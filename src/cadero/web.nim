@@ -63,6 +63,7 @@ const mats = {{
   "materasso": new THREE.MeshStandardMaterial({{color: 0xffffff, roughness: 1}}),
   "foro": new THREE.MeshStandardMaterial({{color: 0x3a2e22}}),
   "accessorio": new THREE.MeshStandardMaterial({{color: 0xf5f5f5, roughness: 0.4}}),
+  "muro": new THREE.MeshStandardMaterial({{color: 0xb8bcc0, roughness: 1, transparent: true, opacity: 0.45}}),
 }};
 const edgeMat = new THREE.LineBasicMaterial({{color: 0x6b5a45}});
 

@@ -23,6 +23,10 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   "Ipotesi da verificare" di `docsrc/parete_nicchia.nim`. Non bloccarsi a chiedere:
   si rivede tutto insieme alla fine.
 - Tipi di parte (`Kind`) e come appaiono nelle viste: vedi `src/cadero/drawing.nim`.
+  `kWall` è il muro (es. la risega): si disegna tratteggiato, non va in distinta.
+- Le cose che non tornano (misure che non ci stanno, decisioni in conflitto) vanno in
+  `controlli(p)` di `models/parete.nim`, mostrati nel documento: non si correggono
+  i numeri di nascosto.
   Un nuovo tipo va gestito in `drawFront`/`drawSide`/`drawPlan`, in `web.nim`
   (materiale three.js) e, se serve, nella distinta.
 

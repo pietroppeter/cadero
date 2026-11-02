@@ -1,4 +1,5 @@
 import std/unittest
+import std/strutils
 import ../src/cadero, ../models/parete
 
 let p = rilievo()
@@ -16,9 +17,10 @@ suite "parete di riferimento":
     let cx = p.colonneX
     check near(cx[3] + p.colonneBasse[3], p.larghezza - p.margineLato)
 
-  test "vista laterale: 104, 32, 128, 52 e 104, 27":
-    check near(p.baseLibreria - p.pianoLetto, 32)     # testata
-    check near(p.cimaLibreria - p.baseLibreria, 128)  # libreria
+  test "vista laterale: piano letto 104, testata 55, libreria fino al soffitto":
+    check near(p.baseLibreria - p.pianoLetto, 55)     # testata (= comodino)
+    check near(p.cimaLibreria, p.soffittoNicchia)     # libreria fino al soffitto
+    check abs(p.vanoUtile - 32) < 0.5                 # 3 vani da circa 32
     check near(p.soffittoNicchia, 260)
     check near(p.margineBasso + p.zonaBassa + p.fascia - p.pianoLetto, 27)
 
@@ -28,6 +30,7 @@ suite "parete di riferimento":
   test "tutto sta dentro l'ingombro (tranne il cassetto aperto)":
     for q in m.parts:
       if q.kind in {kBox, kKnob} and q.pos.y < 0: continue
+      if q.kind == kSoft: continue      # il materasso lo verificano i controlli
       check q.pos.x >= -0.01 and q.x1 <= p.larghezza + 0.01
       check q.pos.z >= -0.01 and q.z1 <= p.altezza + 0.01
       check q.pos.y >= -0.01 and q.y1 <= p.profondita + 0.01
@@ -47,7 +50,7 @@ suite "parete di riferimento":
     p2.nicchia = 112
     check p2.altezza == 306
     check near(p2.soffittoNicchia, 250)
-    check near(p2.cimaLibreria - p2.baseLibreria, 118)   # la libreria si accorcia
+    check p2.cimaLibreria <= p2.soffittoNicchia   # la libreria ci sta ancora
 
   test "i ripiani stanno dentro la libreria":
     for h in p.ripiani:
@@ -56,3 +59,36 @@ suite "parete di riferimento":
   test "formato delle quote":
     check fmtNum(198.2) == "198.2"
     check fmtNum(316.0) == "316"
+
+  test "risega: colonna profonda 73 e pannellino sul bordo sottile":
+    check near(p.profColonna, 73)
+    let r = m.find("risega (muro)")
+    check r.kind == kWall and near(r.y1, p.profondita)
+    let pan = m.find("pannellino risega")
+    check near(pan.pos.y, p.profColonna) and near(pan.y1, p.profondita)
+    check near(pan.size.z, p.altezza - 2 * p.spessore)   # per tutta l'altezza
+    # rivestimento a L senza fessure: lo schienale della colonna parte dallo
+    # stesso piano del pannellino e del divisorio
+    let sc = m.find("schienale colonna")
+    check near(sc.pos.x, pan.pos.x) and near(sc.y1, pan.pos.y)
+    check near(m.find("divisorio").y1, sc.pos.y)
+    check near(m.find("schienale").x1, pan.pos.x)
+    for row in bom(m): check row.kind != kWall           # il muro non va in distinta
+
+  test "una scatola dietro ogni gradino, profonda 30":
+    var n = 0
+    for q in m.parts:
+      if q.name == "schiena gradino":
+        inc n
+        check near(q.pos.y, p.spessore + p.profGradini)
+    check n == p.nGradini
+
+  test "comodino a filo della risega, scaffali meno profondi":
+    check abs(m.find("piano testata (comodino)").size.x - p.risegaLarga) < 0.2
+    check near(m.find("ripiano libreria").size.x, 26)
+
+  test "controlli: niente da segnalare, ma il materasso da 80 non entra":
+    check p.controlli.len == 0
+    var p3 = rilievo()
+    p3.materasso[1] = 80
+    check p3.controlli.len == 1 and "materasso largo 80" in p3.controlli[0]
