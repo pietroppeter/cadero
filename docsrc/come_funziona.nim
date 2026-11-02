@@ -1,7 +1,7 @@
-import nimib
+import nimib, tema   # tema: stessi colori e caratteri degli artefatti
 import std/[strformat, strutils]
 
-nbInit
+nbInit(theme = useTema)
 nb.title = "Come funziona Caderò"
 
 nbText: """

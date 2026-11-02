@@ -1,7 +1,7 @@
-import nimib
+import nimib, tema   # tema: stessi colori e caratteri degli artefatti
 import std/[strformat, strutils]
 
-nbInit
+nbInit(theme = useTema)
 nb.title = "Parete con nicchia letto"
 
 nbText: """
@@ -39,6 +39,9 @@ nbRawHtml: svgTavola
 
 nbText: """
 ## Vista 3D
+
+Per vederla a tutto schermo, con viste predefinite (anche da dentro la nicchia),
+il cassetto aperto e il fronte nascosto: [visore 3D](visore3d.html).
 """
 nbRawHtml: viewer3d(m)
 

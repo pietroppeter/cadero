@@ -32,8 +32,8 @@ proc viewer3d*(m: Model; id = "cadero3d"; height = 520): string =
   ## Un frammento HTML autosufficiente (da inserire con nbRawHtml).
   let data = $toJson(m)
   result = &"""
-<div id="{id}" style="width:100%;height:{height}px;border:1px solid #ddd;border-radius:6px;position:relative;touch-action:none"></div>
-<p style="font-size:0.85em;color:#666">Trascina per ruotare, pizzica o usa la rotella per lo zoom.</p>
+<div id="{id}" style="width:100%;height:{height}px;border:1px solid var(--line, #ddd);border-radius:6px;position:relative;touch-action:none"></div>
+<p style="font-size:0.85em;color:var(--muted, #666)">Trascina per ruotare, pizzica o usa la rotella per lo zoom.</p>
 <script type="importmap">
 {{"imports": {{"three": "https://cdn.jsdelivr.net/npm/three@{threeVersion}/build/three.module.js",
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@{threeVersion}/examples/jsm/"}}}}
@@ -44,7 +44,8 @@ import {{ OrbitControls }} from 'three/addons/controls/OrbitControls.js';
 const model = {data};
 const el = document.getElementById('{id}');
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf4f2ee);
+// lo sfondo segue il tema della pagina (variabile CSS --stage), se c'è
+scene.background = new THREE.Color(getComputedStyle(el).getPropertyValue('--stage').trim() || '#f4f2ee');
 const camera = new THREE.PerspectiveCamera(35, el.clientWidth / el.clientHeight, 1, 5000);
 const renderer = new THREE.WebGLRenderer({{antialias: true}});
 renderer.setPixelRatio(window.devicePixelRatio);

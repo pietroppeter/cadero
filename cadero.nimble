@@ -17,3 +17,4 @@ task test, "esegue i test":
 task docs, "genera i documenti nimib in docs/":
   exec "nim r docsrc/index.nim"
   exec "nim r docsrc/come_funziona.nim"
+  exec "nim r tools/visore3d.nim docs/visore3d.html"
