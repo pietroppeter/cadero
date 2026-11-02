@@ -5,8 +5,18 @@ Mini CAD in Nim per progettare mobili fatti di pannelli, sperimentando con docum
 
 Il primo esempio ridisegna da codice una parete attrezzata con nicchia letto:
 prospetto frontale, vista laterale e pianta con le quote, vista 3D interattiva e
-distinta dei pezzi. Il documento pubblicato è su
-<https://pietroppeter.github.io/cadero/>.
+distinta dei pezzi.
+
+## Documenti
+
+Generati con nimib da `docsrc/` e pubblicati su GitHub Pages:
+
+- [Parete con nicchia letto](https://pietroppeter.github.io/cadero/): tavola con
+  prospetto, laterale e pianta, vista 3D, una variante, distinta e ipotesi
+  (sorgente: [`docsrc/index.nim`](docsrc/index.nim))
+- [Come funziona Caderò](https://pietroppeter.github.io/cadero/come_funziona.html):
+  spiegazione del codice passo passo, con esempi eseguiti
+  (sorgente: [`docsrc/come_funziona.nim`](docsrc/come_funziona.nim))
 
 ## Come è fatto
 
