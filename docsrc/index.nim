@@ -13,6 +13,7 @@ alto e ante, gradini e cassetti in basso. Tutte le misure sono in cm.
 
 Il mobile è descritto da un oggetto di parametri e da una funzione che lo
 trasforma in parti (scatole). Viste, quote, 3D e distinta vengono tutte da lì.
+Per capire come funziona il codice, passo passo: [come funziona Caderò](come_funziona.html).
 """
 
 nbCode:
