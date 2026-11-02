@@ -16,8 +16,9 @@ suite "parete di riferimento":
     let cx = p.colonneX
     check near(cx[3] + p.colonneBasse[3], p.larghezza - p.margineLato)
 
-  test "vista laterale: 130, 130, 56 e 104, 27":
-    check near(p.baseLibreria, 130)
+  test "vista laterale: 104, 32, 128, 52 e 104, 27":
+    check near(p.baseLibreria - p.pianoLetto, 32)     # testata
+    check near(p.cimaLibreria - p.baseLibreria, 128)  # libreria
     check near(p.soffittoNicchia, 260)
     check near(p.margineBasso + p.zonaBassa + p.fascia - p.pianoLetto, 27)
 
@@ -46,6 +47,11 @@ suite "parete di riferimento":
     p2.nicchia = 112
     check p2.altezza == 306
     check near(p2.soffittoNicchia, 250)
+    check near(p2.cimaLibreria - p2.baseLibreria, 118)   # la libreria si accorcia
+
+  test "i ripiani stanno dentro la libreria":
+    for h in p.ripiani:
+      check h > 0 and p.baseLibreria + h < p.cimaLibreria
 
   test "formato delle quote":
     check fmtNum(198.2) == "198.2"

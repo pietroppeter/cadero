@@ -25,8 +25,10 @@ nbCode:
 nbText: """
 ## La tavola
 
-Prospetto frontale, vista laterale (sezione verso sinistra, con il cassetto centrale
-aperto) e pianta (sezione all'altezza della nicchia, col materasso tratteggiato).
+Prospetto frontale, vista laterale (sezione dentro la colonna destra guardando verso
+sinistra, con la libreria tagliata e il cassetto centrale aperto) e pianta (sezione
+all'altezza della nicchia, col materasso tratteggiato). In testa al letto la colonna
+destra è aperta verso la nicchia: sotto c'è la testata con il gavone, sopra la libreria.
 Le quote sono generate dai parametri: se cambia una misura, cambiano anche loro.
 """
 
@@ -85,7 +87,13 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
   12.5, nicchia da 16 a 181.5 con raggio 18, colonne in basso larghe 71, 29, 52 e 38.5.
 - **Colonna destra** profonda 73 invece di 80, come sembra dalla pianta.
 - **Materasso** 190 × 78, spesso 18, appoggiato su una rete di 2 cm sopra il piano a 104.
-- **Libreria nella nicchia**: quattro vani uguali tra 130 e 260, larga 20 cm.
+- **Testata e libreria** (dallo schizzo): testata alta 32 sopra il piano letto, libreria
+  alta 128 dentro la colonna destra, ripiani a 41, 85 e 107 cm dalla base. La colonna è
+  aperta verso la nicchia tra 136 e 264 cm; il resto del divisorio resta pieno.
+- **Gavone**: un vano chiuso dentro la colonna, tra il piano letto (104) e la base della
+  libreria (136), con il coperchio che fa da primo ripiano. Come si apre è da decidere.
+- **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra la base
+  della libreria: posizione indicativa.
 - **Cassetti in basso** profondi 75, il centrale disegnato aperto di 23 cm.
 - **Fori maniglia** di 4 cm; quelli delle ante a 10 cm dal bordo e 12 dall'alto.
 - Le **linee tratteggiate** davanti al mobile nella laterale e nella pianta del disegno

@@ -17,6 +17,7 @@ type
     kBox = "cassetto"       ## corpo di un cassetto (compreso il frontale)
     kSoft = "materasso"     ## oggetti morbidi, disegnati tratteggiati se nascosti
     kKnob = "foro"          ## foro maniglia (pos = centro, size.x = diametro)
+    kAccessory = "accessorio" ## prese, lampade...: solo nel 3D e in distinta
 
   RRect* = object
     ## Rettangolo con angoli arrotondati nel piano del fronte (x, z).

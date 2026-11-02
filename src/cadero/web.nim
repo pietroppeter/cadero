@@ -61,6 +61,7 @@ const mats = {{
   "cassetto": new THREE.MeshStandardMaterial({{color: 0xead3ad, roughness: 0.8}}),
   "materasso": new THREE.MeshStandardMaterial({{color: 0xffffff, roughness: 1}}),
   "foro": new THREE.MeshStandardMaterial({{color: 0x3a2e22}}),
+  "accessorio": new THREE.MeshStandardMaterial({{color: 0xf5f5f5, roughness: 0.4}}),
 }};
 const edgeMat = new THREE.LineBasicMaterial({{color: 0x6b5a45}});
 
@@ -103,7 +104,7 @@ scene.add(group);
 const box = new THREE.Box3().setFromObject(group);
 const c = box.getCenter(new THREE.Vector3());
 const size = box.getSize(new THREE.Vector3()).length();
-camera.position.set(c.x + size * 0.6, c.y + size * 0.2, c.z + size * 1.45);
+camera.position.set(c.x - size * 0.6, c.y + size * 0.2, c.z + size * 1.45);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.copy(c);
 controls.update();

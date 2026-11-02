@@ -108,6 +108,7 @@ proc drawFront(s: var Sheet; v: View; m: Model) =
       if p.hiddenFront: s.rect(v, u0, w0, u1, w1, p.r, dash = dotted)
     of kKnob:
       s.circle(v, p.pos.x, p.pos.z, p.size.x / 2)
+    of kAccessory: discard
 
 proc drawSide(s: var Sheet; v: View; m: Model) =
   ## Sezione al piano x = cut, guardando verso sinistra: si vede quello
@@ -119,7 +120,7 @@ proc drawSide(s: var Sheet; v: View; m: Model) =
     of kPanel: s.rect(v, u0, w0, u1, w1, width = if p.size.y >= 50: thick else: thin)
     of kBox: s.rect(v, u0, w0, u1, w1)
     of kSoft: s.rect(v, u0, w0, u1, w1, 3)
-    of kFront, kKnob: discard
+    of kFront, kKnob, kAccessory: discard
 
 proc drawPlan(s: var Sheet; v: View; m: Model) =
   ## Sezione al piano z = cut, vista dall'alto.

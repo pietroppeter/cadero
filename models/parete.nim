@@ -42,8 +42,9 @@ type
     rete*: float             ## spazio tra piano e materasso (ipotesi: 2)
     # nicchia
     sottoCassetti*: float    ## soffitto della nicchia sotto i cassetti alti (rilevato: 5)
-    libreriaL*: float        ## larghezza della libreria nella nicchia (ipotesi: 20)
-    nRipiani*: int           ## 4 vani uguali tra 130 e 260
+    # testata e libreria: in testa al letto, dentro la colonna destra (schizzo)
+    testata*: float          ## altezza della testata sopra il piano letto: 32
+    ripiani*: seq[float]     ## altezze dei ripiani dalla base della libreria (rilevati: 41, 85, 107)
     # cassetti in basso
     profCassetti*: float     ## (rilevato: 75)
     cassettoAperto*: int     ## quale cassetto basso disegnare aperto (-1 nessuno)
@@ -62,7 +63,7 @@ proc rilievo*(): Parete =
     colonneBasse: [71.0, 29, 52, 38.5], spaziBassi: [7.5, 5.5, 8.5],
     nGradini: 5, passoGradini: 5.5, nCassettiBassi: 3, gapCassetti: 4,
     pianoLetto: 104, materasso: [190.0, 78, 18], rete: 2,
-    sottoCassetti: 5, libreriaL: 20, nRipiani: 4,
+    sottoCassetti: 5, testata: 32, ripiani: @[41.0, 85, 107],
     profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4)
 
 proc altezza*(p: Parete): float =
@@ -82,8 +83,12 @@ proc soffittoNicchia*(p: Parete): float =
   p.catenaFronte[5] - p.sottoCassetti
 
 proc baseLibreria*(p: Parete): float =
-  ## 130 nella vista laterale: il primo ripiano, appena sotto l'apertura.
-  p.catenaFronte[3] - 1
+  ## 136: la libreria parte sopra la testata.
+  p.pianoLetto + p.testata
+
+proc cimaLibreria*(p: Parete): float =
+  ## 264: la libreria arriva fin sotto i cassetti alti (128 cm nello schizzo).
+  p.catenaFronte[5] - 1
 
 proc xColonna*(p: Parete): float = p.larghezza - p.colonnaDx
 
@@ -119,9 +124,14 @@ proc parete*(p: Parete): Model =
   # --- struttura -----------------------------------------------------------
   result.add part("fianco sx", kPanel, 0, s, 0, s, P - s, H)
   result.add part("fianco dx", kPanel, L - s, s, 0, s, p.profColonna - s, H)
-  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, 0, s, P - s, H)
+  # il divisorio è aperto all'altezza della libreria: sotto fa da testata
+  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, s, s, P - s, p.baseLibreria - s)
   divisorio.hiddenFront = true
   result.add divisorio
+  var divisorioAlto = part("divisorio alto", kPanel, xCol - s / 2, s, p.cimaLibreria, s, P - s,
+                           H - s - p.cimaLibreria)
+  divisorioAlto.hiddenFront = true
+  result.add divisorioAlto
   result.add part("cielo", kPanel, s, s, H - s, L - 2 * s, P - s, s)
   result.add part("fondo", kPanel, s, s, 0, L - 2 * s, P - s, s)
   result.add part("schienale", kPanel, s, P - s, s, xCol - 1.5 * s, s, H - 2 * s)
@@ -138,10 +148,18 @@ proc parete*(p: Parete): Model =
                  p.pianoLetto + p.rete, mL, mP, mH, r = 3)
   mat.hiddenFront = true
   result.add mat
-  let hVano = (p.soffittoNicchia - p.baseLibreria) / float(p.nRipiani)
-  for i in 0 ..< p.nRipiani:
-    let z = p.baseLibreria + float(i) * hVano
-    result.add part("ripiano libreria", kPanel, xInt, s, z - s, p.libreriaL, P - 2 * s, s)
+
+  # --- colonna destra: gavone, libreria, prese -----------------------------
+  let xc = xCol + s / 2                 # interno della colonna
+  let lc = L - s - xc
+  let pc = p.profColonna - 2 * s
+  result.add part("fondo gavone", kPanel, xc, s, p.pianoLetto - s, lc, pc, s)
+  result.add part("coperchio gavone", kPanel, xc, s, p.baseLibreria - s, lc, pc, s)
+  for h in p.ripiani:
+    result.add part("ripiano libreria", kPanel, xc, s, p.baseLibreria + h - s, lc, pc, s)
+  result.add part("cielo libreria", kPanel, xc, s, p.cimaLibreria, lc, pc, s)
+  result.add part("prese (2 USB-C, 1 schuko)", kAccessory, xc + lc - 14, s, p.baseLibreria + 8,
+                  12, 0.6, 7)
 
   # --- cassetti alti -------------------------------------------------------
   let wAlto = (L - 2 * p.margineLato - 2 * p.gapAlti) / 3
@@ -177,7 +195,7 @@ proc quote*(p: Parete): seq[DimChain] =
     DimChain(view: vFront, vertical: false, at: -12, ext: 0, stops: @[0.0, p.larghezza]),
     # vista laterale
     DimChain(view: vSide, vertical: true, at: -26, ext: 0,
-             stops: @[0.0, p.baseLibreria, p.soffittoNicchia, H]),
+             stops: @[0.0, p.pianoLetto, p.baseLibreria, p.cimaLibreria, H]),
     DimChain(view: vSide, vertical: true, at: p.profondita + 40, ext: p.profondita,
              stops: @[0.0, p.pianoLetto, p.margineBasso + p.zonaBassa + p.fascia]),
     DimChain(view: vSide, vertical: false, at: -18, ext: 0, stops: @[0.0, p.profondita]),
@@ -193,7 +211,7 @@ proc tavola*(p: Parete; m: Model): string =
   ## Il foglio con le tre viste disposte come nel disegno di riferimento.
   let views = [
     View(kind: vFront, ox: 0, oy: 0),
-    View(kind: vSide, cut: 150, ox: p.larghezza + 110, oy: 0),
+    View(kind: vSide, cut: 230, ox: p.larghezza + 110, oy: 0),
     View(kind: vPlan, cut: 200, ox: 0, oy: 40 + p.profondita),
   ]
   var s = initSheet()
