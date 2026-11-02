@@ -108,7 +108,7 @@ proc drawFront(s: var Sheet; v: View; m: Model) =
       if p.hiddenFront: s.rect(v, u0, w0, u1, w1, p.r, dash = dotted)
     of kKnob:
       s.circle(v, p.pos.x, p.pos.z, p.size.x / 2)
-    of kAccessory: discard
+    of kAccessory, kWall: discard
 
 proc drawSide(s: var Sheet; v: View; m: Model) =
   ## Sezione al piano x = cut, guardando verso sinistra: si vede quello
@@ -120,6 +120,7 @@ proc drawSide(s: var Sheet; v: View; m: Model) =
     of kPanel: s.rect(v, u0, w0, u1, w1, width = if p.size.y >= 50: thick else: thin)
     of kBox: s.rect(v, u0, w0, u1, w1)
     of kSoft: s.rect(v, u0, w0, u1, w1, 3)
+    of kWall: s.rect(v, u0, w0, u1, w1, dash = dashed)
     of kFront, kKnob, kAccessory: discard
 
 proc drawPlan(s: var Sheet; v: View; m: Model) =
@@ -128,6 +129,9 @@ proc drawPlan(s: var Sheet; v: View; m: Model) =
     let (u0, w0, u1, w1) = p.viewBox(vPlan)
     if p.kind == kSoft:                  # il materasso sta sotto il taglio
       s.rect(v, u0, w0, u1, w1, p.r, dash = dotted)
+      continue
+    if p.kind == kWall:                  # il muro, tratteggiato
+      s.rect(v, u0, w0, u1, w1, dash = dashed)
       continue
     if not (p.pos.z <= v.cut and v.cut <= p.z1): continue
     if p.kind notin {kPanel, kBox}: continue

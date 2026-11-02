@@ -29,7 +29,9 @@ nbText: """
 Prospetto frontale, vista laterale (sezione dentro la colonna destra guardando verso
 sinistra, con la libreria tagliata e il cassetto centrale aperto) e pianta (sezione
 all'altezza della nicchia, col materasso tratteggiato). In testa al letto la colonna
-destra è aperta verso la nicchia: sotto c'è la testata con il gavone, sopra la libreria.
+destra è aperta verso la nicchia: sotto c'è la testata con il gavone, sopra il piano
+della testata, che fa da comodino, e la libreria con scaffali meno profondi.
+Dietro a destra, tratteggiata, la risega del muro: la colonna si ferma contro di essa.
 Le quote sono generate dai parametri: se cambia una misura, cambiano anche loro.
 """
 
@@ -68,6 +70,16 @@ nbCode:
 nbRawHtml: foglio.render()
 
 nbText: """
+## Cosa non torna
+
+`controlli(p)` confronta le misure con le decisioni prese e segnala i conflitti.
+Per ora li lascio visibili invece di correggere i numeri: sono scelte da fare.
+"""
+
+nbCode:
+  for c in p.controlli: echo "- ", c
+
+nbText: """
 ## Distinta dei pezzi
 
 Pezzi uguali sono contati insieme; misure dalla più grande alla più piccola.
@@ -89,15 +101,22 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Spessore pannelli** 1.8 cm (multistrato), ipotesi.
 - **Posizioni orizzontali** di frontali e aperture, rilevate in scala: margini laterali
   12.5, nicchia da 16 a 181.5 con raggio 18, colonne in basso larghe 71, 29, 52 e 38.5.
-- **Colonna destra** profonda 73 invece di 80, come sembra dalla pianta.
-- **Materasso** 190 × 78, spesso 18, appoggiato su una rete di 2 cm sopra il piano a 104.
-- **Testata e libreria** (dallo schizzo): testata alta 32 sopra il piano letto, libreria
-  alta 128 dentro la colonna destra, ripiani a 41, 85 e 107 cm dalla base. La colonna è
-  aperta verso la nicchia tra 136 e 264 cm; il resto del divisorio resta pieno.
-- **Gavone**: un vano chiuso dentro la colonna, tra il piano letto (104) e la base della
-  libreria (136), con il coperchio che fa da primo ripiano. Come si apre è da decidere.
-- **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra la base
-  della libreria: posizione indicativa.
+- **Risega del muro**: pilastro dietro a destra per tutta l'altezza, sporge 7 e largo 38.
+  La colonna destra è quindi profonda 73. La faccia larga è rivestita dallo schienale
+  della colonna, il bordo sottile da un pannellino dove il divisorio è aperto.
+- **Materasso** 80 × 190, spesso 17, appoggiato direttamente sul piano a 104 (vedi
+  "Cosa non torna": 80 non entra).
+- **Testata e libreria** (decisioni dopo il confronto con i nonni): piano della testata
+  55 sopra il piano letto (17 di materasso + 38 di schienale), profondo 38 a filo della
+  risega, fa da comodino. Sopra, fino a 128 dal piano letto, tre vani uguali con
+  scaffali profondi 22 appoggiati al fianco destro. Il divisorio è aperto tra il
+  comodino (159) e il cielo della libreria (232); sotto fa da testata, sopra è chiuso.
+- **Gavone**: un vano chiuso dentro la colonna, tra il piano letto (104) e il comodino
+  (159). Come si apre è da decidere.
+- **Scatole dei gradini**: dietro ogni gradino una scatola aperta sul davanti, profonda
+  30 (da definire), come un cassetto senza frontale.
+- **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
+  comodino: posizione indicativa.
 - **Cassetti in basso** profondi 75, il centrale disegnato aperto di 23 cm.
 - **Fori maniglia** di 4 cm; quelli delle ante a 10 cm dal bordo e 12 dall'alto.
 - Le **linee tratteggiate** davanti al mobile nella laterale e nella pianta del disegno

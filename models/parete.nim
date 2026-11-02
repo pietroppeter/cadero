@@ -22,7 +22,10 @@ type
     margineAlto*: float      ## 8
     # divisione orizzontale
     colonnaDx*: float        ## 38.8, colonna a destra
-    profColonna*: float      ## profondità della colonna destra (rilevato in pianta: 73)
+    # risega: il pilastro nel muro, dietro a destra, per tutta l'altezza.
+    # La colonna destra è profonda solo profondita - sporgenza (73).
+    risegaSporge*: float     ## quanto sporge dal muro verso la stanza (note di Pietro: 7)
+    risegaLarga*: float      ## quanto è larga lungo la parete (note di Pietro: 38)
     margineLato*: float      ## distanza dei frontali dai bordi (rilevato: 12.5)
     gapAlti*: float          ## spazio tra i cassetti alti (rilevato: 3.75)
     nicchiaX*: float         ## inizio della nicchia da sinistra (rilevato: 16)
@@ -34,17 +37,24 @@ type
     spaziBassi*: array[3, float]
     nGradini*: int           ## 5
     passoGradini*: float     ## spazio verticale tra i gradini (rilevato: 5.5)
+    profGradini*: float      ## profondità della scatola dietro ogni gradino (Pietro: 30 per ora)
     nCassettiBassi*: int     ## 3
     gapCassetti*: float      ## (rilevato: 4)
     # letto
     pianoLetto*: float       ## quota del piano letto: 104
-    materasso*: array[3, float]   ## 190 x 78 x 18 (spessore rilevato dal tratteggio)
-    rete*: float             ## spazio tra piano e materasso (ipotesi: 2)
+    materasso*: array[3, float]   ## 190 x 80 x 17 (note di Pietro)
+    rete*: float             ## spazio tra piano e materasso (0: il materasso poggia sul piano)
     # nicchia
     sottoCassetti*: float    ## soffitto della nicchia sotto i cassetti alti (rilevato: 5)
-    # testata e libreria: in testa al letto, dentro la colonna destra (schizzo)
-    testata*: float          ## altezza della testata sopra il piano letto: 32
-    ripiani*: seq[float]     ## altezze dei ripiani dalla base della libreria (rilevati: 41, 85, 107)
+    # testata e libreria-comodino: in testa al letto, dentro la colonna destra.
+    # Decisioni (note di Pietro, dopo il confronto con i nonni):
+    testata*: float          ## piano della testata (= comodino) sopra il piano letto: 55
+                             ## (materasso 17 + 38 di schienale)
+    altezzaLibreria*: float  ## tutta la libreria sopra il piano letto, testata compresa: 128
+    profComodino*: float     ## il piano della testata fa da comodino: 38, a filo della risega
+    profScaffali*: float     ## gli scaffali sopra sono meno profondi: 22
+    nVani*: int              ## vani sopra il comodino (schizzo: 3)
+    altezzaLibri*: float     ## altezza utile minima di un vano per i libri (ipotesi: 25)
     # cassetti in basso
     profCassetti*: float     ## (rilevato: 75)
     cassettoAperto*: int     ## quale cassetto basso disegnare aperto (-1 nessuno)
@@ -57,13 +67,14 @@ proc rilievo*(): Parete =
     larghezza: 237, profondita: 80, spessore: 1.8,
     margineBasso: 6, zonaBassa: 95, fascia: 30, nicchia: 122,
     stacco: 12, cassettiAlti: 43, margineAlto: 8,
-    colonnaDx: 38.8, profColonna: 73,
+    colonnaDx: 38.8, risegaSporge: 7, risegaLarga: 38,
     margineLato: 12.5, gapAlti: 3.75,
     nicchiaX: 16, nicchiaL: 165.5, raggioNicchia: 18, raggio: 3,
     colonneBasse: [71.0, 29, 52, 38.5], spaziBassi: [7.5, 5.5, 8.5],
-    nGradini: 5, passoGradini: 5.5, nCassettiBassi: 3, gapCassetti: 4,
-    pianoLetto: 104, materasso: [190.0, 78, 18], rete: 2,
-    sottoCassetti: 5, testata: 32, ripiani: @[41.0, 85, 107],
+    nGradini: 5, passoGradini: 5.5, profGradini: 30, nCassettiBassi: 3, gapCassetti: 4,
+    pianoLetto: 104, materasso: [190.0, 80, 17], rete: 0,
+    sottoCassetti: 5, testata: 55, altezzaLibreria: 128, profComodino: 38,
+    profScaffali: 22, nVani: 3, altezzaLibri: 25,
     profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4)
 
 proc altezza*(p: Parete): float =
@@ -82,13 +93,30 @@ proc soffittoNicchia*(p: Parete): float =
   ## 260 nella vista laterale: poco sotto i cassetti alti.
   p.catenaFronte[5] - p.sottoCassetti
 
+proc profColonna*(p: Parete): float =
+  ## 73: la colonna destra finisce contro la risega.
+  p.profondita - p.risegaSporge
+
 proc baseLibreria*(p: Parete): float =
-  ## 136: la libreria parte sopra la testata.
+  ## 159: il piano della testata, che fa da comodino.
   p.pianoLetto + p.testata
 
 proc cimaLibreria*(p: Parete): float =
-  ## 264: la libreria arriva fin sotto i cassetti alti (128 cm nello schizzo).
-  p.catenaFronte[5] - 1
+  ## 232: 128 sopra il piano letto, testata compresa.
+  p.pianoLetto + p.altezzaLibreria
+
+proc ripiani*(p: Parete): seq[float] =
+  ## Quote dei ripiani (piano superiore) dalla base della libreria:
+  ## nVani vani uguali tra il comodino e il cielo della libreria.
+  let s = p.spessore
+  let passo = (p.cimaLibreria - p.baseLibreria) / float(p.nVani)
+  for i in 1 ..< p.nVani:
+    result.add float(i) * passo + s / 2
+
+proc vanoUtile*(p: Parete): float =
+  ## Altezza libera di ciascun vano, tolti gli spessori.
+  let s = p.spessore
+  (p.cimaLibreria - p.baseLibreria - float(p.nVani) * s) / float(p.nVani)
 
 proc xColonna*(p: Parete): float = p.larghezza - p.colonnaDx
 
@@ -121,11 +149,24 @@ proc parete*(p: Parete): Model =
     fronte.holes.add rrect(cx[1], z, p.colonneBasse[1], hGradino, p.raggio)
   result.add fronte
 
+  # dietro ogni gradino una scatola aperta sul davanti, come un cassetto senza
+  # frontale: fondo (dove si appoggia il piede), cielo, due fianchi e schiena
+  let wG = p.colonneBasse[1]
+  let yG = s + p.profGradini
+  for i in 0 ..< p.nGradini:
+    let z = zBasso + float(i) * (hGradino + p.passoGradini)
+    result.add part("fondo gradino", kPanel, cx[1] - s, s, z - s, wG + 2 * s, p.profGradini, s)
+    result.add part("cielo gradino", kPanel, cx[1] - s, s, z + hGradino, wG + 2 * s, p.profGradini, s)
+    result.add part("fianco gradino", kPanel, cx[1] - s, s, z, s, p.profGradini, hGradino)
+    result.add part("fianco gradino", kPanel, cx[1] + wG, s, z, s, p.profGradini, hGradino)
+    result.add part("schiena gradino", kPanel, cx[1] - s, yG, z - s, wG + 2 * s, s, hGradino + 2 * s)
+
   # --- struttura -----------------------------------------------------------
   result.add part("fianco sx", kPanel, 0, s, 0, s, P - s, H)
   result.add part("fianco dx", kPanel, L - s, s, 0, s, p.profColonna - s, H)
   # il divisorio è aperto all'altezza della libreria: sotto fa da testata
-  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, s, s, P - s, p.baseLibreria - s)
+  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, s, s, P - s,
+                       p.baseLibreria - 2 * s)
   divisorio.hiddenFront = true
   result.add divisorio
   var divisorioAlto = part("divisorio alto", kPanel, xCol - s / 2, s, p.cimaLibreria, s, P - s,
@@ -135,8 +176,15 @@ proc parete*(p: Parete): Model =
   result.add part("cielo", kPanel, s, s, H - s, L - 2 * s, P - s, s)
   result.add part("fondo", kPanel, s, s, 0, L - 2 * s, P - s, s)
   result.add part("schienale", kPanel, s, P - s, s, xCol - 1.5 * s, s, H - 2 * s)
+  # la risega (muro, non è un pezzo da costruire) e il suo rivestimento:
+  # la faccia larga è coperta dallo schienale della colonna, il bordo sottile
+  # (7 cm, verso la nicchia) da un pannellino dove il divisorio è aperto
+  result.add part("risega (muro)", kWall, L - p.risegaLarga, p.profColonna, 0,
+                  p.risegaLarga, p.risegaSporge, H)
   result.add part("schienale colonna", kPanel, xCol + s / 2, p.profColonna - s, s,
                   p.colonnaDx - 1.5 * s, s, H - 2 * s)
+  result.add part("pannellino risega", kPanel, xCol - s / 2, p.profColonna, p.baseLibreria,
+                  s, p.risegaSporge - s, p.cimaLibreria - p.baseLibreria)
 
   # --- nicchia letto -------------------------------------------------------
   let xInt = s                       # interno della campata sinistra
@@ -144,20 +192,27 @@ proc parete*(p: Parete): Model =
   result.add part("piano letto", kPanel, xInt, s, p.pianoLetto - s, lInt, P - 2 * s, s)
   result.add part("soffitto nicchia", kPanel, xInt, s, p.soffittoNicchia - s, lInt, P - 2 * s, s)
   let (mL, mP, mH) = (p.materasso[0], p.materasso[1], p.materasso[2])
-  var mat = part("materasso", kSoft, xInt + (lInt - mL) / 2, (P - mP) / 2,
+  # contro il fronte; se è più largo dello spazio interno sporge dietro (vedi controlli)
+  var mat = part("materasso", kSoft, xInt + (lInt - mL) / 2, s,
                  p.pianoLetto + p.rete, mL, mP, mH, r = 3)
   mat.hiddenFront = true
   result.add mat
 
-  # --- colonna destra: gavone, libreria, prese -----------------------------
+  # --- colonna destra: gavone, comodino, libreria, prese --------------------
   let xc = xCol + s / 2                 # interno della colonna
   let lc = L - s - xc
   let pc = p.profColonna - 2 * s
   result.add part("fondo gavone", kPanel, xc, s, p.pianoLetto - s, lc, pc, s)
-  result.add part("coperchio gavone", kPanel, xc, s, p.baseLibreria - s, lc, pc, s)
+  # il piano della testata copre anche il divisorio: profondo 38 verso il letto
+  let xCom = L - s - p.profComodino
+  result.add part("piano testata (comodino)", kPanel, xCom, s, p.baseLibreria - s,
+                  p.profComodino, pc, s)
+  # scaffali meno profondi, appoggiati al fianco destro
+  let xScaf = L - s - p.profScaffali
   for h in p.ripiani:
-    result.add part("ripiano libreria", kPanel, xc, s, p.baseLibreria + h - s, lc, pc, s)
-  result.add part("cielo libreria", kPanel, xc, s, p.cimaLibreria, lc, pc, s)
+    result.add part("ripiano libreria", kPanel, xScaf, s, p.baseLibreria + h - s,
+                    p.profScaffali, pc, s)
+  result.add part("cielo libreria", kPanel, xCom, s, p.cimaLibreria - s, p.profComodino, pc, s)
   result.add part("prese (2 USB-C, 1 schuko)", kAccessory, xc + lc - 14, s, p.baseLibreria + 8,
                   12, 0.6, 7)
 
@@ -183,6 +238,33 @@ proc parete*(p: Parete): Model =
                     p.diamForo, 0, p.diamForo)
   result.add part("anta stretta", kFront, cx[3], 0, zBasso, p.colonneBasse[3], s, p.zonaBassa, p.raggio)
   result.add part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
+
+proc controlli*(p: Parete): seq[string] =
+  ## Le cose che non tornano: misure che non ci stanno o decisioni in conflitto.
+  let s = p.spessore
+  let interno = p.profondita - 2 * s           # tra fronte e schienale della nicchia
+  if p.materasso[1] > interno:
+    result.add "materasso largo " & fmtNum(p.materasso[1]) & " ma tra fronte e schienale ci sono " &
+      fmtNum(interno) & " cm (senza schienale, contro il muro: " & fmtNum(p.profondita - s) & ")"
+  let campata = p.xColonna - s / 2 - s
+  if p.materasso[0] > campata:
+    result.add "materasso lungo " & fmtNum(p.materasso[0]) & " ma la campata è " & fmtNum(campata)
+  let schiena = p.testata - p.rete - p.materasso[2]
+  if schiena < 38 or schiena > 40:
+    result.add "la testata sporge " & fmtNum(schiena) & " cm sopra il materasso (deciso: 38-40)"
+  if p.vanoUtile < p.altezzaLibri:
+    result.add "i vani della libreria sono alti " & fmtNum(p.vanoUtile) &
+      " cm: meno di " & fmtNum(p.altezzaLibri) & " per i libri"
+  if p.cimaLibreria < p.soffittoNicchia - s:
+    result.add "sopra la libreria (fino a " & fmtNum(p.cimaLibreria) & ") restano " &
+      fmtNum(p.soffittoNicchia - p.cimaLibreria) & " cm chiusi sotto il soffitto della nicchia (" &
+      fmtNum(p.soffittoNicchia) & ")"
+  if p.cimaLibreria > p.soffittoNicchia:
+    result.add "la libreria supera il soffitto della nicchia"
+  let pilastro = p.risegaLarga
+  if abs(pilastro - p.profComodino) > 1:
+    result.add "comodino profondo " & fmtNum(p.profComodino) & " ma la risega è larga " &
+      fmtNum(pilastro) & ": non è a filo"
 
 proc quote*(p: Parete): seq[DimChain] =
   ## Le stesse quote della tavola di riferimento, ricavate dai parametri.

@@ -18,6 +18,7 @@ type
     kSoft = "materasso"     ## oggetti morbidi, disegnati tratteggiati se nascosti
     kKnob = "foro"          ## foro maniglia (pos = centro, size.x = diametro)
     kAccessory = "accessorio" ## prese, lampade...: solo nel 3D e in distinta
+    kWall = "muro"           ## parti dell'edificio (pilastri, riseghe): non si costruiscono
 
   RRect* = object
     ## Rettangolo con angoli arrotondati nel piano del fronte (x, z).
@@ -74,7 +75,7 @@ proc sortedDims(p: Part): array[3, float] =
 proc bom*(m: Model): seq[BomRow] =
   ## Distinta: pezzi uguali (stesso tipo e stesse misure) contati insieme.
   for p in m.parts:
-    if p.kind in {kKnob}: continue
+    if p.kind in {kKnob, kWall}: continue
     let d = sortedDims(p)
     var found = false
     for row in result.mitems:
