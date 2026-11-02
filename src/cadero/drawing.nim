@@ -104,6 +104,8 @@ proc drawFront(s: var Sheet; v: View; m: Model) =
         s.line(v, (u0 + u1) / 2, w0, (u0 + u1) / 2, w1, dash = dotted)
     of kFront, kBox:
       s.rect(v, u0, w0, u1, w1, p.r)
+      for h in p.holes:                 # es. i gradini nel frontale del tavolino
+        s.rect(v, h.x, h.z, h.x + h.w, h.z + h.h, h.r)
     of kSoft:
       if p.hiddenFront: s.rect(v, u0, w0, u1, w1, p.r, dash = dotted)
     of kKnob:

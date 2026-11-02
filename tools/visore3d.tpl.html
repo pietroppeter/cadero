@@ -58,8 +58,15 @@ __BACK__
       <button id="v-alto" type="button">Dall'alto</button>
       <button id="v-dentro" type="button">Dentro: verso la libreria</button>
       <button id="v-testata" type="button">Dentro: dalla testata</button>
+      <button id="v-tavolino" type="button">Gradini e tavolino</button>
+    </div>
+    <div class="group" role="group" aria-label="Variante">
+      <span class="label">Mobile</span>
+      <button id="m-base" type="button" aria-pressed="true">Base</button>
+      <button id="m-tavolino" type="button" aria-pressed="false">Con tavolino</button>
     </div>
     <div class="group">
+      <button id="t-tavolino" type="button" aria-pressed="false" hidden>Tavolino estratto</button>
       <button id="t-cassetto" type="button" aria-pressed="true">Cassetto aperto</button>
       <button id="t-fronte" type="button" aria-pressed="false">Nascondi il fronte</button>
     </div>
@@ -75,7 +82,10 @@ __BACK__
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const model = __MODEL__;
+// due modelli generati dal codice Nim: il mobile base e la variante con il
+// tavolino (disegnato estratto: le parti con y < 0 si possono far rientrare)
+const models = { base: __MODEL__, tavolino: __MODEL_TAVOLINO__ };
+let model = models.base;
 const el = document.getElementById('stage');
 const status = document.getElementById('status');
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -118,30 +128,38 @@ function extruded(p) {
   return g;
 }
 
-const group = new THREE.Group();
-const openParts = [];   // cassetto aperto e il suo foro
+let group = new THREE.Group();
+let openParts = [];   // parti estratte (cassetto, tavolino), con il loro gruppo
 let frontPanel = [];
-for (const p of model.parts) {
-  let g;
-  if (p.kind === "foro") {
-    g = new THREE.CylinderGeometry(p.w / 2, p.w / 2, 0.4, 20);
-    g.rotateX(Math.PI / 2);
-    g.translate(p.x, p.z, -p.y + 0.15);
-  } else if (p.holes.length > 0 || ((p.kind === "frontale" || p.kind === "cassetto") && p.r > 0)) {
-    g = extruded(p);
-  } else {
-    g = new THREE.BoxGeometry(p.w, p.h, p.d);
-    g.translate(p.x + p.w / 2, p.z + p.h / 2, -(p.y + p.d / 2));
+function build(m) {
+  if (group.parent) scene.remove(group);
+  group = new THREE.Group(); openParts = []; frontPanel = [];
+  for (const p of m.parts) {
+    let g;
+    if (p.kind === "foro") {
+      g = new THREE.CylinderGeometry(p.w / 2, p.w / 2, 0.4, 20);
+      g.rotateX(Math.PI / 2);
+      g.translate(p.x, p.z, -p.y + 0.15);
+    } else if (p.holes.length > 0 || ((p.kind === "frontale" || p.kind === "cassetto") && p.r > 0)) {
+      g = extruded(p);
+    } else {
+      g = new THREE.BoxGeometry(p.w, p.h, p.d);
+      g.translate(p.x + p.w / 2, p.z + p.h / 2, -(p.y + p.d / 2));
+    }
+    const obj = new THREE.Group();
+    obj.add(new THREE.Mesh(g, mats[p.kind]));
+    if (p.kind !== "foro" && p.kind !== "materasso")
+      obj.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), edgeMat));
+    group.add(obj);
+    if (p.gruppo) openParts.push({ obj, gruppo: p.gruppo, shift: -Math.min(p.y, 0) });
+    if (p.name === "fronte") frontPanel.push(obj);
   }
-  const obj = new THREE.Group();
-  obj.add(new THREE.Mesh(g, mats[p.kind]));
-  if (p.kind !== "foro" && p.kind !== "materasso")
-    obj.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), edgeMat));
-  group.add(obj);
-  if (p.y < 0) openParts.push({ obj, shift: -p.y });
-  if (p.name === "fronte") frontPanel.push(obj);
+  scene.add(group);
 }
-scene.add(group);
+build(model);
+// lo spostamento di un gruppo: quanto esce la sua parte più esterna
+function shiftOf(gruppo) { return Math.max(0, ...openParts.filter(o => o.gruppo === gruppo).map(o => o.shift)); }
+
 
 const box = new THREE.Box3().setFromObject(group);
 const c = box.getCenter(new THREE.Vector3());
@@ -160,6 +178,8 @@ const views = {
   // dentro la nicchia, seduti sul materasso (occhi a circa 175 cm da terra)
   dentro:  { pos: [20, 178, -50], target: [50, 176, -45], fov: 72 },
   testata: { pos: [180, 180, -60], target: [150, 172, -52], fov: 72 },
+  // davanti alla scaletta, un po' da sinistra e dall'alto
+  tavolino: { pos: [-40, 150, 230], target: [110, 40, 10] },
 };
 let anim = null;
 function goTo(name, instant) {
@@ -178,19 +198,38 @@ controls.update();
 for (const name of Object.keys(views))
   document.getElementById('v-' + name).addEventListener('click', () => goTo(name));
 
-const tCass = document.getElementById('t-cassetto');
-tCass.addEventListener('click', () => {
-  const open = tCass.getAttribute('aria-pressed') !== 'true';
-  tCass.setAttribute('aria-pressed', String(open));
-  for (const o of openParts) o.target = open ? 0 : -o.shift;   // chiuso = rientra di "shift"
-});
-for (const o of openParts) o.target = 0;
+// pulsanti "aperto/chiuso": ogni gruppo esce o rientra di tutta la sua corsa
+const toggles = { cassetto: document.getElementById('t-cassetto'),
+                  tavolino: document.getElementById('t-tavolino') };
 const tFront = document.getElementById('t-fronte');
-tFront.addEventListener('click', () => {
-  const hide = tFront.getAttribute('aria-pressed') !== 'true';
-  tFront.setAttribute('aria-pressed', String(hide));
-  for (const f of frontPanel) f.visible = !hide;
-});
+function applyToggles(instant) {
+  for (const [gruppo, btn] of Object.entries(toggles)) {
+    const open = btn.getAttribute('aria-pressed') === 'true', d = shiftOf(gruppo);
+    for (const o of openParts.filter(o => o.gruppo === gruppo)) {
+      o.target = open ? 0 : -d;          // le parti sono disegnate aperte
+      if (instant) o.obj.position.z = o.target;
+    }
+  }
+  for (const f of frontPanel) f.visible = tFront.getAttribute('aria-pressed') !== 'true';
+}
+for (const btn of [...Object.values(toggles), tFront])
+  btn.addEventListener('click', () => {
+    btn.setAttribute('aria-pressed', String(btn.getAttribute('aria-pressed') !== 'true'));
+    applyToggles(false);
+  });
+// cambio di variante: si ricostruisce la scena con l'altro modello
+for (const name of Object.keys(models)) {
+  const btn = document.getElementById('m-' + name);
+  btn.addEventListener('click', () => {
+    model = models[name];
+    for (const n of Object.keys(models)) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === name));
+    toggles.tavolino.hidden = name !== 'tavolino';
+    build(model); applyToggles(true);
+    if (name === 'tavolino') goTo('tavolino');
+    status.textContent = model.parts.length + ' parti';
+  });
+}
+applyToggles(true);
 
 function applyTheme() { scene.background = new THREE.Color(css('--stage') || '#dfe3e6'); }
 applyTheme();

@@ -70,6 +70,28 @@ nbCode:
 nbRawHtml: foglio.render()
 
 nbText: """
+## Variante: tavolino estraibile
+
+I primi tre gradini stanno nel frontale di un blocco che si estrae del tutto e sta
+in piedi su quattro gambe corte con pattini; da chiuso le gambe dietro arrivano vicino
+allo schienale del mobile, senza toccarlo. Il piano del blocco fa da tavolino; chiuso, è di nuovo una scaletta.
+Il volume dietro i gradini, che prima restava vuoto, diventa il corpo del tavolino.
+"""
+
+nbCode:
+  let pt = rilievo().conTavolino
+  let mt = parete(pt)
+  let piano = mt.find("piano tavolino")
+  echo "piano: ", fmtNum(piano.size.x), " × ", fmtNum(piano.size.y), " cm, alto ",
+       fmtNum(piano.z1), " da terra"
+
+  var foglioT = initSheet()
+  let fronteT = View(kind: vFront)
+  foglioT.draw(fronteT, parete(rilievo().conTavolino(aperto = false)))
+nbRawHtml: foglioT.render()
+nbRawHtml: viewer3d(mt, id = "tavolino3d", height = 420)
+
+nbText: """
 ## Cosa non torna
 
 `controlli(p)` confronta le misure con le decisioni prese e segnala i conflitti.
@@ -120,6 +142,10 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
   (159). Come si apre è da decidere.
 - **Scatole dei gradini**: dietro ogni gradino una scatola aperta sul davanti, profonda
   30 (da definire), come un cassetto senza frontale.
+- **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), profondo 75 (1.4 di
+  gioco dallo schienale), piano
+  a 62.6 da terra (il cielo del terzo gradino). Esce di tutta la sua profondità; quattro
+  gambe corte con pattini. Largo solo 32.6 cm: più un ripiano che un tavolo.
 - **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
   comodino: posizione indicativa.
 - **Cassetti in basso** profondi 75, il centrale disegnato aperto di 23 cm.

@@ -92,3 +92,27 @@ suite "parete di riferimento":
     var p3 = rilievo()
     p3.materasso[1] = 80
     check p3.controlli.len == 1 and "materasso largo 80" in p3.controlli[0]
+
+  test "variante con tavolino":
+    let pt = rilievo().conTavolino
+    let mt = parete(pt)
+    # il fronte ha un'apertura sola al posto dei primi 3 gradini
+    check mt.find("fronte").holes.len == 1 + (pt.nGradini - pt.gradiniTavolino) + 1
+    let fr = mt.find("frontale tavolino")
+    check fr.holes.len == pt.gradiniTavolino and fr.gruppo == "tavolino"
+    # estratto del tutto: il retro arriva al fronte del mobile
+    var yMax = -Inf
+    for q in mt.parts:
+      if q.gruppo == "tavolino": yMax = max(yMax, q.y1)
+    check near(yMax, 0)
+    # il piano è un'altezza da tavolino per bambini e sta sotto il quarto gradino
+    let piano = mt.find("piano tavolino")
+    check piano.z1 > 55 and piano.z1 < 66
+    var gambe = 0
+    for q in mt.parts:
+      if q.name == "gamba": inc gambe
+    check gambe == 4
+    check pt.controlli.len == 0
+    # chiuso, tutto sta dentro il mobile
+    for q in parete(rilievo().conTavolino(aperto = false)).parts:
+      if q.gruppo == "tavolino": check q.pos.y >= 0 and q.y1 <= pt.profondita

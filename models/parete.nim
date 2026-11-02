@@ -57,6 +57,14 @@ type
     profCassetti*: float     ## (rilevato: 75)
     cassettoAperto*: int     ## quale cassetto basso disegnare aperto (-1 nessuno)
     corsa*: float            ## di quanto esce (rilevato: 23)
+    # variante: tavolino estraibile al posto dei primi gradini
+    tavolino*: bool          ## false: mobile base
+    gradiniTavolino*: int    ## quanti gradini, dal basso, stanno nel tavolino (Pietro: 3)
+    profTavolino*: float     ## profondità del blocco: chiuso, le gambe dietro arrivano
+                             ## vicino allo schienale senza toccarlo (ipotesi: 75, 1.4 di gioco)
+    corsaTavolino*: float    ## di quanto si estrae nel disegno: tutto (profTavolino + spessore);
+                             ## con le gambe davanti e dietro sta in piedi da solo
+    tavolinoAperto*: bool    ## disegnarlo estratto
     diamForo*: float         ## fori maniglia (ipotesi: 4)
 
 proc rilievo*(): Parete =
@@ -72,7 +80,15 @@ proc rilievo*(): Parete =
     nGradini: 5, passoGradini: 5.5, profGradini: 30, nCassettiBassi: 3, gapCassetti: 4,
     pianoLetto: 104, materasso: [190.0, 76, 17], rete: 0,
     sottoCassetti: 5, testata: 55, profScaffali: 26, nVani: 3, altezzaLibri: 25,
-    profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4)
+    profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4,
+    tavolino: false, gradiniTavolino: 3, profTavolino: 75, corsaTavolino: 76.8,
+    tavolinoAperto: false)
+
+proc conTavolino*(p: Parete; aperto = true): Parete =
+  ## La variante con il tavolino estraibile.
+  result = p
+  result.tavolino = true
+  result.tavolinoAperto = aperto
 
 proc altezza*(p: Parete): float =
   ## L'altezza non è un parametro: è la somma della catena del fronte.
@@ -139,29 +155,74 @@ proc parete*(p: Parete): Model =
   let zNicchia = c[3]               # 131: base dell'apertura
   let zAlti = c[5]                  # 265: fondo dei cassetti alti
   let xCol = p.xColonna             # 198.2
-  result.name = "Parete con nicchia letto"
+  result.name = if p.tavolino: "Parete con nicchia letto e tavolino" else: "Parete con nicchia letto"
 
   # --- pannello frontale: un unico pannello con le aperture ---------------
   var fronte = part("fronte", kPanel, 0, 0, 0, L, s, H)
   fronte.holes.add rrect(p.nicchiaX, zNicchia, p.nicchiaL, p.nicchia, p.raggioNicchia)
   let cx = p.colonneX
   let hGradino = (p.zonaBassa - p.passoGradini * float(p.nGradini - 1)) / float(p.nGradini)
-  for i in 0 ..< p.nGradini:
-    let z = zBasso + float(i) * (hGradino + p.passoGradini)
-    fronte.holes.add rrect(cx[1], z, p.colonneBasse[1], hGradino, p.raggio)
+  let wG = p.colonneBasse[1]
+  proc zGradino(i: int): float = zBasso + float(i) * (hGradino + p.passoGradini)
+  # con la variante, i primi gradini stanno nel tavolino: il fronte ha
+  # un'unica apertura rettangolare che li contiene
+  let nT = if p.tavolino: p.gradiniTavolino else: 0
+  let xT = cx[1] - s                       # il tavolino è largo quanto le scatole dei gradini
+  let wT = wG + 2 * s
+  let zT0 = zBasso - s                     # il fondo del primo gradino è il fondo del tavolino
+  let zT1 = zGradino(nT - 1) + hGradino + s   # il cielo dell'ultimo gradino è il piano
+  for i in nT ..< p.nGradini:
+    fronte.holes.add rrect(cx[1], zGradino(i), wG, hGradino, p.raggio)
+  if nT > 0:
+    fronte.holes.add rrect(xT, zT0, wT, zT1 - zT0, p.raggio)
   result.add fronte
 
   # dietro ogni gradino una scatola aperta sul davanti, come un cassetto senza
   # frontale: fondo (dove si appoggia il piede), cielo, due fianchi e schiena
-  let wG = p.colonneBasse[1]
-  let yG = s + p.profGradini
-  for i in 0 ..< p.nGradini:
-    let z = zBasso + float(i) * (hGradino + p.passoGradini)
-    result.add part("fondo gradino", kPanel, cx[1] - s, s, z - s, wG + 2 * s, p.profGradini, s)
-    result.add part("cielo gradino", kPanel, cx[1] - s, s, z + hGradino, wG + 2 * s, p.profGradini, s)
-    result.add part("fianco gradino", kPanel, cx[1] - s, s, z, s, p.profGradini, hGradino)
-    result.add part("fianco gradino", kPanel, cx[1] + wG, s, z, s, p.profGradini, hGradino)
-    result.add part("schiena gradino", kPanel, cx[1] - s, yG, z - s, wG + 2 * s, s, hGradino + 2 * s)
+  proc scatola(m: var Model; i: int; y, prof: float; gruppo = ""; fondo = true, cielo = true) =
+    let z = zGradino(i)
+    var parti: seq[Part]
+    if fondo: parti.add part("fondo gradino", kPanel, cx[1] - s, y, z - s, wT, prof, s)
+    if cielo: parti.add part("cielo gradino", kPanel, cx[1] - s, y, z + hGradino, wT, prof, s)
+    parti.add part("fianco gradino", kPanel, cx[1] - s, y, z, s, prof, hGradino)
+    parti.add part("fianco gradino", kPanel, cx[1] + wG, y, z, s, prof, hGradino)
+    parti.add part("schiena gradino", kPanel, cx[1] - s, y + prof, z - s, wT, s, hGradino + 2 * s)
+    for q in parti.mitems:
+      q.gruppo = gruppo
+      m.add q
+  for i in nT ..< p.nGradini:
+    result.scatola(i, s, p.profGradini)
+
+  # --- variante: tavolino estraibile ---------------------------------------
+  # Un blocco su gambe con pattini: il frontale porta i primi gradini, dentro ci sono le loro
+  # scatole, il piano in alto fa da tavolino. Chiuso è una scaletta come prima.
+  if nT > 0:
+    let y0 = if p.tavolinoAperto: -p.corsaTavolino else: 0.0
+    let yB = y0 + s                          # dietro il frontale
+    let pT = p.profTavolino
+    var t: seq[Part]
+    var fr = part("frontale tavolino", kFront, xT, y0, zT0, wT, s, zT1 - zT0, p.raggio)
+    for i in 0 ..< nT:
+      fr.holes.add rrect(cx[1], zGradino(i), wG, hGradino, p.raggio)
+    t.add fr
+    t.add part("piano tavolino", kPanel, xT, yB, zT1 - s, wT, pT, s)
+    t.add part("fondo tavolino", kPanel, xT, yB, zT0, wT, pT, s)
+    t.add part("fianco tavolino", kPanel, xT, yB, zT0 + s, s, pT, zT1 - zT0 - 2 * s)
+    t.add part("fianco tavolino", kPanel, xT + wT - s, yB, zT0 + s, s, pT, zT1 - zT0 - 2 * s)
+    t.add part("schiena tavolino", kPanel, xT + s, yB + pT - s, zT0 + s, wT - 2 * s, s,
+               zT1 - zT0 - 2 * s)
+    # quattro gambe corte agli angoli, con pattini che scorrono sul pavimento:
+    # davanti e dietro, così estratto sta in piedi da solo
+    for dx in [s, wT - s - 3]:
+      for dy in [0.0, pT - 3]:
+        t.add part("gamba", kPanel, xT + dx, yB + dy, 0, 3, 3, zT0)
+    for q in t.mitems:
+      q.gruppo = "tavolino"
+      result.add q
+    # le scatole dei gradini dentro il blocco: fondo e cielo li danno il fondo
+    # del tavolino, il piano e i cieli dei gradini sotto
+    for i in 0 ..< nT:
+      result.scatola(i, yB, p.profGradini, "tavolino", fondo = i > 0, cielo = i < nT - 1)
 
   # --- struttura -----------------------------------------------------------
   result.add part("fianco sx", kPanel, 0, s, 0, s, P - s, H)
@@ -238,9 +299,12 @@ proc parete*(p: Parete): Model =
   for i in 0 ..< p.nCassettiBassi:
     let z = zTop - hC - float(i) * (hC + p.gapCassetti)
     let y = if i == p.cassettoAperto: -p.corsa else: 0.0
-    result.add part("cassetto", kBox, cx[2], y, z, p.colonneBasse[2], p.profCassetti, hC, p.raggio)
-    result.add part("foro", kKnob, cx[2] + p.colonneBasse[2] / 2, y, z + hC / 2,
+    var cas = part("cassetto", kBox, cx[2], y, z, p.colonneBasse[2], p.profCassetti, hC, p.raggio)
+    var foro = part("foro", kKnob, cx[2] + p.colonneBasse[2] / 2, y, z + hC / 2,
                     p.diamForo, 0, p.diamForo)
+    if y < 0: (cas.gruppo = "cassetto"; foro.gruppo = "cassetto")
+    result.add cas
+    result.add foro
   result.add part("anta stretta", kFront, cx[3], 0, zBasso, p.colonneBasse[3], s, p.zonaBassa, p.raggio)
   result.add part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
 
@@ -263,6 +327,11 @@ proc controlli*(p: Parete): seq[string] =
   if abs(p.risegaLarga - p.profComodino) > 1:
     result.add "comodino profondo " & fmtNum(p.profComodino) & " ma la risega è larga " &
       fmtNum(p.risegaLarga) & ": non è a filo"
+  if p.tavolino and s + p.profTavolino > p.profondita - s:
+    result.add "il tavolino chiuso urta lo schienale"
+  if p.tavolino and p.corsaTavolino > p.profTavolino + s + 0.01:
+    result.add "il tavolino esce di " & fmtNum(p.corsaTavolino) & " ma è profondo solo " &
+      fmtNum(p.profTavolino + s)
   if p.profScaffali >= p.profComodino:
     result.add "gli scaffali non sono meno profondi del comodino"
 
