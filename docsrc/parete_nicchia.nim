@@ -76,14 +76,22 @@ I primi tre gradini stanno nel frontale di un blocco che si estrae del tutto e s
 in piedi su quattro gambe corte con pattini; da chiuso le gambe dietro arrivano vicino
 allo schienale del mobile, senza toccarlo. Il piano del blocco fa da tavolino; chiuso, è di nuovo una scaletta.
 Il volume dietro i gradini, che prima restava vuoto, diventa il corpo del tavolino.
+
+Sotto il piano il blocco è pieno: per sedersi serve l'**aletta a libro**. Chiusa sta
+sopra il piano; aperta ruota sulla cerniera del bordo sinistro e finisce a fianco,
+alla stessa altezza, sostenuta da due gambe a ribalta: il piano raddoppia e sotto
+l'aletta c'è lo spazio per le gambe.
 """
 
 nbCode:
-  let pt = rilievo().conTavolino
+  let pt = rilievo().conTavolino(alettaAperta = true)
   let mt = parete(pt)
   let piano = mt.find("piano tavolino")
-  echo "piano: ", fmtNum(piano.size.x), " × ", fmtNum(piano.size.y), " cm, alto ",
-       fmtNum(piano.z1), " da terra"
+  let aletta = mt.find("aletta")
+  echo "piano con l'aletta aperta: ", fmtNum(piano.size.x + aletta.size.x), " × ",
+       fmtNum(aletta.size.y), " cm, alto ", fmtNum(piano.z1), " da terra"
+  echo "spazio per le gambe sotto l'aletta: ", fmtNum(aletta.size.x - 3), " × ",
+       fmtNum(aletta.pos.z), " cm"
 
   var foglioT = initSheet()
   let fronteT = View(kind: vFront)
@@ -145,7 +153,8 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), profondo 75 (1.4 di
   gioco dallo schienale), piano
   a 62.6 da terra (il cielo del terzo gradino). Esce di tutta la sua profondità; quattro
-  gambe corte con pattini. Largo solo 32.6 cm: più un ripiano che un tavolo.
+  gambe corte con pattini. Con l'aletta aperta il piano è 65.2 × 76.8; le gambe dell'aletta, a ribalta, sono da
+  disegnare meglio (da chiusa dove stanno?).
 - **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
   comodino: posizione indicativa.
 - **Cassetti in basso** profondi 75, il centrale disegnato aperto di 23 cm.

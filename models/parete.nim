@@ -65,6 +65,8 @@ type
     corsaTavolino*: float    ## di quanto si estrae nel disegno: tutto (profTavolino + spessore);
                              ## con le gambe davanti e dietro sta in piedi da solo
     tavolinoAperto*: bool    ## disegnarlo estratto
+    aletta*: bool            ## aletta a libro sul piano: si apre di lato e raddoppia il piano
+    alettaAperta*: bool      ## disegnarla aperta (solo con il tavolino estratto)
     diamForo*: float         ## fori maniglia (ipotesi: 4)
 
 proc rilievo*(): Parete =
@@ -82,13 +84,14 @@ proc rilievo*(): Parete =
     sottoCassetti: 5, testata: 55, profScaffali: 26, nVani: 3, altezzaLibri: 25,
     profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4,
     tavolino: false, gradiniTavolino: 3, profTavolino: 75, corsaTavolino: 76.8,
-    tavolinoAperto: false)
+    tavolinoAperto: false, aletta: true, alettaAperta: false)
 
-proc conTavolino*(p: Parete; aperto = true): Parete =
-  ## La variante con il tavolino estraibile.
+proc conTavolino*(p: Parete; aperto = true; alettaAperta = false): Parete =
+  ## La variante con il tavolino estraibile (e la sua aletta).
   result = p
   result.tavolino = true
   result.tavolinoAperto = aperto
+  result.alettaAperta = aperto and alettaAperta
 
 proc altezza*(p: Parete): float =
   ## L'altezza non è un parametro: è la somma della catena del fronte.
@@ -174,7 +177,9 @@ proc parete*(p: Parete): Model =
   for i in nT ..< p.nGradini:
     fronte.holes.add rrect(cx[1], zGradino(i), wG, hGradino, p.raggio)
   if nT > 0:
-    fronte.holes.add rrect(xT, zT0, wT, zT1 - zT0, p.raggio)
+    # l'apertura comprende anche l'aletta chiusa, appoggiata sul piano
+    let hAletta = if p.aletta: s else: 0.0
+    fronte.holes.add rrect(xT, zT0, wT, zT1 + hAletta - zT0, p.raggio)
   result.add fronte
 
   # dietro ogni gradino una scatola aperta sul davanti, come un cassetto senza
@@ -216,6 +221,18 @@ proc parete*(p: Parete): Model =
     for dx in [s, wT - s - 3]:
       for dy in [0.0, pT - 3]:
         t.add part("gamba", kPanel, xT + dx, yB + dy, 0, 3, 3, zT0)
+    # aletta a libro, incernierata sul bordo sinistro del piano, lunga quanto
+    # tutto il tavolino. Chiusa sta sopra il piano; aperta ruota di 180° sulla
+    # cerniera e finisce a fianco, alla stessa altezza del piano, con sotto lo
+    # spazio per le gambe e due gambe a ribalta sul bordo esterno.
+    if p.aletta:
+      let lA = s + pT
+      if p.alettaAperta:
+        t.add part("aletta", kPanel, xT - wT, y0, zT1 - s, wT, lA, s)
+        for dy in [1.0, lA - 4]:
+          t.add part("gamba aletta", kPanel, xT - wT + 1, y0 + dy, 0, 3, 3, zT1 - s)
+      else:
+        t.add part("aletta", kPanel, xT, y0, zT1, wT, lA, s)
     for q in t.mitems:
       q.gruppo = "tavolino"
       result.add q
@@ -329,6 +346,15 @@ proc controlli*(p: Parete): seq[string] =
       fmtNum(p.risegaLarga) & ": non è a filo"
   if p.tavolino and s + p.profTavolino > p.profondita - s:
     result.add "il tavolino chiuso urta lo schienale"
+  if p.tavolino and p.aletta:
+    # tra l'aletta chiusa e il primo gradino fisso deve restare del pannello
+    let hG = (p.zonaBassa - p.passoGradini * float(p.nGradini - 1)) / float(p.nGradini)
+    let zSopra = p.margineBasso + float(p.gradiniTavolino) * (hG + p.passoGradini)
+    let zAletta = p.margineBasso + float(p.gradiniTavolino) * hG +
+      float(p.gradiniTavolino - 1) * p.passoGradini + 2 * s
+    if zSopra - zAletta < 1.5:
+      result.add "tra l'apertura del tavolino e il gradino sopra restano solo " &
+        fmtNum(zSopra - zAletta) & " cm di pannello"
   if p.tavolino and p.corsaTavolino > p.profTavolino + s + 0.01:
     result.add "il tavolino esce di " & fmtNum(p.corsaTavolino) & " ma è profondo solo " &
       fmtNum(p.profTavolino + s)
