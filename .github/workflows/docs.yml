@@ -31,10 +31,11 @@ jobs:
           nimble install -y nimib
       - name: Test
         run: nim c -r tests/test_parete.nim
-      - name: Documenti nimib
+      - name: Documenti nimib e visore 3D
         run: |
           nim r docsrc/index.nim
           nim r docsrc/come_funziona.nim
+          nim r tools/visore3d.nim docs/visore3d.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs

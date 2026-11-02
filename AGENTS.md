@@ -35,9 +35,10 @@ src/cadero/web.nim       JSON + frammento HTML three.js per nimib
 models/parete.nim        parametri rilievo(), parete(p), quote(p), tavola(p, m)
 docsrc/index.nim         documento della parete (-> docs/index.html)
 docsrc/come_funziona.nim spiegazione del codice (-> docs/come_funziona.html)
+docsrc/tema.nim          tema nimib con lo stile degli artefatti (nbInit(theme = useTema))
 tests/test_parete.nim    controlli sulle quote della tavola di riferimento
 tests/tavola.nim         prova veloce senza nimib: scrive tavola.svg e parete3d.html
-tools/visore3d.nim       pagina del visore 3D per l'artefatto claude.ai
+tools/visore3d.nim       pagina del visore 3D: artefatto claude.ai o docs/visore3d.html
 ```
 
 ## Comandi
@@ -45,8 +46,9 @@ tools/visore3d.nim       pagina del visore 3D per l'artefatto claude.ai
 ```sh
 nimble install -y nimib
 nimble test                      # nim c -r tests/test_parete.nim
-nimble docs                      # genera docs/ (index e come_funziona)
-nim r tools/visore3d.nim         # tools/parete-3d.html dal modello attuale
+nimble docs                      # genera docs/ (index, come_funziona, visore3d)
+nim r tools/visore3d.nim         # tools/parete-3d.html per l'artefatto (senza doctype)
+nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
 ```
 
 `config.nims` aggiunge `src` e `models` al path; `nimib.toml` manda l'output in `docs/`
@@ -67,6 +69,10 @@ nim r tools/visore3d.nim         # tools/parete-3d.html dal modello attuale
 - Il visore 3D carica three.js 0.160.0 da `cdn.jsdelivr.net/npm` con un importmap:
   è consentito negli artefatti. Template in `tools/visore3d.tpl.html`, viste
   predefinite (anche "dentro la nicchia") nell'oggetto `views`.
+- Documenti e artefatti condividono lo stesso stile: token chiaro/scuro, Barlow
+  Condensed / IBM Plex Sans / IBM Plex Mono. Se si cambia un colore, va cambiato in
+  `docsrc/tema.nim` e in `tools/visore3d.tpl.html`. Il tema non carica CSS da CDN e
+  disattiva highlight.js: il codice lo colora già nimib.
 - Pietro legge spesso da telefono: i disegni vanno mostrati come immagini o pagine,
   non come file SVG grezzi.
 
