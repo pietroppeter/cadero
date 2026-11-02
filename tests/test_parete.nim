@@ -108,33 +108,26 @@ suite "parete di riferimento":
     # il piano è un'altezza da tavolino per bambini e sta sotto il quarto gradino
     let piano = mt.find("piano tavolino")
     check piano.z1 > 55 and piano.z1 < 66
-    var gambe = 0
+    # davanti poggia sui fianchi, da terra al piano; dietro su due gambe a pannello
+    var gambe, fianchi = 0
     for q in mt.parts:
-      if q.name == "gamba": inc gambe
-    check gambe == 4
+      if q.name == "gamba tavolino":
+        inc gambe
+        check near(q.pos.z, 0) and near(q.z1, piano.pos.z) and near(q.y1, piano.y1)
+      if q.name == "fianco tavolino":
+        inc fianchi
+        check near(q.pos.z, 0) and near(q.z1, piano.pos.z)
+    check gambe == 2 and fianchi == 2
+    # un ripiano sotto ogni gradino e il fondo dei cassetti a profGradini dal frontale
+    var ripiani = 0
+    for q in mt.parts:
+      if q.name == "ripiano gradino": inc ripiani
+    check ripiani == pt.gradiniTavolino
+    check near(mt.find("fondo cassetti").pos.y, fr.y1 + pt.profGradini)
+    # frontale e apertura a spigoli dritti: tondi solo i vani
+    check fr.r == 0
     check pt.controlli.len == 0
     # chiuso, tutto sta dentro il mobile
     for q in parete(rilievo().conTavolino(aperto = false)).parts:
       if q.gruppo == "tavolino": check q.pos.y >= 0 and q.y1 <= pt.profondita
 
-  test "aletta del tavolino":
-    let pa = rilievo().conTavolino(alettaAperta = true)
-    let ma = parete(pa)
-    let piano = ma.find("piano tavolino")
-    let al = ma.find("aletta")
-    check near(al.x1, piano.pos.x)                # aperta, a fianco del piano
-    check near(al.z1, piano.z1)                   # alla stessa altezza
-    check near(piano.size.x + al.size.x, 2 * piano.size.x)
-    var gambe = 0
-    for q in ma.parts:
-      if q.name == "gamba aletta": inc gambe
-    check gambe == 2
-    # chiusa sta sopra il piano e l'apertura nel fronte la contiene
-    let mc = parete(rilievo().conTavolino(aperto = false))
-    let alc = mc.find("aletta")
-    check near(alc.pos.z, mc.find("piano tavolino").z1)
-    var ok = false
-    for h in mc.find("fronte").holes:
-      if near(h.z + h.h, alc.z1): ok = true
-    check ok
-    check pa.controlli.len == 0

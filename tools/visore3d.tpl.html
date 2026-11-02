@@ -59,6 +59,7 @@ __BACK__
       <button id="v-dentro" type="button">Dentro: verso la libreria</button>
       <button id="v-testata" type="button">Dentro: dalla testata</button>
       <button id="v-tavolino" type="button">Gradini e tavolino</button>
+      <button id="v-gambe" type="button">Sotto il tavolino</button>
     </div>
     <div class="group" role="group" aria-label="Variante">
       <span class="label">Mobile</span>
@@ -67,7 +68,6 @@ __BACK__
     </div>
     <div class="group">
       <button id="t-tavolino" type="button" aria-pressed="false" hidden>Tavolino estratto</button>
-      <button id="t-aletta" type="button" aria-pressed="false" hidden>Aletta aperta</button>
       <button id="t-cassetto" type="button" aria-pressed="true">Cassetto aperto</button>
       <button id="t-fronte" type="button" aria-pressed="false">Nascondi il fronte</button>
     </div>
@@ -86,7 +86,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // due modelli generati dal codice Nim: il mobile base e la variante con il
 // tavolino (disegnato estratto: le parti con y < 0 si possono far rientrare)
 const models = { base: __MODEL__, tavolino: __MODEL_TAVOLINO__ };
-const modelAletta = __MODEL_ALETTA__;   // tavolino estratto con l'aletta aperta
 let model = models.base;
 const el = document.getElementById('stage');
 const status = document.getElementById('status');
@@ -182,6 +181,8 @@ const views = {
   testata: { pos: [180, 180, -60], target: [150, 172, -52], fov: 72 },
   // davanti alla scaletta, un po' da sinistra e dall'alto
   tavolino: { pos: [-40, 150, 230], target: [110, 40, 10] },
+  // di fianco al tavolino estratto, per vedere lo spazio per le gambe
+  gambe:    { pos: [-110, 75, 125], target: [95, 35, 30] },
 };
 let anim = null;
 function goTo(name, instant) {
@@ -214,37 +215,19 @@ function applyToggles(instant) {
   }
   for (const f of frontPanel) f.visible = tFront.getAttribute('aria-pressed') !== 'true';
 }
-const tAletta = document.getElementById('t-aletta');
 const pressed = b => b.getAttribute('aria-pressed') === 'true';
-// l'aletta si apre solo con il tavolino fuori: aprirla o chiuderla cambia modello
-function setAletta(open) {
-  tAletta.setAttribute('aria-pressed', String(open));
-  model = open ? modelAletta : models.tavolino;
-  build(model); applyToggles(true);
-  status.textContent = model.parts.length + ' parti';
-}
 for (const btn of [...Object.values(toggles), tFront])
   btn.addEventListener('click', () => {
     btn.setAttribute('aria-pressed', String(!pressed(btn)));
-    if (btn === toggles.tavolino && !pressed(btn) && pressed(tAletta)) setAletta(false);
     applyToggles(false);
   });
-tAletta.addEventListener('click', () => {
-  const open = !pressed(tAletta);
-  if (open && !pressed(toggles.tavolino)) {
-    toggles.tavolino.setAttribute('aria-pressed', 'true');
-    applyToggles(true);
-  }
-  setAletta(open);
-});
 // cambio di variante: si ricostruisce la scena con l'altro modello
 for (const name of Object.keys(models)) {
   const btn = document.getElementById('m-' + name);
   btn.addEventListener('click', () => {
     model = models[name];
     for (const n of Object.keys(models)) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === name));
-    toggles.tavolino.hidden = tAletta.hidden = name !== 'tavolino';
-    tAletta.setAttribute('aria-pressed', 'false');
+    toggles.tavolino.hidden = name !== 'tavolino';
     build(model); applyToggles(true);
     if (name === 'tavolino') goTo('tavolino');
     status.textContent = model.parts.length + ' parti';
