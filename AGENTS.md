@@ -29,7 +29,7 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   visore tutto parte chiuso e si apre toccandolo; il perno è calcolato dal visore
   sullo spigolo del gruppo. Una parte disegnata aperta (y < 0) parte aperta.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
-  106 × 52.6 cm): non è nel repository; se manca il pulsante non compare.
+  106 × 52.6 cm, Vårklockor di Josef Frank); se manca il pulsante non compare.
 - Le varianti sono funzioni sui parametri (es. `rilievo().conTavolino`); il visore 3D
   riceve un modello per variante (`__MODEL__`, `__MODEL_TAVOLINO__`).
 - Le cose che non tornano (misure che non ci stanno, decisioni in conflitto) vanno in

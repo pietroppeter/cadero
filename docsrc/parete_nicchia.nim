@@ -158,12 +158,17 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
   i fianchi e le gambe scorrono sul pavimento (pattini o feltrini da scegliere).
 - **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
   comodino: posizione indicativa.
-- **Cassetti in basso** profondi 75, il centrale disegnato aperto di 23 cm.
+- **Cassetti in basso** profondi 75, con cassa (fondo, fianchi, schiena) 1 cm più stretta
+  del frontale per lato; escono di 60, il centrale è disegnato aperto.
+- **Ante in basso**: dietro ognuna una scatola con i fianchi da terra al piano letto,
+  che fa da cielo, fondo e schiena. Nell'anta a sinistra un ripiano a metà altezza;
+  nell'anta stretta un bastone appendiabiti dal davanti al dietro, 7 cm sotto il cielo.
+- **Vani alti**: un piano sotto, una schiena e due divisori tra le ribalte, profondi
+  quanto la colonna (69.4).
 - **Fori maniglia** di 4 cm; quelli delle ante a 10 cm dal bordo e 12 dall'alto.
 - Le **linee tratteggiate** davanti al mobile nella laterale e nella pianta del disegno
   originale non sono riprodotte: non è chiaro cosa rappresentino.
-- In alto ci sono tre vani con **ribalte** che si alzano (nel disegno sembravano cassetti):
-  la profondità dei vani non è indicata.
+- In alto ci sono tre vani con **ribalte** che si alzano (nel disegno sembravano cassetti).
 - **Carta da parati** Vårklockor (Josef Frank, Svenskt Tenn): le misure non sono note.
   Dalla foto il motivo è a mezza caduta; ho assunto rotolo da 53 cm e rapporto di 53.
 """

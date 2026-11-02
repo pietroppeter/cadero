@@ -29,7 +29,7 @@ suite "parete di riferimento":
 
   test "tutto sta dentro l'ingombro (tranne il cassetto aperto)":
     for q in m.parts:
-      if q.kind in {kBox, kKnob} and q.pos.y < 0: continue
+      if q.gruppo != "" and q.pos.y < 0: continue   # aperto
       if q.kind == kSoft: continue      # il materasso lo verificano i controlli
       if q.name == "muro (carta da parati)": continue   # il muro dietro, fuori dal mobile
       check q.pos.x >= -0.01 and q.x1 <= p.larghezza + 0.01
@@ -43,7 +43,7 @@ suite "parete di riferimento":
   test "distinta":
     var cassetti = 0
     for r in bom(m):
-      if r.kind == kBox: cassetti += r.count
+      if r.name == "frontale cassetto": cassetti += r.count
     check cassetti == p.nCassettiBassi
 
   test "variante: cambiando la nicchia cambia l'altezza":

@@ -56,7 +56,7 @@ type
     # cassetti in basso
     profCassetti*: float     ## (rilevato: 75)
     cassettoAperto*: int     ## quale cassetto basso disegnare aperto (-1 nessuno)
-    corsa*: float            ## di quanto esce (rilevato: 23)
+    corsa*: float            ## di quanto escono i cassetti (ipotesi: 60, su 75 di profondità)
     # variante: tavolino estraibile al posto dei primi gradini
     tavolino*: bool          ## false: mobile base
     gradiniTavolino*: int    ## quanti gradini, dal basso, stanno nel tavolino (Pietro: 3)
@@ -84,7 +84,7 @@ proc rilievo*(): Parete =
     nGradini: 5, passoGradini: 5.5, profGradini: 30, nCassettiBassi: 3, gapCassetti: 4,
     pianoLetto: 104, materasso: [190.0, 78, 17], rete: 0,
     sottoCassetti: 5, testata: 55, profScaffali: 26, nVani: 3, altezzaLibri: 25,
-    profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4,
+    profCassetti: 75, cassettoAperto: 1, corsa: 60, diamForo: 4,
     tavolino: false, gradiniTavolino: 3, profTavolino: 76.8, corsaTavolino: 78.6,
     profCassettiTavolino: 20, gambaTavolino: 8, tavolinoAperto: false)
 
@@ -234,14 +234,11 @@ proc parete*(p: Parete): Model =
   # il divisorio è aperto all'altezza della libreria: sotto fa da testata
   # il divisorio arriva fino al rivestimento della risega
   let pDiv = p.profColonna - 2 * s
-  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, 0, s, pDiv,
-                       p.baseLibreria - s)
+  # sotto il piano letto c'è la scatola dell'anta stretta: il divisorio parte da lì
+  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, p.pianoLetto - s, s, pDiv,
+                       p.baseLibreria - p.pianoLetto)
   divisorio.hiddenFront = true
   result.add divisorio
-  var divisorioAlto = part("divisorio alto", kPanel, xCol - s / 2, s, p.cimaLibreria, s, pDiv,
-                           H - s - p.cimaLibreria)
-  divisorioAlto.hiddenFront = true
-  result.add divisorioAlto
   result.add part("cielo", kPanel, s, s, H - s, L - 2 * s, P - s, s)
   # niente fondo sul pavimento e niente schienale: dietro c'è il muro con la
   # carta da parati, che nella nicchia si vede direttamente (Pietro)
@@ -289,9 +286,17 @@ proc parete*(p: Parete): Model =
                   12, 0.6, 7)
 
   # --- in alto: tre vani con ribalte che si alzano --------------------------
+  # sotto un piano, dietro una schiena, in mezzo due divisori; ai lati i fianchi
   let wAlto = (L - 2 * p.margineLato - 2 * p.gapAlti) / 3
+  let dV = p.profColonna - 3 * s          # davanti allo schienale della colonna
+  result.add part("fondo vani alti", kPanel, s, s, zAlti - s, L - 2 * s, dV, s)
+  result.add part("schiena vani alti", kPanel, s, s + dV, zAlti - s, L - 2 * s, s, H - zAlti)
   for i in 0..2:
     let x = p.margineLato + float(i) * (wAlto + p.gapAlti)
+    if i > 0:
+      var d = part("divisorio vani alti", kPanel, x - p.gapAlti / 2 - s / 2, s, zAlti, s, dV, H - s - zAlti)
+      d.hiddenFront = true
+      result.add d
     var rib = part("ribalta alta", kFront, x, 0, zAlti, wAlto, s, p.cassettiAlti, p.raggio)
     var foro = part("foro", kKnob, x + wAlto / 2, 0, zAlti + p.cassettiAlti / 2,
                     p.diamForo, 0, p.diamForo)
@@ -302,26 +307,56 @@ proc parete*(p: Parete): Model =
 
   # --- zona bassa ----------------------------------------------------------
   let zTop = zBasso + p.zonaBassa
-  # ante: quella a sinistra si apre verso sinistra, quella stretta verso destra
-  var anta = part("anta", kFront, cx[0], 0, zBasso, p.colonneBasse[0], s, p.zonaBassa, p.raggio)
-  var foroAnta = part("foro", kKnob, cx[0] + p.colonneBasse[0] - 10, 0, zTop - 12,
-                      p.diamForo, 0, p.diamForo)
+  # dietro ogni anta una scatola aperta sul davanti: fianchi da terra fino al
+  # piano letto (che fa da cielo), fondo sotto l'anta, schiena dietro
+  proc scatolaAnta(m: var Model; nome: string; x, w, prof: float) =
+    let zCielo = p.pianoLetto - s
+    for xf in [x - s, x + w]:
+      var f = part("fianco " & nome, kPanel, xf, s, 0, s, prof + s, zCielo)
+      f.hiddenFront = true
+      m.add f
+    m.add part("fondo " & nome, kPanel, x, s, zBasso - s, w, prof, s)
+    var sc = part("schiena " & nome, kPanel, x, s + prof, zBasso, w, s, zCielo - zBasso)
+    sc.hiddenFront = true
+    m.add sc
+  # anta a sinistra: si apre verso sinistra, dentro un ripiano a metà
+  let wA = p.colonneBasse[0]
+  result.scatolaAnta("anta", cx[0], wA, p.profCassetti)
+  var rip = part("ripiano anta", kPanel, cx[0], s, zBasso + p.zonaBassa / 2 - s / 2, wA, p.profCassetti - 2, s)
+  rip.hiddenFront = true
+  result.add rip
+  var anta = part("anta", kFront, cx[0], 0, zBasso, wA, s, p.zonaBassa, p.raggio)
+  var foroAnta = part("foro", kKnob, cx[0] + wA - 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
   anta.apribile("anta", "sx")
   foroAnta.apribile("anta", "sx")
   result.add anta
   result.add foroAnta
+  # cassetti veri: frontale e, dietro, una cassa con fondo, fianchi e schiena
   let hC = (p.zonaBassa - p.gapCassetti * float(p.nCassettiBassi - 1)) / float(p.nCassettiBassi)
+  let wC = p.colonneBasse[2]
   for i in 0 ..< p.nCassettiBassi:
     let z = zTop - hC - float(i) * (hC + p.gapCassetti)
     let y = if i == p.cassettoAperto: -p.corsa else: 0.0
-    var cas = part("cassetto", kBox, cx[2], y, z, p.colonneBasse[2], p.profCassetti, hC, p.raggio)
-    var foro = part("foro", kKnob, cx[2] + p.colonneBasse[2] / 2, y, z + hC / 2,
-                    p.diamForo, 0, p.diamForo)
-    cas.apribile("cassetto " & $(i + 1), "tira", p.corsa)
-    foro.apribile("cassetto " & $(i + 1), "tira", p.corsa)
-    result.add cas
-    result.add foro
-  var antaDx = part("anta stretta", kFront, cx[3], 0, zBasso, p.colonneBasse[3], s, p.zonaBassa, p.raggio)
+    let (xi, wi, hi, di) = (cx[2] + 1, wC - 2, hC - 3, p.profCassetti - s)   # la cassa, dietro il frontale
+    var parti = @[
+      part("frontale cassetto", kFront, cx[2], y, z, wC, s, hC, p.raggio),
+      part("foro", kKnob, cx[2] + wC / 2, y, z + hC / 2, p.diamForo, 0, p.diamForo),
+      part("fondo cassetto", kPanel, xi + s, y + s, z + 1, wi - 2 * s, di - s, s),
+      part("fianco cassetto", kPanel, xi, y + s, z + 1, s, di, hi),
+      part("fianco cassetto", kPanel, xi + wi - s, y + s, z + 1, s, di, hi),
+      part("schiena cassetto", kPanel, xi + s, y + s + di - s, z + 1 + s, wi - 2 * s, s, hi - s)]
+    for q in parti.mitems:
+      if q.kind == kPanel: q.hiddenFront = true
+      q.apribile("cassetto " & $(i + 1), "tira", p.corsa)
+      result.add q
+  # anta stretta sotto la colonna destra: si apre verso destra, dentro un
+  # bastone appendiabiti dal davanti al dietro (la colonna è stretta e profonda)
+  let wD = p.colonneBasse[3]
+  let profD = p.profColonna - 3 * s
+  result.scatolaAnta("anta stretta", cx[3], wD, profD)
+  result.add part("bastone appendiabiti", kAccessory, cx[3] + wD / 2 - 1.25, s + 3,
+                  p.pianoLetto - s - 7, 2.5, profD - 6, 2.5)
+  var antaDx = part("anta stretta", kFront, cx[3], 0, zBasso, wD, s, p.zonaBassa, p.raggio)
   var foroDx = part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
   antaDx.apribile("anta stretta", "dx")
   foroDx.apribile("anta stretta", "dx")

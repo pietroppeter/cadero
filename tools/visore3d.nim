@@ -15,7 +15,7 @@ base.cassettoAperto = -1
 let tavolino = base.conTavolino(aperto = false)
 
 # la carta da parati (facoltativa): una piastrella del motivo, che si ripete
-# sul muro. Non è nel repository; se manca il pulsante non compare.
+# sul muro; se il file manca il pulsante non compare.
 # Misure assunte: due teli da 53 cm affiancati (motivo a mezza caduta), rapporto 52.6.
 let cartaFile = dir / "carta-da-parati.jpg"
 let carta = if fileExists(cartaFile):
