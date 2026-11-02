@@ -17,7 +17,8 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # nimib usa std/re, che richiede libpcre3: non c'è più da Ubuntu 26.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: jiro4989/setup-nim-action@v2
