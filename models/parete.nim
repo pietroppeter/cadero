@@ -42,7 +42,7 @@ type
     gapCassetti*: float      ## (rilevato: 4)
     # letto
     pianoLetto*: float       ## quota del piano letto: 104
-    materasso*: array[3, float]   ## 190 x 76 x 17 (80 non entra: tra fronte e schienale ci sono 76.4)
+    materasso*: array[3, float]   ## 190 x 78 x 17 su misura (80 non entra: tra fronte e muro ci sono 78.2)
     rete*: float             ## spazio tra piano e materasso (0: il materasso poggia sul piano)
     # nicchia
     sottoCassetti*: float    ## soffitto della nicchia sotto i cassetti alti (rilevato: 5)
@@ -61,7 +61,7 @@ type
     tavolino*: bool          ## false: mobile base
     gradiniTavolino*: int    ## quanti gradini, dal basso, stanno nel tavolino (Pietro: 3)
     profTavolino*: float     ## profondità del piano: chiuso, le gambe dietro arrivano
-                             ## vicino allo schienale senza toccarlo (ipotesi: 75, 1.4 di gioco)
+                             ## vicino al muro senza toccarlo (ipotesi: 76.8, 1.4 di gioco)
     corsaTavolino*: float    ## di quanto si estrae nel disegno: tutto (profTavolino + spessore);
                              ## davanti poggia sui fianchi, dietro sulle due gambe
     profCassettiTavolino*: float ## profondità dei cassetti-gradino del tavolino (ipotesi: 20,
@@ -82,10 +82,10 @@ proc rilievo*(): Parete =
     nicchiaX: 16, nicchiaL: 165.5, raggioNicchia: 18, raggio: 3,
     colonneBasse: [71.0, 29, 52, 38.5], spaziBassi: [7.5, 5.5, 8.5],
     nGradini: 5, passoGradini: 5.5, profGradini: 30, nCassettiBassi: 3, gapCassetti: 4,
-    pianoLetto: 104, materasso: [190.0, 76, 17], rete: 0,
+    pianoLetto: 104, materasso: [190.0, 78, 17], rete: 0,
     sottoCassetti: 5, testata: 55, profScaffali: 26, nVani: 3, altezzaLibri: 25,
     profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4,
-    tavolino: false, gradiniTavolino: 3, profTavolino: 75, corsaTavolino: 76.8,
+    tavolino: false, gradiniTavolino: 3, profTavolino: 76.8, corsaTavolino: 78.6,
     profCassettiTavolino: 20, gambaTavolino: 8, tavolinoAperto: false)
 
 proc conTavolino*(p: Parete; aperto = true): Parete =
@@ -234,8 +234,8 @@ proc parete*(p: Parete): Model =
   # il divisorio è aperto all'altezza della libreria: sotto fa da testata
   # il divisorio arriva fino al rivestimento della risega
   let pDiv = p.profColonna - 2 * s
-  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, s, s, pDiv,
-                       p.baseLibreria - 2 * s)
+  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, 0, s, pDiv,
+                       p.baseLibreria - s)
   divisorio.hiddenFront = true
   result.add divisorio
   var divisorioAlto = part("divisorio alto", kPanel, xCol - s / 2, s, p.cimaLibreria, s, pDiv,
@@ -243,12 +243,13 @@ proc parete*(p: Parete): Model =
   divisorioAlto.hiddenFront = true
   result.add divisorioAlto
   result.add part("cielo", kPanel, s, s, H - s, L - 2 * s, P - s, s)
-  result.add part("fondo", kPanel, s, s, 0, L - 2 * s, P - s, s)
-  result.add part("schienale", kPanel, s, P - s, s, xCol - 1.5 * s, s, H - 2 * s)
+  # niente fondo sul pavimento e niente schienale: dietro c'è il muro con la
+  # carta da parati, che nella nicchia si vede direttamente (Pietro)
+  result.add part("muro (carta da parati)", kWall, 0, P, 0, L, 2, H)
   # la risega (muro, non è un pezzo da costruire) e il suo rivestimento a L,
   # per tutta l'altezza: la faccia larga è coperta dallo schienale della colonna,
   # che parte dal piano del divisorio; il bordo sottile (7 cm, verso la nicchia)
-  # da un pannellino che si unisce allo schienale della nicchia e a quello della colonna
+  # da un pannellino che si unisce allo schienale della colonna e arriva al muro
   result.add part("risega (muro)", kWall, L - p.risegaLarga, p.profColonna, 0,
                   p.risegaLarga, p.risegaSporge, H)
   result.add part("schienale colonna", kPanel, xCol - s / 2, p.profColonna - s, s,
@@ -259,8 +260,9 @@ proc parete*(p: Parete): Model =
   # --- nicchia letto -------------------------------------------------------
   let xInt = s                       # interno della campata sinistra
   let lInt = xCol - s / 2 - s
-  result.add part("piano letto", kPanel, xInt, s, p.pianoLetto - s, lInt, P - 2 * s, s)
-  result.add part("soffitto nicchia", kPanel, xInt, s, p.soffittoNicchia - s, lInt, P - 2 * s, s)
+  # piano e soffitto della nicchia arrivano fino al muro
+  result.add part("piano letto", kPanel, xInt, s, p.pianoLetto - s, lInt, P - s, s)
+  result.add part("soffitto nicchia", kPanel, xInt, s, p.soffittoNicchia - s, lInt, P - s, s)
   let (mL, mP, mH) = (p.materasso[0], p.materasso[1], p.materasso[2])
   # contro il fronte; se è più largo dello spazio interno sporge dietro (vedi controlli)
   var mat = part("materasso", kSoft, xInt + (lInt - mL) / 2, s,
@@ -315,10 +317,10 @@ proc parete*(p: Parete): Model =
 proc controlli*(p: Parete): seq[string] =
   ## Le cose che non tornano: misure che non ci stanno o decisioni in conflitto.
   let s = p.spessore
-  let interno = p.profondita - 2 * s           # tra fronte e schienale della nicchia
+  let interno = p.profondita - s               # tra fronte e muro (niente schienale)
   if p.materasso[1] > interno:
-    result.add "materasso largo " & fmtNum(p.materasso[1]) & " ma tra fronte e schienale ci sono " &
-      fmtNum(interno) & " cm (senza schienale, contro il muro: " & fmtNum(p.profondita - s) & ")"
+    result.add "materasso largo " & fmtNum(p.materasso[1]) & " ma tra fronte e muro ci sono " &
+      fmtNum(interno) & " cm"
   let campata = p.xColonna - s / 2 - s
   if p.materasso[0] > campata:
     result.add "materasso lungo " & fmtNum(p.materasso[0]) & " ma la campata è " & fmtNum(campata)
@@ -331,8 +333,8 @@ proc controlli*(p: Parete): seq[string] =
   if abs(p.risegaLarga - p.profComodino) > 1:
     result.add "comodino profondo " & fmtNum(p.profComodino) & " ma la risega è larga " &
       fmtNum(p.risegaLarga) & ": non è a filo"
-  if p.tavolino and s + p.profTavolino > p.profondita - s:
-    result.add "il tavolino chiuso urta lo schienale"
+  if p.tavolino and s + p.profTavolino > p.profondita - 0.5:
+    result.add "il tavolino chiuso arriva al muro"
   if p.tavolino and p.corsaTavolino > p.profTavolino + s + 0.01:
     result.add "il tavolino esce di " & fmtNum(p.corsaTavolino) & " ma è profondo solo " &
       fmtNum(p.profTavolino + s)

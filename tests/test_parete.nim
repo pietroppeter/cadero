@@ -31,6 +31,7 @@ suite "parete di riferimento":
     for q in m.parts:
       if q.kind in {kBox, kKnob} and q.pos.y < 0: continue
       if q.kind == kSoft: continue      # il materasso lo verificano i controlli
+      if q.name == "muro (carta da parati)": continue   # il muro dietro, fuori dal mobile
       check q.pos.x >= -0.01 and q.x1 <= p.larghezza + 0.01
       check q.pos.z >= -0.01 and q.z1 <= p.altezza + 0.01
       check q.pos.y >= -0.01 and q.y1 <= p.profondita + 0.01
@@ -72,7 +73,9 @@ suite "parete di riferimento":
     let sc = m.find("schienale colonna")
     check near(sc.pos.x, pan.pos.x) and near(sc.y1, pan.pos.y)
     check near(m.find("divisorio").y1, sc.pos.y)
-    check near(m.find("schienale").x1, pan.pos.x)
+    # niente fondo e niente schienale: dietro c'è il muro
+    check not m.has("schienale") and not m.has("fondo")
+    check near(m.find("piano letto").y1, p.profondita)
     for row in bom(m): check row.kind != kWall           # il muro non va in distinta
 
   test "una scatola dietro ogni gradino, profonda 30":

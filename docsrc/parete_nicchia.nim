@@ -78,8 +78,8 @@ da tavolino. Davanti i gradini sono cassetti senza frontale: due fianchi da terr
 piano, un fondo in comune dietro e un ripiano sotto ogni gradino. Dietro i cassetti
 non c'è altro, solo due gambe a pannello alte e sottili sotto il piano, messe di
 traverso agli angoli: tengono il blocco anche di lato e lasciano libero il fianco,
-da dove entrano le gambe di chi si siede. Da chiuso le gambe arrivano vicino allo schienale
-del mobile, senza toccarlo, ed è di nuovo una scaletta.
+da dove entrano le gambe di chi si siede. Da chiuso le gambe arrivano vicino al muro, senza
+toccarlo, ed è di nuovo una scaletta.
 """
 
 nbCode:
@@ -138,9 +138,11 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Risega del muro**: pilastro dietro a destra per tutta l'altezza, sporge 7 e largo 38.
   La colonna destra è quindi profonda 73. Il rivestimento è a L, per tutta l'altezza:
   la faccia larga è coperta dallo schienale della colonna, il bordo sottile da un
-  pannellino che si unisce allo schienale della nicchia e a quello della colonna.
-- **Materasso** 76 × 190, spesso 17 (su misura: 80 non entra nei 76.4 cm tra fronte e
-  schienale), appoggiato direttamente sul piano a 104.
+  pannellino che si unisce allo schienale della colonna e arriva al muro.
+- **Niente fondo e niente schienale** (Pietro): il mobile poggia sul pavimento con fianchi
+  e divisori, dietro c'è il muro con la carta da parati, che nella nicchia si vede.
+- **Materasso** 78 × 190, spesso 17 (su misura: 80 non entra nei 78.2 cm tra fronte e
+  muro), appoggiato direttamente sul piano a 104.
 - **Testata e libreria** (decisioni dopo il confronto con i nonni): piano della testata
   55 sopra il piano letto (17 di materasso + 38 di schienale), profondo 37.9 a filo della
   risega, fa da comodino. Sopra, fino al soffitto della nicchia (260), tre vani alti
@@ -150,8 +152,8 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
   (159). Come si apre è da decidere.
 - **Scatole dei gradini**: dietro ogni gradino una scatola aperta sul davanti, profonda
   30 (da definire), come un cassetto senza frontale.
-- **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), piano profondo 75
-  (1.4 di gioco dallo schienale) a 62.6 da terra, sopra il terzo gradino. Cassetti-gradino
+- **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), piano profondo 76.8
+  (1.4 di gioco dal muro) a 62.6 da terra, sopra il terzo gradino. Cassetti-gradino
   profondi 20 (le scatole fisse 30); gambe dietro di traverso, larghe 8. Esce di tutta la sua profondità;
   i fianchi e le gambe scorrono sul pavimento (pattini o feltrini da scegliere).
 - **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il

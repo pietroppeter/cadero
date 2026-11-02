@@ -60,6 +60,11 @@ proc find*(m: Model; name: string): Part =
     if p.name == name: return p
   raise newException(KeyError, "parte non trovata: " & name)
 
+proc has*(m: Model; name: string): bool =
+  ## C'è almeno una parte con questo nome?
+  for p in m.parts:
+    if p.name == name: return true
+
 type BomRow* = object
   name*: string
   kind*: Kind
