@@ -92,3 +92,49 @@ suite "parete di riferimento":
     var p3 = rilievo()
     p3.materasso[1] = 80
     check p3.controlli.len == 1 and "materasso largo 80" in p3.controlli[0]
+
+  test "variante con tavolino":
+    let pt = rilievo().conTavolino
+    let mt = parete(pt)
+    # il fronte ha un'apertura sola al posto dei primi 3 gradini
+    check mt.find("fronte").holes.len == 1 + (pt.nGradini - pt.gradiniTavolino) + 1
+    let fr = mt.find("frontale tavolino")
+    check fr.holes.len == pt.gradiniTavolino and fr.gruppo == "tavolino"
+    # estratto del tutto: il retro arriva al fronte del mobile
+    var yMax = -Inf
+    for q in mt.parts:
+      if q.gruppo == "tavolino": yMax = max(yMax, q.y1)
+    check near(yMax, 0)
+    # il piano è un'altezza da tavolino per bambini e sta sotto il quarto gradino
+    let piano = mt.find("piano tavolino")
+    check piano.z1 > 55 and piano.z1 < 66
+    var gambe = 0
+    for q in mt.parts:
+      if q.name == "gamba": inc gambe
+    check gambe == 4
+    check pt.controlli.len == 0
+    # chiuso, tutto sta dentro il mobile
+    for q in parete(rilievo().conTavolino(aperto = false)).parts:
+      if q.gruppo == "tavolino": check q.pos.y >= 0 and q.y1 <= pt.profondita
+
+  test "aletta del tavolino":
+    let pa = rilievo().conTavolino(alettaAperta = true)
+    let ma = parete(pa)
+    let piano = ma.find("piano tavolino")
+    let al = ma.find("aletta")
+    check near(al.x1, piano.pos.x)                # aperta, a fianco del piano
+    check near(al.z1, piano.z1)                   # alla stessa altezza
+    check near(piano.size.x + al.size.x, 2 * piano.size.x)
+    var gambe = 0
+    for q in ma.parts:
+      if q.name == "gamba aletta": inc gambe
+    check gambe == 2
+    # chiusa sta sopra il piano e l'apertura nel fronte la contiene
+    let mc = parete(rilievo().conTavolino(aperto = false))
+    let alc = mc.find("aletta")
+    check near(alc.pos.z, mc.find("piano tavolino").z1)
+    var ok = false
+    for h in mc.find("fronte").holes:
+      if near(h.z + h.h, alc.z1): ok = true
+    check ok
+    check pa.controlli.len == 0

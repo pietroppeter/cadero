@@ -30,8 +30,9 @@ type
     pos*: Vec3          ## angolo con x, y, z minimi
     size*: Vec3         ## larghezza, profondità, altezza
     r*: float           ## raggio degli angoli visti di fronte
-    holes*: seq[RRect]  ## aperture vuote (solo per il pannello frontale)
+    holes*: seq[RRect]  ## aperture vuote (pannello frontale, frontale del tavolino)
     hiddenFront*: bool  ## disegnata tratteggiata nel prospetto frontale
+    gruppo*: string     ## parti che si muovono insieme nel 3D (es. "cassetto", "tavolino")
 
   Model* = object
     name*: string

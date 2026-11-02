@@ -18,14 +18,16 @@ proc toJson*(m: Model): JsonNode =
   var parts = newJArray()
   for p in m.parts:
     var holes = newJArray()
-    if p.holes.len > 0:
-      for h in p.holes & fronts:
+    # solo il pannello frontale riceve le sagome dei frontali come fori
+    let fori = if p.kind == kPanel and p.holes.len > 0: p.holes & fronts else: p.holes
+    if fori.len > 0:
+      for h in fori:
         holes.add %*{"x": h.x, "z": h.z, "w": h.w, "h": h.h, "r": h.r}
     parts.add %*{
       "name": p.name, "kind": $p.kind,
       "x": p.pos.x, "y": p.pos.y, "z": p.pos.z,
       "w": p.size.x, "d": p.size.y, "h": p.size.z,
-      "r": p.r, "holes": holes}
+      "r": p.r, "holes": holes, "gruppo": p.gruppo}
   %*{"name": m.name, "parts": parts}
 
 proc viewer3d*(m: Model; id = "cadero3d"; height = 520): string =

@@ -9,6 +9,8 @@ import ../src/cadero, ../models/parete
 
 let dir = currentSourcePath().parentDir
 let tpl = readFile(dir / "visore3d.tpl.html")
+  .replace("__MODEL_TAVOLINO__", $toJson(parete(rilievo().conTavolino)))
+  .replace("__MODEL_ALETTA__", $toJson(parete(rilievo().conTavolino(alettaAperta = true))))
   .replace("__MODEL__", $toJson(parete(rilievo())))
 
 if paramCount() == 0:

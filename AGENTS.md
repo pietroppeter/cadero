@@ -24,6 +24,10 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   si rivede tutto insieme alla fine.
 - Tipi di parte (`Kind`) e come appaiono nelle viste: vedi `src/cadero/drawing.nim`.
   `kWall` è il muro (es. la risega): si disegna tratteggiato, non va in distinta.
+- Parti che si muovono insieme nel 3D (cassetto aperto, tavolino) hanno `gruppo`; sono
+  disegnate aperte (y < 0) e il visore le fa rientrare con un pulsante per gruppo.
+- Le varianti sono funzioni sui parametri (es. `rilievo().conTavolino`); il visore 3D
+  riceve un modello per variante (`__MODEL__`, `__MODEL_TAVOLINO__`).
 - Le cose che non tornano (misure che non ci stanno, decisioni in conflitto) vanno in
   `controlli(p)` di `models/parete.nim`, mostrati nel documento: non si correggono
   i numeri di nascosto.
