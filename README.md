@@ -9,11 +9,14 @@ distinta dei pezzi.
 
 ## Documenti
 
-Generati con nimib da `docsrc/` e pubblicati su GitHub Pages:
+Generati con nimib da `docsrc/` e pubblicati su GitHub Pages. Si parte
+dall'[indice](https://pietroppeter.github.io/cadero/) (sorgente:
+[`docsrc/index.nim`](docsrc/index.nim)); ogni documento ha in testa il link
+"← Indice" per tornarci.
 
-- [Parete con nicchia letto](https://pietroppeter.github.io/cadero/): tavola con
+- [Parete con nicchia letto](https://pietroppeter.github.io/cadero/parete_nicchia.html): tavola con
   prospetto, laterale e pianta, vista 3D, una variante, distinta e ipotesi
-  (sorgente: [`docsrc/index.nim`](docsrc/index.nim))
+  (sorgente: [`docsrc/parete_nicchia.nim`](docsrc/parete_nicchia.nim))
 - [Come funziona Caderò](https://pietroppeter.github.io/cadero/come_funziona.html):
   spiegazione del codice passo passo, con esempi eseguiti
   (sorgente: [`docsrc/come_funziona.nim`](docsrc/come_funziona.nim))
@@ -34,7 +37,8 @@ src/cadero/model.nim      parti (scatole), mobile, distinta
 src/cadero/drawing.nim    viste 2D e catene di quote in SVG
 src/cadero/web.nim        vista 3D con three.js
 models/parete.nim         il mobile: parametri + funzione che crea le parti + quote
-docsrc/index.nim          il documento della parete
+docsrc/index.nim          l'indice dei documenti
+docsrc/parete_nicchia.nim il documento della parete
 docsrc/come_funziona.nim  la spiegazione del codice
 docsrc/tema.nim           il tema dei documenti (stesso stile degli artefatti)
 tools/visore3d.nim        genera la pagina del visore 3D
@@ -53,7 +57,7 @@ Assi, in cm: `x` larghezza (da sinistra, guardando il mobile), `y` profondità
 ```sh
 nimble install -y nimib
 nimble test        # controlli sulle misure
-nimble docs        # genera docs/: i due documenti e visore3d.html
+nimble docs        # genera docs/: indice, documenti e visore3d.html
 ```
 
 Per una prova senza nimib: `nim c -r tests/tavola.nim` scrive `tavola.svg` e

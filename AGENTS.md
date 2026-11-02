@@ -20,7 +20,7 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
 - Vincoli scritti in avanti come formule, niente risolutore.
 - Misure non scritte sui disegni di Pietro: rilevarle in scala o fare un'ipotesi,
   commentarla nel parametro (`rilevato:` / `ipotesi:`) ed elencarla nella sezione
-  "Ipotesi da verificare" di `docsrc/index.nim`. Non bloccarsi a chiedere:
+  "Ipotesi da verificare" di `docsrc/parete_nicchia.nim`. Non bloccarsi a chiedere:
   si rivede tutto insieme alla fine.
 - Tipi di parte (`Kind`) e come appaiono nelle viste: vedi `src/cadero/drawing.nim`.
   Un nuovo tipo va gestito in `drawFront`/`drawSide`/`drawPlan`, in `web.nim`
@@ -33,7 +33,8 @@ src/cadero/model.nim     parti, mobile, distinta
 src/cadero/drawing.nim   proiezioni, catene di quote, foglio SVG (in cm)
 src/cadero/web.nim       JSON + frammento HTML three.js per nimib
 models/parete.nim        parametri rilievo(), parete(p), quote(p), tavola(p, m)
-docsrc/index.nim         documento della parete (-> docs/index.html)
+docsrc/index.nim         indice dei documenti, home di Pages (-> docs/index.html)
+docsrc/parete_nicchia.nim documento della parete (-> docs/parete_nicchia.html)
 docsrc/come_funziona.nim spiegazione del codice (-> docs/come_funziona.html)
 docsrc/tema.nim          tema nimib con lo stile degli artefatti (nbInit(theme = useTema))
 tests/test_parete.nim    controlli sulle quote della tavola di riferimento
@@ -46,7 +47,7 @@ tools/visore3d.nim       pagina del visore 3D: artefatto claude.ai o docs/visore
 ```sh
 nimble install -y nimib
 nimble test                      # nim c -r tests/test_parete.nim
-nimble docs                      # genera docs/ (index, come_funziona, visore3d)
+nimble docs                      # genera docs/ (indice, parete_nicchia, come_funziona, visore3d)
 nim r tools/visore3d.nim         # tools/parete-3d.html per l'artefatto (senza doctype)
 nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
 ```
@@ -73,6 +74,10 @@ nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
   Condensed / IBM Plex Sans / IBM Plex Mono. Se si cambia un colore, va cambiato in
   `docsrc/tema.nim` e in `tools/visore3d.tpl.html`. Il tema non carica CSS da CDN e
   disattiva highlight.js: il codice lo colora già nimib.
+- Navigazione: `docs/index.html` è l'indice con una scheda per documento; il tema mette
+  "← Indice" in testa a ogni documento, il visore ha lo stesso link. Un nuovo documento
+  va aggiunto all'indice, al workflow, al task `docs` e al README. Non chiamare un
+  documento come un modulo che importa (es. `parete.nim`): si importerebbe da solo.
 - Pietro legge spesso da telefono: i disegni vanno mostrati come immagini o pagine,
   non come file SVG grezzi.
 

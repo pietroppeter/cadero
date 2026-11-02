@@ -18,7 +18,7 @@ if paramCount() == 0:
 else:
   let dest = paramStr(1)
   createDir(dest.parentDir)
-  let back = """<nav class="back"><a href="./">← Documenti di Caderò</a></nav>"""
+  let back = """<nav class="back"><a href="index.html">← Indice</a></nav>"""
   writeFile(dest, """<!doctype html>
 <html lang="it">
 <meta charset="utf-8">

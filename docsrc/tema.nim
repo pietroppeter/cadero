@@ -6,7 +6,7 @@
 ## Il codice è già colorato da nimib alla generazione (classi `hljs-*`),
 ## quindi highlight.js nel browser non serve.
 
-import std/json
+import std/[json, strutils]
 import nimib
 import nimib/themes as nbThemes
 
@@ -78,7 +78,21 @@ th, td { text-align: left; padding: 6px 14px 6px 0; border-bottom: 1px solid var
 th { font-family: var(--display); font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 main svg { display: block; max-width: 100%; height: auto; margin: 6px 0 22px; border: 1px solid var(--line); border-radius: 4px; }
 main > div[id$="3d"] { margin-top: 6px; }
+header a.indice { color: var(--accent); text-decoration: none; font-weight: 500; }
+header a.indice:hover { text-decoration: underline; }
+.schede { display: grid; gap: 14px; margin: 8px 0 28px; }
+a.scheda { display: block; padding: 16px 18px; background: var(--paper); border: 1px solid var(--line);
+  border-radius: 6px; color: var(--fg); text-decoration: none; }
+a.scheda:hover { border-color: var(--accent); }
+a.scheda b { display: block; font-family: var(--display); font-size: 24px; font-weight: 600; line-height: 1.15;
+  color: var(--accent); margin-bottom: 4px; }
+a.scheda span { display: block; color: var(--muted); font-size: 15px; }
 </style>"""
+
+func linkIndice(blk: JsonNode, nb: Nb): string =
+  ## In testa a ogni documento un link per tornare all'indice (non sull'indice stesso).
+  if nb.doc.context{"path_to_here"}.getStr.endsWith("index.nim"): ""
+  else: """<a class="indice" href="index.html">← Indice</a>"""
 
 proc useTema*(nb: var Nb) =
   nbThemes.useDefault(nb)
@@ -86,3 +100,4 @@ proc useTema*(nb: var Nb) =
   nb.doc.context["highlight"] = %""
   nb.doc.context["nb_style"] = %stile
   nb.doc.context["disableHighlightJs"] = %true
+  nb.backend.partials["header_left"] = linkIndice
