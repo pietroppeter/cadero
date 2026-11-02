@@ -9,6 +9,8 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
 ## Convenzioni
 
 - Lingua: italiano per commenti, documenti, commit e PR.
+- Ogni volta che si aggiornano i commit di una PR, si aggiorna anche il suo testo
+  perché descriva lo stato attuale del branch (regola del progetto).
 - Unità: centimetri. Assi: `x` larghezza (da sinistra guardando il fronte),
   `y` profondità (0 sul fronte, verso il muro), `z` altezza (0 a terra).
 - Un mobile = oggetto di parametri + funzione che restituisce un `Model`
