@@ -225,7 +225,7 @@ proc parete*(p: Parete): Model =
     for x in [xT, xT + wT - p.gambaTavolino]:
       t.add part("gamba tavolino", kPanel, x, yB + pT - s, 0, p.gambaTavolino, s, zP)
     for q in t.mitems:
-      q.gruppo = "tavolino"
+      q.apribile("tavolino", "tira", p.corsaTavolino)
       result.add q
 
   # --- struttura -----------------------------------------------------------
@@ -288,19 +288,28 @@ proc parete*(p: Parete): Model =
   result.add part("prese (2 USB-C, 1 schuko)", kAccessory, xc + lc - 14, s, p.baseLibreria + 8,
                   12, 0.6, 7)
 
-  # --- cassetti alti -------------------------------------------------------
+  # --- in alto: tre vani con ribalte che si alzano --------------------------
   let wAlto = (L - 2 * p.margineLato - 2 * p.gapAlti) / 3
   for i in 0..2:
     let x = p.margineLato + float(i) * (wAlto + p.gapAlti)
-    result.add part("frontale cassetto alto", kFront, x, 0, zAlti, wAlto, s, p.cassettiAlti, p.raggio)
-    result.add part("foro", kKnob, x + wAlto / 2, 0, zAlti + p.cassettiAlti / 2,
+    var rib = part("ribalta alta", kFront, x, 0, zAlti, wAlto, s, p.cassettiAlti, p.raggio)
+    var foro = part("foro", kKnob, x + wAlto / 2, 0, zAlti + p.cassettiAlti / 2,
                     p.diamForo, 0, p.diamForo)
+    rib.apribile("ribalta " & $(i + 1), "su")
+    foro.apribile("ribalta " & $(i + 1), "su")
+    result.add rib
+    result.add foro
 
   # --- zona bassa ----------------------------------------------------------
   let zTop = zBasso + p.zonaBassa
-  result.add part("anta", kFront, cx[0], 0, zBasso, p.colonneBasse[0], s, p.zonaBassa, p.raggio)
-  result.add part("foro", kKnob, cx[0] + p.colonneBasse[0] - 10, 0, zTop - 12,
-                  p.diamForo, 0, p.diamForo)
+  # ante: quella a sinistra si apre verso sinistra, quella stretta verso destra
+  var anta = part("anta", kFront, cx[0], 0, zBasso, p.colonneBasse[0], s, p.zonaBassa, p.raggio)
+  var foroAnta = part("foro", kKnob, cx[0] + p.colonneBasse[0] - 10, 0, zTop - 12,
+                      p.diamForo, 0, p.diamForo)
+  anta.apribile("anta", "sx")
+  foroAnta.apribile("anta", "sx")
+  result.add anta
+  result.add foroAnta
   let hC = (p.zonaBassa - p.gapCassetti * float(p.nCassettiBassi - 1)) / float(p.nCassettiBassi)
   for i in 0 ..< p.nCassettiBassi:
     let z = zTop - hC - float(i) * (hC + p.gapCassetti)
@@ -308,11 +317,16 @@ proc parete*(p: Parete): Model =
     var cas = part("cassetto", kBox, cx[2], y, z, p.colonneBasse[2], p.profCassetti, hC, p.raggio)
     var foro = part("foro", kKnob, cx[2] + p.colonneBasse[2] / 2, y, z + hC / 2,
                     p.diamForo, 0, p.diamForo)
-    if y < 0: (cas.gruppo = "cassetto"; foro.gruppo = "cassetto")
+    cas.apribile("cassetto " & $(i + 1), "tira", p.corsa)
+    foro.apribile("cassetto " & $(i + 1), "tira", p.corsa)
     result.add cas
     result.add foro
-  result.add part("anta stretta", kFront, cx[3], 0, zBasso, p.colonneBasse[3], s, p.zonaBassa, p.raggio)
-  result.add part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
+  var antaDx = part("anta stretta", kFront, cx[3], 0, zBasso, p.colonneBasse[3], s, p.zonaBassa, p.raggio)
+  var foroDx = part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
+  antaDx.apribile("anta stretta", "dx")
+  foroDx.apribile("anta stretta", "dx")
+  result.add antaDx
+  result.add foroDx
 
 proc controlli*(p: Parete): seq[string] =
   ## Le cose che non tornano: misure che non ci stanno o decisioni in conflitto.

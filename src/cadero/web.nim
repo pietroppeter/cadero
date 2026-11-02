@@ -27,7 +27,8 @@ proc toJson*(m: Model): JsonNode =
       "name": p.name, "kind": $p.kind,
       "x": p.pos.x, "y": p.pos.y, "z": p.pos.z,
       "w": p.size.x, "d": p.size.y, "h": p.size.z,
-      "r": p.r, "holes": holes, "gruppo": p.gruppo}
+      "r": p.r, "holes": holes, "gruppo": p.gruppo,
+      "apre": p.apre, "corsa": p.corsa}
   %*{"name": m.name, "parts": parts}
 
 proc viewer3d*(m: Model; id = "cadero3d"; height = 520): string =

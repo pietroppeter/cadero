@@ -67,12 +67,12 @@ __BACK__
       <button id="m-tavolino" type="button" aria-pressed="false">Con tavolino</button>
     </div>
     <div class="group">
-      <button id="t-tavolino" type="button" aria-pressed="false" hidden>Tavolino estratto</button>
-      <button id="t-cassetto" type="button" aria-pressed="true">Cassetto aperto</button>
+      <button id="t-chiudi" type="button">Chiudi tutto</button>
+      <button id="t-carta" type="button" aria-pressed="true" hidden>Carta da parati</button>
       <button id="t-fronte" type="button" aria-pressed="false">Nascondi il fronte</button>
     </div>
   </div>
-  <p class="note">Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Nelle viste "Dentro" sei seduto sul materasso: trascinando ti guardi intorno. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note"><strong>Tocca cassetti, ante, ribalte e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Nelle viste "Dentro" sei seduto sul materasso: trascinando ti guardi intorno. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
 <script type="importmap">
@@ -83,9 +83,10 @@ __BACK__
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// due modelli generati dal codice Nim: il mobile base e la variante con il
-// tavolino (disegnato estratto: le parti con y < 0 si possono far rientrare)
+// due modelli generati dal codice Nim, tutto chiuso: il mobile base e la
+// variante con il tavolino. Le parti con un "gruppo" si aprono toccandole.
 const models = { base: __MODEL__, tavolino: __MODEL_TAVOLINO__ };
+const carta = __CARTA__;   // la carta da parati sul muro (facoltativa)
 let model = models.base;
 const el = document.getElementById('stage');
 const status = document.getElementById('status');
@@ -109,6 +110,15 @@ const mats = { "pannello": ply, "frontale": front, "cassetto": front,
   "foro": new THREE.MeshStandardMaterial({ color: 0x3a2e22 }),
   "accessorio": new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.4 }),
   "muro": new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 1, transparent: true, opacity: 0.45 }) };
+// la carta da parati: una piastrella del motivo ripetuta alle sue misure reali (cm)
+let cartaMat = null;
+if (carta) {
+  const tex = new THREE.TextureLoader().load(carta.src);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  cartaMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.3 });
+}
 const edgeMat = new THREE.LineBasicMaterial({ color: 0x6b5a45 });
 
 function roundRect(path, x, y, w, h, r) {
@@ -130,11 +140,12 @@ function extruded(p) {
 }
 
 let group = new THREE.Group();
-let openParts = [];   // parti estratte (cassetto, tavolino), con il loro gruppo
-let frontPanel = [];
+let units = [];       // gruppi apribili: cassetti, ante, ribalte, tavolino
+let frontPanel = [], walls = [];
 function build(m) {
   if (group.parent) scene.remove(group);
-  group = new THREE.Group(); openParts = []; frontPanel = [];
+  group = new THREE.Group(); units = []; frontPanel = []; walls = [];
+  const byName = {};
   for (const p of m.parts) {
     let g;
     if (p.kind === "foro") {
@@ -148,19 +159,58 @@ function build(m) {
       g.translate(p.x + p.w / 2, p.z + p.h / 2, -(p.y + p.d / 2));
     }
     const obj = new THREE.Group();
-    obj.add(new THREE.Mesh(g, mats[p.kind]));
-    if (p.kind !== "foro" && p.kind !== "materasso")
+    const mesh = new THREE.Mesh(g, mats[p.kind]);
+    obj.add(mesh);
+    if (p.kind !== "foro" && p.kind !== "materasso" && p.kind !== "muro")
       obj.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), edgeMat));
-    group.add(obj);
-    if (p.gruppo) openParts.push({ obj, gruppo: p.gruppo, shift: -Math.min(p.y, 0) });
+    if (p.kind === "muro" && p.name.includes("carta")) {
+      // coordinate uv in cm sulla faccia verso la stanza, per ripetere il motivo
+      const uv = g.attributes.uv, pos = g.attributes.position;
+      for (let i = 0; i < uv.count; i++)
+        uv.setXY(i, pos.getX(i) / carta?.w || 0, pos.getY(i) / carta?.h || 0);
+      walls.push(mesh);
+    }
+    if (p.gruppo && p.apre) {
+      let u = byName[p.gruppo];
+      if (!u) {
+        u = byName[p.gruppo] = { name: p.gruppo, apre: p.apre, corsa: p.corsa,
+          pivot: new THREE.Group(), inner: new THREE.Group(), k: 0, target: 0,
+          drawnOpen: false };
+        u.pivot.add(u.inner); group.add(u.pivot); units.push(u);
+      }
+      if (p.y < 0) u.drawnOpen = true;   // disegnato già aperto
+      u.inner.add(obj);
+      obj.userData.unit = u;
+    } else group.add(obj);
     if (p.name === "fronte") frontPanel.push(obj);
+  }
+  // il perno di ogni gruppo: lo spigolo della cerniera, sul piano del fronte
+  for (const u of units) {
+    const b = new THREE.Box3().setFromObject(u.inner);
+    const P = new THREE.Vector3(0, 0, 0);
+    if (u.apre === 'sx') P.set(b.min.x, 0, b.max.z);
+    if (u.apre === 'dx') P.set(b.max.x, 0, b.max.z);
+    if (u.apre === 'su') P.set(0, b.max.y, b.max.z);
+    u.pivot.position.copy(P); u.inner.position.copy(P).negate();
+    if (u.drawnOpen) u.k = u.target = 1;
   }
   scene.add(group);
 }
 build(model);
-// lo spostamento di un gruppo: quanto esce la sua parte più esterna
-function shiftOf(gruppo) { return Math.max(0, ...openParts.filter(o => o.gruppo === gruppo).map(o => o.shift)); }
-
+// muove un gruppo: k va da 0 (chiuso) a 1 (aperto)
+function pose(u) {
+  const k = u.k;
+  if (u.apre === 'tira') u.pivot.position.z = (u.drawnOpen ? k - 1 : k) * u.corsa;
+  if (u.apre === 'sx') u.pivot.rotation.y = -k * 1.75;
+  if (u.apre === 'dx') u.pivot.rotation.y = k * 1.75;
+  if (u.apre === 'su') u.pivot.rotation.x = -k * 1.6;
+}
+const unitByName = n => units.find(u => u.name === n);
+function setOpen(u, open, instant) {
+  if (!u) return;
+  u.target = open ? 1 : 0;
+  if (instant || matchMedia('(prefers-reduced-motion: reduce)').matches) { u.k = u.target; pose(u); }
+}
 
 const box = new THREE.Box3().setFromObject(group);
 const c = box.getCenter(new THREE.Vector3());
@@ -199,41 +249,66 @@ controls.target.copy(c);
 controls.update();
 
 for (const name of Object.keys(views))
-  document.getElementById('v-' + name).addEventListener('click', () => goTo(name));
-
-// pulsanti "aperto/chiuso": ogni gruppo esce o rientra di tutta la sua corsa
-const toggles = { cassetto: document.getElementById('t-cassetto'),
-                  tavolino: document.getElementById('t-tavolino') };
-const tFront = document.getElementById('t-fronte');
-function applyToggles(instant) {
-  for (const [gruppo, btn] of Object.entries(toggles)) {
-    const open = btn.getAttribute('aria-pressed') === 'true', d = shiftOf(gruppo);
-    for (const o of openParts.filter(o => o.gruppo === gruppo)) {
-      o.target = open ? 0 : -d;          // le parti sono disegnate aperte
-      if (instant) o.obj.position.z = o.target;
-    }
-  }
-  for (const f of frontPanel) f.visible = tFront.getAttribute('aria-pressed') !== 'true';
-}
-const pressed = b => b.getAttribute('aria-pressed') === 'true';
-for (const btn of [...Object.values(toggles), tFront])
-  btn.addEventListener('click', () => {
-    btn.setAttribute('aria-pressed', String(!pressed(btn)));
-    applyToggles(false);
+  document.getElementById('v-' + name).addEventListener('click', () => {
+    goTo(name);
+    // per vedere sotto il tavolino lo si estrae
+    if (name === 'gambe') setOpen(unitByName('tavolino'), true);
   });
+
+// toccare una parte apribile la apre o la chiude (un tocco, non un trascinamento)
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+ray.params.Line.threshold = 0.5;
+function visible(o) { for (; o; o = o.parent) if (!o.visible) return false; return true; }
+function unitAt(ev) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  for (const h of ray.intersectObject(group, true)) {
+    if (!visible(h.object) || h.object.isLineSegments) continue;
+    let o = h.object; while (o && !o.userData.unit) o = o.parent;
+    return o ? o.userData.unit : null;     // la prima superficie visibile decide
+  }
+  return null;
+}
+let down = null;
+renderer.domElement.addEventListener('pointerdown', ev => { down = { x: ev.clientX, y: ev.clientY, t: performance.now() }; });
+renderer.domElement.addEventListener('pointerup', ev => {
+  if (!down) return;
+  const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y), dt = performance.now() - down.t;
+  down = null;
+  if (moved > 6 || dt > 600) return;
+  const u = unitAt(ev);
+  if (u) setOpen(u, u.target < 0.5);
+});
+renderer.domElement.addEventListener('pointermove', ev => {
+  if (ev.pointerType !== 'mouse' || ev.buttons) return;
+  renderer.domElement.style.cursor = unitAt(ev) ? 'pointer' : '';
+});
+
+const pressed = b => b.getAttribute('aria-pressed') === 'true';
+const tFront = document.getElementById('t-fronte');
+const tCarta = document.getElementById('t-carta');
+tCarta.hidden = !carta;
+function applyToggles() {
+  for (const f of frontPanel) f.visible = !pressed(tFront);
+  const on = carta && pressed(tCarta);
+  for (const w of walls) w.material = on ? cartaMat : mats.muro;
+}
+for (const btn of [tFront, tCarta])
+  btn.addEventListener('click', () => { btn.setAttribute('aria-pressed', String(!pressed(btn))); applyToggles(); });
+document.getElementById('t-chiudi').addEventListener('click', () => { for (const u of units) setOpen(u, false); });
 // cambio di variante: si ricostruisce la scena con l'altro modello
 for (const name of Object.keys(models)) {
   const btn = document.getElementById('m-' + name);
   btn.addEventListener('click', () => {
     model = models[name];
     for (const n of Object.keys(models)) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === name));
-    toggles.tavolino.hidden = name !== 'tavolino';
-    build(model); applyToggles(true);
+    build(model); applyToggles();
     if (name === 'tavolino') goTo('tavolino');
     status.textContent = model.parts.length + ' parti';
   });
 }
-applyToggles(true);
+applyToggles();
 
 function applyTheme() { scene.background = new THREE.Color(css('--stage') || '#dfe3e6'); }
 applyTheme();
@@ -247,9 +322,9 @@ function loop(now) {
     controls.target.lerpVectors(anim.from.target, anim.to.target, e);
     if (k >= 1) anim = null;
   }
-  for (const o of openParts) {
-    const z = o.obj.position.z;
-    o.obj.position.z = z + ((o.target ?? 0) - z) * 0.15;   // le parti aperte sono già fuori di "shift"
+  for (const u of units) {
+    if (Math.abs(u.target - u.k) > 0.001) { u.k += (u.target - u.k) * 0.15; pose(u); }
+    else if (u.k !== u.target) { u.k = u.target; pose(u); }
   }
   controls.update();
   renderer.render(scene, camera);

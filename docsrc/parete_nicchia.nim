@@ -162,7 +162,10 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Fori maniglia** di 4 cm; quelli delle ante a 10 cm dal bordo e 12 dall'alto.
 - Le **linee tratteggiate** davanti al mobile nella laterale e nella pianta del disegno
   originale non sono riprodotte: non è chiaro cosa rappresentino.
-- I **cassetti alti** hanno solo il frontale: la profondità non è indicata.
+- In alto ci sono tre vani con **ribalte** che si alzano (nel disegno sembravano cassetti):
+  la profondità dei vani non è indicata.
+- **Carta da parati** Vårklockor (Josef Frank, Svenskt Tenn): le misure non sono note.
+  Dalla foto il motivo è a mezza caduta; ho assunto rotolo da 53 cm e rapporto di 53.
 """
 
 nbSave
