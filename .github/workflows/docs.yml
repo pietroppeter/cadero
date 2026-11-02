@@ -25,7 +25,9 @@ jobs:
           nim-version: "2.2.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Dipendenze
-        run: nimble install -y nimib
+        run: |
+          sudo apt-get update && sudo apt-get install -y libpcre3
+          nimble install -y nimib
       - name: Test
         run: nim c -r tests/test_parete.nim
       - name: Documenti nimib
