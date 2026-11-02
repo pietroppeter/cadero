@@ -123,7 +123,7 @@ suite "parete di riferimento":
     for q in mt.parts:
       if q.name == "ripiano gradino": inc ripiani
     check ripiani == pt.gradiniTavolino
-    check near(mt.find("fondo cassetti").pos.y, fr.y1 + pt.profGradini)
+    check near(mt.find("fondo cassetti").pos.y, fr.y1 + pt.profCassettiTavolino)
     # frontale e apertura a spigoli dritti: tondi solo i vani
     check fr.r == 0
     check pt.controlli.len == 0

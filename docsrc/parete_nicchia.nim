@@ -76,8 +76,9 @@ I primi tre gradini stanno nel frontale di un blocco che si estrae del tutto. Il
 frontale ha gli spigoli dritti (tondi sono solo i vani) e nasconde il piano, che fa
 da tavolino. Davanti i gradini sono cassetti senza frontale: due fianchi da terra al
 piano, un fondo in comune dietro e un ripiano sotto ogni gradino. Dietro i cassetti
-non c'è altro, solo due gambe a pannello alte e sottili sotto il piano: lì c'è lo
-spazio per le gambe di chi si siede. Da chiuso le gambe arrivano vicino allo schienale
+non c'è altro, solo due gambe a pannello alte e sottili sotto il piano, messe di
+traverso agli angoli: tengono il blocco anche di lato e lasciano libero il fianco,
+da dove entrano le gambe di chi si siede. Da chiuso le gambe arrivano vicino allo schienale
 del mobile, senza toccarlo, ed è di nuovo una scaletta.
 """
 
@@ -89,8 +90,8 @@ nbCode:
   let gamba = mt.find("gamba tavolino")
   echo "piano: ", fmtNum(piano.size.x), " × ", fmtNum(piano.size.y), " cm, alto ",
        fmtNum(piano.z1), " da terra"
-  echo "spazio per le gambe: largo ", fmtNum(piano.size.x - 2 * gamba.size.x),
-       ", profondo ", fmtNum(piano.y1 - fondo.y1), ", alto ", fmtNum(piano.pos.z), " cm"
+  echo "spazio per le gambe, seduti di lato: largo ", fmtNum(gamba.pos.y - fondo.y1),
+       ", sotto il piano ", fmtNum(piano.size.x), ", alto ", fmtNum(piano.pos.z), " cm"
 
   var foglioT = initSheet()
   let fronteT = View(kind: vFront)
@@ -151,7 +152,7 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
   30 (da definire), come un cassetto senza frontale.
 - **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), piano profondo 75
   (1.4 di gioco dallo schienale) a 62.6 da terra, sopra il terzo gradino. Cassetti-gradino
-  profondi 30 come le scatole; gambe dietro larghe 8. Esce di tutta la sua profondità;
+  profondi 20 (le scatole fisse 30); gambe dietro di traverso, larghe 8. Esce di tutta la sua profondità;
   i fianchi e le gambe scorrono sul pavimento (pattini o feltrini da scegliere).
 - **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
   comodino: posizione indicativa.

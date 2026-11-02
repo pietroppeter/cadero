@@ -64,7 +64,10 @@ type
                              ## vicino allo schienale senza toccarlo (ipotesi: 75, 1.4 di gioco)
     corsaTavolino*: float    ## di quanto si estrae nel disegno: tutto (profTavolino + spessore);
                              ## davanti poggia sui fianchi, dietro sulle due gambe
-    gambaTavolino*: float    ## larghezza delle gambe dietro, pannelli alti e sottili (ipotesi: 8)
+    profCassettiTavolino*: float ## profondità dei cassetti-gradino del tavolino (ipotesi: 20,
+                             ## meno delle scatole fisse, per lasciare spazio alle gambe)
+    gambaTavolino*: float    ## larghezza delle gambe dietro, pannelli alti e sottili messi
+                             ## di traverso, paralleli al frontale (ipotesi: 8)
     tavolinoAperto*: bool    ## disegnarlo estratto
     diamForo*: float         ## fori maniglia (ipotesi: 4)
 
@@ -83,7 +86,7 @@ proc rilievo*(): Parete =
     sottoCassetti: 5, testata: 55, profScaffali: 26, nVani: 3, altezzaLibri: 25,
     profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4,
     tavolino: false, gradiniTavolino: 3, profTavolino: 75, corsaTavolino: 76.8,
-    gambaTavolino: 8, tavolinoAperto: false)
+    profCassettiTavolino: 20, gambaTavolino: 8, tavolinoAperto: false)
 
 proc conTavolino*(p: Parete; aperto = true): Parete =
   ## La variante con il tavolino estraibile.
@@ -204,7 +207,7 @@ proc parete*(p: Parete): Model =
     let y0 = if p.tavolinoAperto: -p.corsaTavolino else: 0.0
     let yB = y0 + s                          # dietro il frontale
     let pT = p.profTavolino
-    let pC = p.profGradini                   # profondità dei cassetti-gradino
+    let pC = p.profCassettiTavolino          # profondità dei cassetti-gradino
     let zP = zT1 - s                         # sotto il piano
     var t: seq[Part]
     var fr = part("frontale tavolino", kFront, xT, y0, 0, wT, s, zT1, 0)
@@ -217,9 +220,10 @@ proc parete*(p: Parete): Model =
     t.add part("fondo cassetti", kPanel, xT + s, yB + pC, 0, wT - 2 * s, s, zP)
     for i in 0 ..< nT:
       t.add part("ripiano gradino", kPanel, xT + s, yB, zGradino(i) - s, wT - 2 * s, pC, s)
-    for x in [xT, xT + wT - s]:
-      t.add part("gamba tavolino", kPanel, x, yB + pT - p.gambaTavolino, 0,
-                 s, p.gambaTavolino, zP)
+    # gambe di traverso agli angoli dietro: tengono il blocco anche di lato e
+    # lasciano libero il fianco, da dove entrano le gambe di chi si siede
+    for x in [xT, xT + wT - p.gambaTavolino]:
+      t.add part("gamba tavolino", kPanel, x, yB + pT - s, 0, p.gambaTavolino, s, zP)
     for q in t.mitems:
       q.gruppo = "tavolino"
       result.add q
