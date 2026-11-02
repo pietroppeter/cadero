@@ -1,0 +1,218 @@
+<title>Parete con nicchia letto</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: una sola vista 3D a tutta larghezza, con barra di comandi sotto, come un banco di lavoro */
+:root {
+  --bg: #e9ecee; --panel: #f7f8f9; --fg: #1d2429; --muted: #5d6870; --line: #c9d0d5;
+  --accent: #a8682a; --stage: #dfe3e6; --edge: 0x6b5a45;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161a1d; --panel: #1f2428; --fg: #e6e9eb; --muted: #9aa5ad; --line: #343c42;
+  --accent: #e0a161; --stage: #23292d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #161a1d; --panel: #1f2428; --fg: #e6e9eb; --muted: #9aa5ad; --line: #343c42;
+  --accent: #e0a161; --stage: #23292d; color-scheme: dark }
+html, body { background: var(--bg); color: var(--fg); }
+body { font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 28px; }
+.wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 5vw, 40px); letter-spacing: 0.01em; margin: 0; line-height: 1.05; text-wrap: balance; }
+.dims { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dims b { color: var(--accent); font-weight: 400; }
+.stage { position: relative; width: 100%; height: min(72vh, 680px); min-height: 360px; background: var(--stage);
+  border: 1px solid var(--line); border-radius: 6px; overflow: hidden; touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+.status { position: absolute; left: 12px; bottom: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); pointer-events: none; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
+.group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.label { font-family: var(--display); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+button { font: 500 14px var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { color: var(--muted); font-size: 13.5px; max-width: 70ch; margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Parete con nicchia letto</h1>
+    <div class="dims">L <b>237</b> × H <b>316</b> × P <b>80</b> cm · multistrato 18 mm</div>
+  </header>
+  <div class="stage" id="stage"><div class="status" id="status">Caricamento del modello…</div></div>
+  <div class="bar">
+    <div class="group" role="group" aria-label="Viste">
+      <span class="label">Vista</span>
+      <button id="v-fronte" type="button">Fronte</button>
+      <button id="v-nicchia" type="button">Nicchia</button>
+      <button id="v-lato" type="button">Lato</button>
+      <button id="v-alto" type="button">Dall'alto</button>
+      <button id="v-dentro" type="button">Dentro: verso la libreria</button>
+      <button id="v-testata" type="button">Dentro: dalla testata</button>
+    </div>
+    <div class="group">
+      <button id="t-cassetto" type="button" aria-pressed="true">Cassetto aperto</button>
+      <button id="t-fronte" type="button" aria-pressed="false">Nascondi il fronte</button>
+    </div>
+  </div>
+  <p class="note">Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Nelle viste "Dentro" sei seduto sul materasso: trascinando ti guardi intorno. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+</div>
+
+<script type="importmap">
+{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const model = __MODEL__;
+const el = document.getElementById('stage');
+const status = document.getElementById('status');
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, el.clientWidth / el.clientHeight, 1, 5000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(el.clientWidth, el.clientHeight);
+el.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xb0a890, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+sun.position.set(-150, 400, 300);
+scene.add(sun);
+
+const ply = new THREE.MeshStandardMaterial({ color: 0xe3c9a0, roughness: 0.8 });
+const front = new THREE.MeshStandardMaterial({ color: 0xead3ad, roughness: 0.8 });
+const mats = { "pannello": ply, "frontale": front, "cassetto": front,
+  "materasso": new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }),
+  "foro": new THREE.MeshStandardMaterial({ color: 0x3a2e22 }),
+  "accessorio": new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.4 }) };
+const edgeMat = new THREE.LineBasicMaterial({ color: 0x6b5a45 });
+
+function roundRect(path, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  path.moveTo(x + r, y);
+  path.lineTo(x + w - r, y); path.quadraticCurveTo(x + w, y, x + w, y + r);
+  path.lineTo(x + w, y + h - r); path.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  path.lineTo(x + r, y + h); path.quadraticCurveTo(x, y + h, x, y + h - r);
+  path.lineTo(x, y + r); path.quadraticCurveTo(x, y, x + r, y);
+  return path;
+}
+// Assi: x CAD -> x three, z CAD (altezza) -> y three, y CAD (profondità) -> -z three
+function extruded(p) {
+  const shape = roundRect(new THREE.Shape(), p.x, p.z, p.w, p.h, p.r || 0);
+  for (const h of p.holes) shape.holes.push(roundRect(new THREE.Path(), h.x, h.z, h.w, h.h, h.r));
+  const g = new THREE.ExtrudeGeometry(shape, { depth: p.d, bevelEnabled: false, curveSegments: 8 });
+  g.translate(0, 0, -(p.y + p.d));
+  return g;
+}
+
+const group = new THREE.Group();
+const openParts = [];   // cassetto aperto e il suo foro
+let frontPanel = [];
+for (const p of model.parts) {
+  let g;
+  if (p.kind === "foro") {
+    g = new THREE.CylinderGeometry(p.w / 2, p.w / 2, 0.4, 20);
+    g.rotateX(Math.PI / 2);
+    g.translate(p.x, p.z, -p.y + 0.15);
+  } else if (p.holes.length > 0 || ((p.kind === "frontale" || p.kind === "cassetto") && p.r > 0)) {
+    g = extruded(p);
+  } else {
+    g = new THREE.BoxGeometry(p.w, p.h, p.d);
+    g.translate(p.x + p.w / 2, p.z + p.h / 2, -(p.y + p.d / 2));
+  }
+  const obj = new THREE.Group();
+  obj.add(new THREE.Mesh(g, mats[p.kind]));
+  if (p.kind !== "foro" && p.kind !== "materasso")
+    obj.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), edgeMat));
+  group.add(obj);
+  if (p.y < 0) openParts.push({ obj, shift: -p.y });
+  if (p.name === "fronte") frontPanel.push(obj);
+}
+scene.add(group);
+
+const box = new THREE.Box3().setFromObject(group);
+const c = box.getCenter(new THREE.Vector3());
+const size = box.getSize(new THREE.Vector3()).length();
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.minDistance = 1;
+controls.maxDistance = size * 4;
+
+// punti di vista (in cm, coordinate three)
+const views = {
+  fronte:  { pos: [c.x, c.y, c.z + size * 1.25], target: [c.x, c.y, c.z] },
+  nicchia: { pos: [-30, 215, 230], target: [175, 180, -40] },
+  lato:    { pos: [c.x + size * 1.1, c.y + size * 0.15, c.z + size * 0.35], target: [c.x, c.y, c.z] },
+  alto:    { pos: [c.x - size * 0.3, c.y + size * 1.1, c.z + size * 0.6], target: [c.x, c.y - 40, c.z] },
+  // dentro la nicchia, seduti sul materasso (occhi a circa 175 cm da terra)
+  dentro:  { pos: [20, 178, -50], target: [50, 176, -45], fov: 72 },
+  testata: { pos: [180, 180, -60], target: [150, 172, -52], fov: 72 },
+};
+let anim = null;
+function goTo(name, instant) {
+  const v = views[name];
+  const to = { pos: new THREE.Vector3(...v.pos), target: new THREE.Vector3(...v.target) };
+  camera.fov = v.fov || 35; camera.updateProjectionMatrix();
+  if (instant || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    camera.position.copy(to.pos); controls.target.copy(to.target); controls.update(); return;
+  }
+  anim = { from: { pos: camera.position.clone(), target: controls.target.clone() }, to, t0: performance.now() };
+}
+camera.position.set(c.x - size * 0.6, c.y + size * 0.2, c.z + size * 1.45);
+controls.target.copy(c);
+controls.update();
+
+for (const name of Object.keys(views))
+  document.getElementById('v-' + name).addEventListener('click', () => goTo(name));
+
+const tCass = document.getElementById('t-cassetto');
+tCass.addEventListener('click', () => {
+  const open = tCass.getAttribute('aria-pressed') !== 'true';
+  tCass.setAttribute('aria-pressed', String(open));
+  for (const o of openParts) o.target = open ? 0 : -o.shift;   // chiuso = rientra di "shift"
+});
+for (const o of openParts) o.target = 0;
+const tFront = document.getElementById('t-fronte');
+tFront.addEventListener('click', () => {
+  const hide = tFront.getAttribute('aria-pressed') !== 'true';
+  tFront.setAttribute('aria-pressed', String(hide));
+  for (const f of frontPanel) f.visible = !hide;
+});
+
+function applyTheme() { scene.background = new THREE.Color(css('--stage') || '#dfe3e6'); }
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function loop(now) {
+  if (anim) {
+    const k = Math.min(1, (now - anim.t0) / 700), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    camera.position.lerpVectors(anim.from.pos, anim.to.pos, e);
+    controls.target.lerpVectors(anim.from.target, anim.to.target, e);
+    if (k >= 1) anim = null;
+  }
+  for (const o of openParts) {
+    const z = o.obj.position.z;
+    o.obj.position.z = z + ((o.target ?? 0) - z) * 0.15;   // le parti aperte sono già fuori di "shift"
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+status.textContent = model.parts.length + ' parti';
+new ResizeObserver(() => {
+  camera.aspect = el.clientWidth / el.clientHeight; camera.updateProjectionMatrix();
+  renderer.setSize(el.clientWidth, el.clientHeight);
+}).observe(el);
+</script>

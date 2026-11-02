@@ -4,3 +4,4 @@ tests/*.html
 tests/tavola
 tests/test_parete
 docs/
+tools/parete-3d.html
