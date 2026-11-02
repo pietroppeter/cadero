@@ -17,9 +17,10 @@ suite "parete di riferimento":
     let cx = p.colonneX
     check near(cx[3] + p.colonneBasse[3], p.larghezza - p.margineLato)
 
-  test "vista laterale: piano letto 104, testata 55, libreria 128 in tutto":
+  test "vista laterale: piano letto 104, testata 55, libreria fino al soffitto":
     check near(p.baseLibreria - p.pianoLetto, 55)     # testata (= comodino)
-    check near(p.cimaLibreria - p.pianoLetto, 128)    # libreria, testata compresa
+    check near(p.cimaLibreria, p.soffittoNicchia)     # libreria fino al soffitto
+    check abs(p.vanoUtile - 32) < 0.5                 # 3 vani da circa 32
     check near(p.soffittoNicchia, 260)
     check near(p.margineBasso + p.zonaBassa + p.fascia - p.pianoLetto, 27)
 
@@ -64,7 +65,14 @@ suite "parete di riferimento":
     let r = m.find("risega (muro)")
     check r.kind == kWall and near(r.y1, p.profondita)
     let pan = m.find("pannellino risega")
-    check near(pan.pos.y, p.profColonna) and near(pan.size.z, p.cimaLibreria - p.baseLibreria)
+    check near(pan.pos.y, p.profColonna) and near(pan.y1, p.profondita)
+    check near(pan.size.z, p.altezza - 2 * p.spessore)   # per tutta l'altezza
+    # rivestimento a L senza fessure: lo schienale della colonna parte dallo
+    # stesso piano del pannellino e del divisorio
+    let sc = m.find("schienale colonna")
+    check near(sc.pos.x, pan.pos.x) and near(sc.y1, pan.pos.y)
+    check near(m.find("divisorio").y1, sc.pos.y)
+    check near(m.find("schienale").x1, pan.pos.x)
     for row in bom(m): check row.kind != kWall           # il muro non va in distinta
 
   test "una scatola dietro ogni gradino, profonda 30":
@@ -76,12 +84,11 @@ suite "parete di riferimento":
     check n == p.nGradini
 
   test "comodino a filo della risega, scaffali meno profondi":
-    check near(m.find("piano testata (comodino)").size.x, 38)
-    check near(m.find("ripiano libreria").size.x, 22)
+    check abs(m.find("piano testata (comodino)").size.x - p.risegaLarga) < 0.2
+    check near(m.find("ripiano libreria").size.x, 26)
 
-  test "i controlli trovano il materasso da 80 che non entra":
-    check p.controlli.len > 0
-    check "materasso largo 80" in p.controlli[0]
+  test "controlli: niente da segnalare, ma il materasso da 80 non entra":
+    check p.controlli.len == 0
     var p3 = rilievo()
-    p3.materasso[1] = 76
-    for c in p3.controlli: check "materasso largo" notin c
+    p3.materasso[1] = 80
+    check p3.controlli.len == 1 and "materasso largo 80" in p3.controlli[0]

@@ -73,11 +73,15 @@ nbText: """
 ## Cosa non torna
 
 `controlli(p)` confronta le misure con le decisioni prese e segnala i conflitti.
-Per ora li lascio visibili invece di correggere i numeri: sono scelte da fare.
+Con i parametri attuali non trova niente; con il materasso da 80 delle prime note
+invece sì:
 """
 
 nbCode:
-  for c in p.controlli: echo "- ", c
+  echo "controlli: ", p.controlli.len
+  var p80 = rilievo()
+  p80.materasso[1] = 80
+  for c in p80.controlli: echo "- ", c
 
 nbText: """
 ## Distinta dei pezzi
@@ -102,15 +106,16 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Posizioni orizzontali** di frontali e aperture, rilevate in scala: margini laterali
   12.5, nicchia da 16 a 181.5 con raggio 18, colonne in basso larghe 71, 29, 52 e 38.5.
 - **Risega del muro**: pilastro dietro a destra per tutta l'altezza, sporge 7 e largo 38.
-  La colonna destra è quindi profonda 73. La faccia larga è rivestita dallo schienale
-  della colonna, il bordo sottile da un pannellino dove il divisorio è aperto.
-- **Materasso** 80 × 190, spesso 17, appoggiato direttamente sul piano a 104 (vedi
-  "Cosa non torna": 80 non entra).
+  La colonna destra è quindi profonda 73. Il rivestimento è a L, per tutta l'altezza:
+  la faccia larga è coperta dallo schienale della colonna, il bordo sottile da un
+  pannellino che si unisce allo schienale della nicchia e a quello della colonna.
+- **Materasso** 76 × 190, spesso 17 (su misura: 80 non entra nei 76.4 cm tra fronte e
+  schienale), appoggiato direttamente sul piano a 104.
 - **Testata e libreria** (decisioni dopo il confronto con i nonni): piano della testata
-  55 sopra il piano letto (17 di materasso + 38 di schienale), profondo 38 a filo della
-  risega, fa da comodino. Sopra, fino a 128 dal piano letto, tre vani uguali con
-  scaffali profondi 22 appoggiati al fianco destro. Il divisorio è aperto tra il
-  comodino (159) e il cielo della libreria (232); sotto fa da testata, sopra è chiuso.
+  55 sopra il piano letto (17 di materasso + 38 di schienale), profondo 37.9 a filo della
+  risega, fa da comodino. Sopra, fino al soffitto della nicchia (260), tre vani alti
+  circa 32 con scaffali profondi 26 appoggiati al fianco destro. Il divisorio è aperto
+  tra il comodino (159) e il soffitto; sotto fa da testata.
 - **Gavone**: un vano chiuso dentro la colonna, tra il piano letto (104) e il comodino
   (159). Come si apre è da decidere.
 - **Scatole dei gradini**: dietro ogni gradino una scatola aperta sul davanti, profonda
