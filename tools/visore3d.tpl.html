@@ -118,7 +118,7 @@ __BACK__
       <div class="misure">guardando verso il muro, a una profondità y dal fronte</div>
     </div>
   </div>
-  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Con <strong>Cammina</strong> la rotella o il pizzico ti portano avanti e indietro invece di zoomare, e trascinando ti guardi intorno: così arrivi in qualsiasi punto. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Con <strong>Cammina</strong> giri la testa sul posto trascinando, vai avanti e indietro con la rotella o il pizzico, e ti sposti di lato o in su e giù con due dita (o con il tasto destro): così arrivi in qualsiasi punto. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
 <script type="importmap">
@@ -328,37 +328,67 @@ const views = {
   // di fianco al tavolino estratto, per vedere lo spazio per le gambe
   gambe:    { pos: [-110, 75, 125], target: [95, 35, 30] },
 };
-// modalità "cammina": la rotella (o il pizzico) porta avanti e indietro
-// invece dello zoom, e trascinando ci si guarda intorno
+// modalità "cammina": come muoversi in prima persona. Il punto di rotazione
+// sta a un centimetro davanti agli occhi e si sposta con te: trascinando
+// giri la testa sul posto; rotella o pizzico vanno avanti e indietro; due
+// dita (o il tasto destro) spostano di lato e in su e giù, sempre insieme
+// al punto di rotazione.
 const tCammina = document.getElementById('v-cammina');
 let cammina = false;
 function vicino() {          // il punto di rotazione appena davanti agli occhi
   const dir = controls.target.clone().sub(camera.position).normalize();
-  controls.target.copy(camera.position).addScaledVector(dir, 20);
+  controls.target.copy(camera.position).addScaledVector(dir, 1);
 }
+function sposta(v) { camera.position.add(v); controls.target.add(v); }
 function avanza(cm) {
-  const dir = controls.target.clone().sub(camera.position).normalize();
-  camera.position.addScaledVector(dir, cm); controls.target.addScaledVector(dir, cm);
+  sposta(controls.target.clone().sub(camera.position).normalize().multiplyScalar(cm));
+}
+function trasla(dxPx, dyPx) {   // nel piano dello schermo: 0.4 cm per pixel
+  const destra = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+  const su = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+  sposta(destra.multiplyScalar(-dxPx * 0.4).addScaledVector(su, dyPx * 0.4));
 }
 tCammina.addEventListener('click', () => {
   cammina = !cammina;
   tCammina.setAttribute('aria-pressed', String(cammina));
-  controls.enableZoom = !cammina;
+  controls.enableZoom = controls.enablePan = !cammina;
+  controls.rotateSpeed = cammina ? 0.5 : 1;
   if (cammina) vicino();
+  else {                         // tornando a ruotare intorno al mobile, il centro è più avanti
+    const dir = controls.target.clone().sub(camera.position).normalize();
+    controls.target.copy(camera.position).addScaledVector(dir, 150);
+  }
 });
 renderer.domElement.addEventListener('wheel', ev => {
   if (!cammina) return;
   ev.preventDefault();
   avanza(Math.max(-40, Math.min(40, -ev.deltaY * 0.12)));
 }, { passive: false });
-let pizzico = null;
+// due dita: la distanza tra le dita va avanti e indietro, il loro punto medio sposta
+let due = null;
 renderer.domElement.addEventListener('touchmove', ev => {
-  if (!cammina || ev.touches.length !== 2) { pizzico = null; return; }
-  const [a, b] = ev.touches, d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-  if (pizzico !== null) avanza((d - pizzico) * 0.6);
-  pizzico = d;
+  if (!cammina || ev.touches.length !== 2) { due = null; return; }
+  const [a, b] = ev.touches;
+  const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  const mx = (a.clientX + b.clientX) / 2, my = (a.clientY + b.clientY) / 2;
+  if (due) { avanza((d - due.d) * 0.6); trasla(mx - due.mx, my - due.my); }
+  due = { d, mx, my };
 }, { passive: true });
-renderer.domElement.addEventListener('touchend', () => { pizzico = null; });
+renderer.domElement.addEventListener('touchend', () => { due = null; });
+// tasto destro (o Maiusc + trascina) con il mouse: spostamento di lato
+let destro = null;
+renderer.domElement.addEventListener('pointerdown', ev => {
+  if (cammina && ev.pointerType === 'mouse' && (ev.button === 2 || ev.shiftKey)) {
+    destro = { x: ev.clientX, y: ev.clientY }; controls.enabled = false;
+  }
+});
+window.addEventListener('pointermove', ev => {
+  if (!destro) return;
+  trasla(ev.clientX - destro.x, ev.clientY - destro.y);
+  destro = { x: ev.clientX, y: ev.clientY };
+});
+window.addEventListener('pointerup', () => { if (destro) { destro = null; controls.enabled = true; } });
+renderer.domElement.addEventListener('contextmenu', ev => { if (cammina) ev.preventDefault(); });
 
 let anim = null;
 function goTo(name, instant) {
