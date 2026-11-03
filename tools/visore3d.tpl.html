@@ -71,12 +71,7 @@ __BACK__
     <div class="group" role="group" aria-label="Viste">
       <span class="label">Vista</span>
       <button id="v-iniziale" type="button" title="Il punto di vista di partenza">Tre quarti</button>
-      <button id="v-fronte" type="button">Fronte</button>
-      <button id="v-nicchia" type="button">Nicchia</button>
       <button id="v-dentro" type="button">Dentro</button>
-      <button id="v-gavone" type="button">Gavone</button>
-      <button id="v-tavolino" type="button">Gradini</button>
-      <button id="v-gambe" type="button" hidden>Sotto il tavolino</button>
     </div>
     <div class="group" role="group" aria-label="Mobile">
       <span class="label">Mobile</span>
@@ -414,15 +409,8 @@ const views = {
     const d = Math.max(m.y / 2 / t, m.x / 2 / (t * camera.aspect)) * 1.12 + m.z / 2;
     return { pos: [c.x, c.y, c.z + d], target: [c.x, c.y, c.z] };
   },
-  nicchia: { pos: [-30, 215, 230], target: [175, 180, -40] },
   // dentro la nicchia, al centro e un po' in alto: si vedono libreria, comodino e gavone
   dentro:  { pos: [40, 200, -45], target: [200, 160, -40], fov: 72 },
-  // sopra il comodino, abbastanza lontano da vedere il gavone intero
-  gavone:  { pos: [110, 228, -24], target: [216, 152, -38], fov: 60 },
-  // davanti alla scaletta, un po' da sinistra e dall'alto
-  tavolino: { pos: [-40, 150, 230], target: [110, 40, 10] },
-  // di fianco al tavolino estratto, per vedere lo spazio per le gambe
-  gambe:    { pos: [-110, 75, 125], target: [95, 35, 30] },
 };
 let anim = null;
 function goTo(name, instant) {
@@ -436,12 +424,8 @@ function goTo(name, instant) {
 }
 goTo('iniziale', true);
 
-for (const name of Object.keys(views))
-  document.getElementById('v-' + name).addEventListener('click', () => {
-    goTo(name);
-    // per vedere sotto il tavolino lo si estrae
-    if (name === 'gambe') setOpen(unitByName('tavolino'), true);
-  });
+for (const name of ['iniziale', 'dentro'])   // "fronte" serve solo a calcolare la distanza
+  document.getElementById('v-' + name).addEventListener('click', () => goTo(name));
 
 // toccare una parte apribile la apre o la chiude (un tocco, non un trascinamento)
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -557,13 +541,11 @@ function cambiaModello() {
   for (const n of ['base', 'tavolino']) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === variante));
   build(model); applyToggles(); applyEsploso(); pianiTaglio();
   if (pressed(tSez)) aggiornaSezioni();
-  document.getElementById('v-gambe').hidden = variante !== 'tavolino';
   status.textContent = model.parts.length + ' parti';
 }
 for (const name of ['base', 'tavolino'])
   document.getElementById('m-' + name).addEventListener('click', () => {
     variante = name; cambiaModello();
-    if (name === 'tavolino') goTo('tavolino');
   });
 for (const b of [tRisega, tAntina, tPrese])
   b.addEventListener('click', () => { b.setAttribute('aria-pressed', String(!pressed(b))); cambiaModello(); });
