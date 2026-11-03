@@ -13,19 +13,22 @@ suite "parete di riferimento":
     check p.altezza == 316
 
   test "colonna destra e campata":
-    check near(p.xColonna, 198.2)
+    check near(p.xRisega, 198.2) and near(p.xDivisorio, 196.4)
     let cx = p.colonneX
-    check near(cx[3] + p.colonneBasse[3], p.larghezza - p.margineLato)
+    check near(cx[3] + p.bassa.antaStretta, p.larghezza - p.bassa.margineLato)
+    check near(p.spazioCassetti, 8.5) and near(p.gapAlti, 4)
 
   test "vista laterale: piano letto 104, testata 58, libreria fino al soffitto":
     check near(p.baseLibreria - p.pianoLetto, 58)     # testata (= comodino)
-    check near(p.cimaLibreria, p.soffittoNicchia)     # libreria fino al soffitto
+    check near(p.cimaLibreria, p.sottoSoffitto)       # libreria fino al soffitto
     check abs(p.vanoUtile - 32.5) < 0.5               # 3 vani da circa 32.5
     check near(p.soffittoNicchia, 265)                # un pannello solo sotto i vani alti
-    check near(p.margineBasso + p.zonaBassa + p.fascia - p.pianoLetto, 27)
+    check near(p.nicchiaZ - p.pianoLetto, 27)
+    check near(p.nicchiaH, 122) and near(p.nicchiaFine, 181.5)
+    check near(p.schienale, 41) and near(p.bordo, 10)
 
   test "il pannello frontale ha la nicchia e i gradini come aperture":
-    check m.find("fronte").holes.len == 1 + p.nGradini
+    check m.find("fronte").holes.len == 1 + p.bassa.nGradini
 
   test "tutto sta dentro l'ingombro (tranne il cassetto aperto)":
     for q in m.parts:
@@ -44,14 +47,25 @@ suite "parete di riferimento":
     var cassetti = 0
     for r in bom(m):
       if r.name == "frontale cassetto": cassetti += r.count
-    check cassetti == p.nCassettiBassi
+    check cassetti == p.bassa.nCassetti
 
-  test "variante: cambiando la nicchia cambia l'altezza":
+  test "l'altezza è quella della stanza: cambiando la nicchia si accorcia lo stacco":
     var p2 = rilievo()
-    p2.nicchia = 112
-    check p2.altezza == 306
-    check near(p2.soffittoNicchia, 255)
-    check p2.cimaLibreria <= p2.soffittoNicchia   # la libreria ci sta ancora
+    p2.altezze.nicchia = 149.2
+    check p2.altezza == 316
+    check near(p2.soffittoNicchia, 255) and near(p2.nicchiaH, 112)
+    check p2.catenaFronte[5] == 265               # le ribalte restano dove sono
+    check p2.controlli.len == 1                   # (il bordo di 10, come prima)
+
+  test "le misure partono dal muro: col gioco il mobile si stringe":
+    var pg = rilievo()
+    pg.costruzione.gioco = 0.5
+    check near(pg.larghezza, 236) and near(pg.altezza, 315.5) and near(pg.profondita, 79.5)
+    check fuoriMuro(pg, parete(pg)).len == 0
+    # ma mezzo centimetro basta: il materasso da 78 non entra più, tra le ribalte
+    # restano 3.5 cm e le ribalte (misurate dal soffitto) scendono sul soffitto della
+    # nicchia (misurato da terra)
+    check pg.controlli.len == 4
 
   test "i ripiani stanno dentro la libreria":
     for h in p.ripiani:
@@ -59,9 +73,21 @@ suite "parete di riferimento":
     # vani con la stessa altezza libera, quella di vanoUtile
     var piani = @[p.baseLibreria]
     for h in p.ripiani: piani.add p.baseLibreria + h
-    piani.add p.cimaLibreria
+    piani.add p.soffittoNicchia
     for i in 1 ..< piani.len:
       check near(piani[i] - p.spessore - piani[i - 1], p.vanoUtile)
+
+  test "vani della libreria: se ne fissano al massimo n, le libere si dividono il resto":
+    var q = rilievo()
+    q.libreria.vani = @[0.0, 40]
+    let v = q.vani
+    check v.len == 3 and near(v[1], 40) and near(v[0], v[2])
+    check near(v[0] + v[1] + v[2] + 2 * q.spessore, q.cimaLibreria - q.baseLibreria)
+    q.libreria.vani = @[30.0, 30, 30]          # tre su tre: la terza non conta
+    check near(q.vani[2], 97.6 - 60) and q.controlli.len == 2
+    q.libreria.scaffali = 3
+    q.libreria.vani = @[]
+    check q.vani.len == 4 and q.ripiani.len == 3
 
   test "formato delle quote":
     check fmtNum(198.2) == "198.2"
@@ -82,7 +108,7 @@ suite "parete di riferimento":
       check near(q.size.x, p.larghezza) and near(q.y1, p.profondita)
       check q.taccheP.len == 1 and near(q.taccheP[0].z, p.profColonna - p.spessore)
     check near(m.find("piano letto").z1, p.pianoLetto)
-    check near(m.find("soffitto nicchia").z1, p.catenaFronte[5])
+    check near(m.find("soffitto nicchia").z1, p.soffittoNicchia)
     # tre fianchi per lato, spezzati dai pannelli lunghi
     for lato in ["sx", "dx"]:
       var h = 0.0
@@ -103,13 +129,13 @@ suite "parete di riferimento":
       h += sc.size.z
     check near(h + 2 * p.spessore, p.altezza)
     var ps = rilievo()
-    ps.risegaScoperta = true
+    ps.libreria.risegaRivestita = false
     let ms = parete(ps)
     check not ms.has("schienale colonna basso") and not ms.has("pannellino risega basso")
     check ms.find("risega (muro, carta da parati)").kind == kWall
     check near(ms.find("piano letto").taccheP[0].z, p.profColonna)
     check near(ms.find("divisorio").y1, p.profColonna)
-    check ps.controlli.len == 0
+    check ps.controlli.len == 1
 
   test "nell'esploso i cassetti restano tra i loro fianchi":
     for q in m.parts:
@@ -127,8 +153,8 @@ suite "parete di riferimento":
       if q.name == "fianco gradini":
         inc fianchi
         check near(q.pos.z, 0) and near(q.z1, p.pianoLetto - p.spessore)
-    check n == p.nGradini and fianchi == 2
-    check near(m.find("fondo gradini").pos.y, p.spessore + p.profGradini)
+    check n == p.bassa.nGradini and fianchi == 2
+    check near(m.find("fondo gradini").pos.y, p.spessore + p.bassa.profGradini)
 
   test "i cassetti scorrono tra due fianchi fissi":
     var n = 0
@@ -155,22 +181,30 @@ suite "parete di riferimento":
     check m.find("piano letto").x1 >= com.x1
 
   test "comodino a filo della risega, scaffali meno profondi":
-    check abs(m.find("piano testata (comodino)").size.x - p.risegaLarga) < 0.2
+    let com = m.find("piano testata (comodino)")
+    check near(com.size.x, p.muro.risegaLarga) and near(com.pos.x + p.spessore, p.xRisega)
     check near(m.find("ripiano libreria").size.x, 26.5)
 
-  test "controlli: niente da segnalare, ma il materasso da 80 non entra":
-    check p.controlli.len == 0
+  test "controlli: solo il bordo di 10 cm; il materasso da 80 non entra":
+    check p.controlli.len == 1 and "bordo" in p.controlli[0]
+    check fuoriMuro(p, m).len == 0
     var p3 = rilievo()
-    p3.materasso[1] = 80
-    check p3.controlli.len == 1 and "materasso largo 80" in p3.controlli[0]
+    p3.materasso.larghezza = 80
+    check p3.controlli.len == 2 and "materasso largo 80" in p3.controlli[0]
+
+  test "materasso centrato: il gioco si calcola":
+    let mat = m.find("materasso")
+    let (gL, gP) = p.giocoMaterasso
+    check near(gL, 2.3) and near(gP, 0.1)
+    check near(mat.pos.x - p.spessore, gL) and near(mat.pos.y - p.spessore, gP)
 
   test "variante con tavolino":
     let pt = rilievo().conTavolino
     let mt = parete(pt)
     # il fronte ha un'apertura sola al posto dei primi 3 gradini
-    check mt.find("fronte").holes.len == 1 + (pt.nGradini - pt.gradiniTavolino) + 1
+    check mt.find("fronte").holes.len == 1 + (pt.bassa.nGradini - pt.tavolino.gradini) + 1
     let fr = mt.find("frontale tavolino")
-    check fr.holes.len == pt.gradiniTavolino and fr.gruppo == "tavolino"
+    check fr.holes.len == pt.tavolino.gradini and fr.gruppo == "tavolino"
     # estratto del tutto: il retro arriva al fronte del mobile
     var yMax = -Inf
     for q in mt.parts:
@@ -193,18 +227,18 @@ suite "parete di riferimento":
     var ripiani = 0
     for q in mt.parts:
       if q.name == "ripiano gradino" and q.gruppo == "tavolino": inc ripiani
-    check ripiani == pt.gradiniTavolino
-    check near(mt.find("fondo cassetti").pos.y, fr.y1 + pt.profCassettiTavolino)
+    check ripiani == pt.tavolino.gradini
+    check near(mt.find("fondo cassetti").pos.y, fr.y1 + pt.tavolino.profCassetti)
     # frontale e apertura a spigoli dritti: tondi solo i vani
     check fr.r == 0
-    check pt.controlli.len == 0
+    check pt.controlli.len == 1
     # chiuso, tutto sta dentro il mobile
     for q in parete(rilievo().conTavolino(aperto = false)).parts:
       if q.gruppo == "tavolino": check q.pos.y >= 0 and q.y1 <= pt.profondita
 
   test "variante: antina ribaltabile sotto il tavolino":
     var pa = rilievo().conTavolino(aperto = false)
-    pa.antinaTavolino = true
+    pa.tavolino.antina = true
     let ma = parete(pa)
     let a = ma.find("antina tavolino")
     let piano = ma.find("piano tavolino")
@@ -214,11 +248,11 @@ suite "parete di riferimento":
     check a.pos.y > ma.find("fondo cassetti").y1
     for q in ma.parts:
       if q.name == "gamba tavolino": check a.y1 < q.pos.y
-    check pa.controlli.len == 0
+    check pa.controlli.len == 1
     # aperta, con il tavolino estratto: affiancata a destra, alla quota del piano
     var po = rilievo().conTavolino(aperto = true)
-    po.antinaTavolino = true
-    po.antinaAperta = true
+    po.tavolino.antina = true
+    po.disegno.antinaAperta = true
     let mo = parete(po)
     let ao = mo.find("antina tavolino")
     let pianoO = mo.find("piano tavolino")
@@ -237,11 +271,11 @@ suite "parete di riferimento":
     check near(sc.z1, primo)                             # appesa sotto il primo scaffale
     let wBase = m.find("piano testata (comodino)").holesPiano[0].w
     var pc = rilievo()
-    pc.preseSulComodino = true
+    pc.prese.sulComodino = true
     let mc = parete(pc)
     let sc2 = mc.find(nome)
     let com = mc.find("piano testata (comodino)")
     check near(sc2.pos.z, com.z1)                        # appoggiata sul comodino
     let h = com.holesPiano[0]
     check h.x + h.w <= sc2.pos.x - 1.9 and h.w < wBase   # il gavone si stringe
-    check pc.controlli.len == 0
+    check pc.controlli.len == 1

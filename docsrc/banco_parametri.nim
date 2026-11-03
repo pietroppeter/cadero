@@ -24,7 +24,7 @@ var
 
 proc iniziale(): Parete =
   result = rilievo()
-  result.cassettoAperto = -1     # nel visore tutto parte chiuso: si apre toccando
+  result.disegno.cassettoAperto = -1   # nel visore tutto parte chiuso: si apre toccando
 
 proc controlliHtml(): string =
   ## I cursori, un gruppo per riquadro (`<details>`).
@@ -47,6 +47,7 @@ proc controlliHtml(): string =
           q.campo & "\" min=\"" & $q.min & "\" max=\"" & $q.max & "\" step=\"" & $q.passo &
           "\" value=\"" & $v & "\" aria-label=\"" & q.etichetta & "\"></div>"
         if q.nota.len > 0: result.add "<small>" & q.nota & "</small>"
+        if q.campo.startsWith("libreria.vani."): result.add "<small class=\"vano\"></small>"
         result.add "</div>"
     result.add "</details>"
 
@@ -65,6 +66,16 @@ proc allinea() =
       if diverso: inc cambiati
       let r = document.querySelector(cstring("[data-riga=\"" & q.campo & "\"]"))
       if r != nil: r.toggleClass("cambiato", diverso)
+  # i vani: se ne vedono n + 1; accanto, quanto vale ciascuno (fissato o libero)
+  let q = sicuro(p)
+  let v = q.vani
+  for i in 0 ..< maxVani:
+    let r = document.querySelector(cstring("[data-riga=\"libreria.vani." & $i & "\"]"))
+    if r == nil: continue
+    r.nascosto(i > q.libreria.scaffali)
+    if i < v.len:
+      let fissato = i < q.libreria.vani.len and q.libreria.vani[i] > 0
+      r.querySelector(".vano").textContent = cstring((if fissato: "fissato: " else: "libero: ") & fmtNum(v[i]) & " cm")
   el("n-cambiati").textContent = cstring(if cambiati == 0: "valori del rilievo"
                                          else: $cambiati & " parametri cambiati")
 
@@ -75,9 +86,7 @@ proc aggiorna() =
   try:
     let m = parete(q)
     if visoreAvviato: mostra(m)
-    avvisi = q.controlli & fuoriLastra(m)
-    for d in q.derivate:
-      if d.allarme: avvisi.add d.nome.toLowerAscii & ": " & fmtNum(d.valore) & " cm (" & d.formula & ")"
+    avvisi = q.controlli & fuoriMuro(q, m) & fuoriLastra(m)
     el("tavola-attuale").html(tavola(q, m))
     el("tavola-proposta").html(tavolaProposta(q, m))
   except Exception as e:
@@ -91,7 +100,7 @@ proc aggiorna() =
   var r = "L <b>" & fmtNum(q.larghezza) & "</b> × H <b>" & fmtNum(q.altezza) & "</b> × P <b>" &
     fmtNum(q.profondita) & "</b>"
   for d in q.derivate:
-    if d.nome in ["Bordo sopra il materasso", "Schienale della testata", "Spazio tra zona bassa e piano letto"]:
+    if d.nome in ["Bordo davanti al materasso", "Schienale sopra il materasso", "Spazio tra le ribalte"]:
       r.add " · <span" & (if d.allarme: " class=\"allarme\"" else: "") & ">" &
         d.nome.toLowerAscii & " <b>" & fmtNum(d.valore) & "</b></span>"
   el("riassunto").html(r)

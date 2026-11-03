@@ -13,6 +13,16 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   perché descriva lo stato attuale del branch (regola del progetto).
 - Unità: centimetri. Assi: `x` larghezza (da sinistra guardando il fronte),
   `y` profondità (0 sul fronte, verso il muro), `z` altezza (0 a terra).
+- I parametri della parete sono divisi in gruppi, un oggetto per gruppo (revisione di
+  Pietro): `p.muro` (vincoli del muro: misure della stanza, massime, da cui parte
+  tutto), `p.costruzione`, `p.altezze`, `p.materasso`, `p.libreria`, `p.cornice`,
+  `p.bassa`, `p.alta`, `p.frontali`, `p.prese`, `p.tavolino` e `p.disegno` (solo cosa
+  disegnare aperto). Ogni misura si prende da un riferimento (muro, risega, base letto,
+  soffitto della nicchia); le altre si calcolano in procedure con nome (`altezza`,
+  `nicchiaH`, `bordo`, `schienale`, `gapAlti`, `vani`...). Un parametro nuovo va
+  descritto anche in `models/parete_parametri.nim` (cursori e tabelle).
+- I vincoli soft (schienale ≥ 40, bordo ≥ 16, spazio tra frontali ≥ spazio minimo,
+  vano minimo) sono in `controlli(p)`; `fuoriMuro(p, m)` verifica che niente esca dal muro.
 - Un mobile = oggetto di parametri + funzione che restituisce un `Model`
   (lista di `Part`, scatole allineate agli assi) + funzione delle quote.
   Le misure derivate si calcolano (es. `altezza` = somma della catena del fronte),

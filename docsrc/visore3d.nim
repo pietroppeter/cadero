@@ -54,11 +54,11 @@ nbJsFromCode(cartaSrc):
       for antina in (if tav: @[false, true] else: @[false]):
         for comodino in [false, true]:
           var p = rilievo()
-          p.cassettoAperto = -1
+          p.disegno.cassettoAperto = -1
           if tav: p = p.conTavolino(aperto = false)
-          p.risegaScoperta = scoperta
-          p.antinaTavolino = antina
-          p.preseSulComodino = comodino
+          p.libreria.risegaRivestita = not scoperta
+          p.tavolino.antina = antina
+          p.prese.sulComodino = comodino
           # (la chiave si scrive a pezzi: nimib ricopia il blocco come testo e
           # un `(if ...) & (if ...)` su più righe non sopravvive alla copia)
           var chiave = "base"

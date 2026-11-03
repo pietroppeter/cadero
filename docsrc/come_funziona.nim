@@ -223,7 +223,11 @@ Due cose da notare, perché valgono anche per la parete:
 
 ## 6. La parete vera
 
-`models/parete.nim` segue lo stesso schema, con più parti. Ecco i passaggi chiave.
+`models/parete.nim` segue lo stesso schema, con più parti. I parametri sono divisi
+in gruppi, un oggetto per gruppo: `p.muro` (le misure della stanza, da cui parte tutto),
+`p.altezze`, `p.materasso`, `p.libreria`, `p.cornice`, `p.bassa`, `p.alta` e altri;
+il documento [I parametri della parete](parametri.html) li spiega tutti. Ecco i
+passaggi chiave.
 """
 
 nbCode:
@@ -231,21 +235,22 @@ nbCode:
 
   let p = rilievo()
   echo "catena del fronte: ", p.catenaFronte
-  echo "altezza (calcolata): ", fmtNum(p.altezza)
-  echo "inizio colonna destra: ", fmtNum(p.xColonna)
+  echo "altezza (quella della stanza): ", fmtNum(p.altezza)
+  echo "inizio della risega: ", fmtNum(p.xRisega)
   echo "libreria: da ", fmtNum(p.baseLibreria), " a ", fmtNum(p.cimaLibreria)
 
 nbText: """
 Le posizioni che il disegno non scrive sono ricavate da poche regole. Per esempio i
-cinque gradini dividono la zona bassa alta 95 in parti uguali, lasciando 5.5 cm tra
+cinque gradini dividono l'altezza delle ante, 95, in parti uguali, lasciando 5.5 cm tra
 l'uno e l'altro:
 """
 
 nbCode:
-  let hGradino = (p.zonaBassa - p.passoGradini * float(p.nGradini - 1)) / float(p.nGradini)
-  echo "altezza di un gradino: ", fmtNum(hGradino)
-  let wAlto = (p.larghezza - 2 * p.margineLato - 2 * p.gapAlti) / 3
-  echo "larghezza di una ribalta alta: ", fmtNum(wAlto)
+  let b = p.bassa
+  let hGradino = (b.altezzaAnte - b.passoGradini * float(b.nGradini - 1)) / float(b.nGradini)
+  echo "altezza di un gradino: ", fmtNum(hGradino)    # è anche p.hGradino
+  let gap = (p.larghezza - 2 * b.margineLato - 3 * p.alta.larghezzaRibalta) / 2
+  echo "spazio tra le ribalte alte: ", fmtNum(gap)     # è anche p.gapAlti
 
 nbText: """
 La funzione `parete(p)` usa queste formule per aggiungere le parti in gruppi:
