@@ -81,6 +81,7 @@ __BACK__
       <span class="label">Mobile</span>
       <button id="m-base" type="button" aria-pressed="true">Base</button>
       <button id="m-tavolino" type="button" aria-pressed="false">Con tavolino</button>
+      <button id="m-risega" type="button" aria-pressed="false" title="Senza i pannelli che rivestono la risega: si vede il muro con la carta da parati">Scopri risega</button>
     </div>
     <div class="group" role="group" aria-label="Apertura">
       <span class="label">Apertura</span>
@@ -132,7 +133,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // due modelli generati dal codice Nim, tutto chiuso: il mobile base e la
 // variante con il tavolino. Le parti con un "gruppo" si aprono toccandole.
-const models = { base: __MODEL__, tavolino: __MODEL_TAVOLINO__ };
+// le varianti: base o con tavolino, con la risega rivestita o scoperta
+const models = { base: __MODEL__, tavolino: __MODEL_TAVOLINO__,
+                 baseScoperta: __MODEL_SCOPERTA__, tavolinoScoperta: __MODEL_TAVOLINO_SCOPERTA__ };
 const carta = __CARTA__;   // la carta da parati sul muro (facoltativa)
 let model = models.base;
 const el = document.getElementById('stage');
@@ -224,11 +227,15 @@ function build(m) {
   const byName = {}, wrapByName = {};
   // il contenitore che l'esploso sposta: uno per gruppo, uno per ogni altra parte
   function wrapOf(p) {
-    if (p.gruppo && wrapByName[p.gruppo]) return wrapByName[p.gruppo].wrap;
+    const chiave = p.blocco || p.gruppo;   // il blocco tiene insieme più gruppi
+    if (chiave && wrapByName[chiave]) {
+      if (p.apre) wrapByName[chiave].apribile = true;
+      return wrapByName[chiave].wrap;
+    }
     const pz = { wrap: new THREE.Group(), fisso: p.kind === 'muro', fronte: p.name === 'fronte',
                  apribile: !!p.apre };
     group.add(pz.wrap); pezzi.push(pz);
-    if (p.gruppo) wrapByName[p.gruppo] = pz;
+    if (chiave) wrapByName[chiave] = pz;
     return pz.wrap;
   }
   for (const p of m.parts) {
@@ -526,18 +533,24 @@ tEsploso.addEventListener('click', () => {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { esploso = esplosoTarget; applyEsploso(); }
 });
 // cambio di variante: si ricostruisce la scena con l'altro modello
-for (const name of Object.keys(models)) {
-  const btn = document.getElementById('m-' + name);
-  btn.addEventListener('click', () => {
-    model = models[name];
-    for (const n of Object.keys(models)) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === name));
-    build(model); applyToggles(); applyEsploso(); pianiTaglio();
-    if (pressed(tSez)) aggiornaSezioni();
-    document.getElementById('v-gambe').hidden = name !== 'tavolino';
-    if (name === 'tavolino') goTo('tavolino');
-    status.textContent = model.parts.length + ' parti';
-  });
+let variante = 'base';
+const tRisega = document.getElementById('m-risega');
+function cambiaModello() {
+  model = models[variante + (pressed(tRisega) ? 'Scoperta' : '')];
+  for (const n of ['base', 'tavolino']) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === variante));
+  build(model); applyToggles(); applyEsploso(); pianiTaglio();
+  if (pressed(tSez)) aggiornaSezioni();
+  document.getElementById('v-gambe').hidden = variante !== 'tavolino';
+  status.textContent = model.parts.length + ' parti';
 }
+for (const name of ['base', 'tavolino'])
+  document.getElementById('m-' + name).addEventListener('click', () => {
+    variante = name; cambiaModello();
+    if (name === 'tavolino') goTo('tavolino');
+  });
+tRisega.addEventListener('click', () => {
+  tRisega.setAttribute('aria-pressed', String(!pressed(tRisega))); cambiaModello();
+});
 applyToggles();
 
 // --- sezioni: tre piani di taglio scelti con i cursori, disegnati in 2D ------

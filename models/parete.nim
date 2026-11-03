@@ -26,6 +26,8 @@ type
     # La colonna destra è profonda solo profondita - sporgenza (73).
     risegaSporge*: float     ## quanto sporge dal muro verso la stanza (note di Pietro: 7)
     risegaLarga*: float      ## quanto è larga lungo la parete (note di Pietro: 38)
+    risegaScoperta*: bool    ## variante: risega senza rivestimento, tappezzata come il muro;
+                             ## altrimenti è rivestita da pannelli sulla faccia larga e sul bordo
     margineLato*: float      ## distanza dei frontali dai bordi (rilevato: 12.5)
     gapAlti*: float          ## spazio tra i cassetti alti (rilevato: 3.75)
     nicchiaX*: float         ## inizio della nicchia da sinistra (rilevato: 16)
@@ -237,7 +239,12 @@ proc parete*(p: Parete): Model =
   # da questi due pannelli: tre per lato. Dietro a destra i pannelli lunghi
   # girano intorno alla risega con una tacca.
   let zA = zAlti - s                         # sotto il soffitto della nicchia
-  let tacca = rrect(L - p.risegaLarga, p.profColonna, p.risegaLarga, p.risegaSporge, 0)
+  # la risega è rivestita (pannello sulla faccia larga e pannellino lungo sul
+  # bordo, spezzati anche loro dai pannelli lunghi) oppure scoperta e tappezzata.
+  # yCol è dove finisce la colonna destra: la faccia della risega o il rivestimento
+  let yCol = if p.risegaScoperta: p.profColonna else: p.profColonna - s
+  let xTacca = if p.risegaScoperta: L - p.risegaLarga else: xCol - s / 2
+  let tacca = rrect(xTacca, yCol, L - xTacca, P - yCol, 0)
   var pianoLetto = part("piano letto", kPanel, 0, s, zL, L, P - s, s)
   var soffitto = part("soffitto nicchia", kPanel, 0, s, zA, L, P - s, s)
   pianoLetto.taccheP.add tacca
@@ -246,17 +253,24 @@ proc parete*(p: Parete): Model =
   result.add soffitto
   for (nome, z0, z1) in [("basso", 0.0, zL), ("medio", p.pianoLetto, zA), ("alto", zAlti, H)]:
     result.add part("fianco sx " & nome, kPanel, 0, s, z0, s, P - s, z1 - z0)
-    result.add part("fianco dx " & nome, kPanel, L - s, s, z0, s, p.profColonna - s, z1 - z0)
+    result.add part("fianco dx " & nome, kPanel, L - s, s, z0, s, yCol - s, z1 - z0)
+    if not p.risegaScoperta:
+      var sc = part("schienale colonna " & nome, kPanel, xTacca, yCol, z0, L - xTacca, s, z1 - z0)
+      var pan = part("pannellino risega " & nome, kPanel, xTacca, yCol + s, z0, s, P - yCol - s, z1 - z0)
+      sc.hiddenFront = true
+      pan.hiddenFront = true
+      result.add sc
+      result.add pan
   # il divisorio tra nicchia e colonna: poggia sul piano letto, arriva alla
   # risega e porta il piano della testata
-  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, p.pianoLetto, s, p.profColonna - s,
+  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, p.pianoLetto, s, yCol - s,
                        p.baseLibreria - s - p.pianoLetto)
   divisorio.hiddenFront = true
   result.add divisorio
   # il muro con la carta da parati, che nella nicchia si vede direttamente;
-  # la risega (il pilastro nel muro) è tappezzata con cura anche lei
+  # la risega (il pilastro nel muro), se scoperta, è tappezzata con cura anche lei
   result.add part("muro (carta da parati)", kWall, 0, P, 0, L, 2, H)
-  result.add part("risega (muro, carta da parati)", kWall, L - p.risegaLarga, p.profColonna, 0,
+  result.add part(if p.risegaScoperta: "risega (muro, carta da parati)" else: "risega (muro)", kWall, L - p.risegaLarga, p.profColonna, 0,
                   p.risegaLarga, p.risegaSporge, H)
 
   # --- nicchia letto -------------------------------------------------------
@@ -273,7 +287,7 @@ proc parete*(p: Parete): Model =
   # --- colonna destra: gavone, comodino, libreria, prese --------------------
   let xc = xCol + s / 2                 # interno della colonna
   let lc = L - s - xc
-  let pc = p.profColonna - s            # fino alla risega
+  let pc = yCol - s                     # fino alla risega o al suo rivestimento
   # il piano della testata copre anche il divisorio: profondo 38 verso il letto
   let xCom = xCol - s / 2
   # il gavone: lo spazio chiuso sotto il comodino, con il fondo nel piano letto.
@@ -360,6 +374,7 @@ proc parete*(p: Parete): Model =
     var f = part("fianco cassetti", kPanel, xf, s, 0, s, p.profCassetti, zL)
     f.hiddenFront = true
     f.gruppo = "fianchi cassetti"
+    f.blocco = "cassetti"             # nell'esploso i cassetti restano tra i loro fianchi
     result.add f
   for i in 0 ..< p.nCassettiBassi:
     let z = zTop - hC - float(i) * (hC + p.gapCassetti)
@@ -375,11 +390,12 @@ proc parete*(p: Parete): Model =
     for q in parti.mitems:
       if q.kind == kPanel: q.hiddenFront = true
       q.apribile("cassetto " & $(i + 1), "tira", p.corsa)
+      q.blocco = "cassetti"
       result.add q
   # anta stretta sotto la colonna destra: si apre verso destra, dentro un
   # bastone appendiabiti da un fianco all'altro, a metà profondità
   let wD = p.colonneBasse[3]
-  let profD = p.profColonna - 2 * s      # la schiena davanti alla risega
+  let profD = yCol - 2 * s               # la schiena davanti alla risega o al rivestimento
   result.scatolaAnta("anta stretta", cx[3], wD, profD)
   var bastone = part("bastone appendiabiti", kAccessory, cx[3], s + profD / 2 - 1.25,
                      p.pianoLetto - s - 7, wD, 2.5, 2.5)

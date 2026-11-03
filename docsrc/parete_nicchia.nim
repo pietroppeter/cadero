@@ -145,14 +145,16 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Posizioni orizzontali** di frontali e aperture, rilevate in scala: margini laterali
   12.5, nicchia da 16 a 181.5 con raggio 18, colonne in basso larghe 71, 29, 52 e 38.5.
 - **Risega del muro**: pilastro dietro a destra per tutta l'altezza, sporge 7 e largo 38.
-  La colonna destra è quindi profonda 73. Non è rivestita: la carta da parati è
-  applicata con cura anche su tutta la risega (Pietro).
+  La colonna destra è quindi profonda 73. È rivestita da un pannello sulla faccia larga
+  e da un pannellino lungo sul bordo sottile, spezzati in tre come i fianchi. Variante
+  `risegaScoperta` (nel visore "Scopri risega"): niente rivestimento, la carta da parati
+  è applicata con cura anche su tutta la risega (Pietro).
 - **Vincoli costruttivi** (Pietro): dietro, ai lati, sopra e sotto c'è il muro, quindi
   niente schienale, niente cielo e niente fondo. Ci sono due soli pannelli lunghi
   orizzontali, da un fianco all'altro: il **piano letto**, che sotto la testata fa da
   fondo al gavone, e il **soffitto della nicchia**, che fa anche da fondo ai vani alti
   (prima erano due pannelli). Dietro a destra hanno una tacca per girare intorno alla
-  risega. I **fianchi** sono tre per lato, spezzati dai due pannelli lunghi. Il
+  risega (e il suo rivestimento). I **fianchi** sono tre per lato, spezzati dai due pannelli lunghi. Il
   divisorio tra nicchia e colonna poggia sul piano letto e porta il comodino.
 - **Materasso** 78 × 190, spesso 17 (su misura: 80 non entra nei 78.2 cm tra fronte e
   muro), appoggiato direttamente sul piano a 104.

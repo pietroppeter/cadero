@@ -63,17 +63,18 @@ suite "parete di riferimento":
 
   test "vincoli costruttivi: muro dietro, ai lati, sopra e sotto":
     check near(p.profColonna, 73)
-    let r = m.find("risega (muro, carta da parati)")
+    let r = m.find("risega (muro)")
     check r.kind == kWall and near(r.y1, p.profondita)
-    # niente schienali, cielo, fondo o rivestimento della risega
-    for nome in ["schienale", "fondo", "cielo", "schienale colonna", "pannellino risega",
-                 "cielo libreria", "fondo gavone", "fondo vani alti", "schiena vani alti"]:
+    # niente schienali, cielo o fondo
+    for nome in ["schienale", "fondo", "cielo", "cielo libreria", "fondo gavone",
+                 "fondo vani alti", "schiena vani alti"]:
       check not m.has(nome)
-    # due soli pannelli lunghi orizzontali, da un muro all'altro, con la tacca per la risega
+    # due soli pannelli lunghi orizzontali, da un muro all'altro, con la tacca per la
+    # risega e il suo rivestimento
     for nome in ["piano letto", "soffitto nicchia"]:
       let q = m.find(nome)
       check near(q.size.x, p.larghezza) and near(q.y1, p.profondita)
-      check q.taccheP.len == 1 and near(q.taccheP[0].z, p.profColonna)
+      check q.taccheP.len == 1 and near(q.taccheP[0].z, p.profColonna - p.spessore)
     check near(m.find("piano letto").z1, p.pianoLetto)
     check near(m.find("soffitto nicchia").z1, p.catenaFronte[5])
     # tre fianchi per lato, spezzati dai pannelli lunghi
@@ -81,10 +82,33 @@ suite "parete di riferimento":
       var h = 0.0
       for t in ["basso", "medio", "alto"]: h += m.find("fianco " & lato & " " & t).size.z
       check near(h + 2 * p.spessore, p.altezza)
-    # il divisorio poggia sul piano letto e arriva alla risega
+    # il divisorio poggia sul piano letto e arriva al rivestimento della risega
     let d = m.find("divisorio")
-    check near(d.pos.z, p.pianoLetto) and near(d.y1, p.profColonna)
+    check near(d.pos.z, p.pianoLetto) and near(d.y1, p.profColonna - p.spessore)
     for row in bom(m): check row.kind != kWall           # il muro non va in distinta
+
+  test "risega rivestita (in tre pezzi come i fianchi) o scoperta":
+    var h = 0.0
+    for t in ["basso", "medio", "alto"]:
+      let sc = m.find("schienale colonna " & t)
+      let pan = m.find("pannellino risega " & t)
+      check near(sc.y1, p.profColonna) and near(pan.y1, p.profondita)
+      check near(pan.pos.x, m.find("divisorio").pos.x)   # stesso piano del divisorio
+      h += sc.size.z
+    check near(h + 2 * p.spessore, p.altezza)
+    var ps = rilievo()
+    ps.risegaScoperta = true
+    let ms = parete(ps)
+    check not ms.has("schienale colonna basso") and not ms.has("pannellino risega basso")
+    check ms.find("risega (muro, carta da parati)").kind == kWall
+    check near(ms.find("piano letto").taccheP[0].z, p.profColonna)
+    check near(ms.find("divisorio").y1, p.profColonna)
+    check ps.controlli.len == 0
+
+  test "nell'esploso i cassetti restano tra i loro fianchi":
+    for q in m.parts:
+      if q.name in ["fianco cassetti", "frontale cassetto", "fianco cassetto"]:
+        check q.blocco == "cassetti"
 
   test "il fronte da solo non sta in una lastra":
     let f = fuoriLastra(m)
