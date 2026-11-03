@@ -48,9 +48,9 @@ type
     rete*: float             ## spazio tra piano e materasso (0: il materasso poggia sul piano)
     # testata e libreria-comodino: in testa al letto, dentro la colonna destra.
     # Decisioni (note di Pietro, dopo il confronto con i nonni):
-    testata*: float          ## piano della testata (= comodino) sopra il piano letto: 55
-                             ## (materasso 17 + 38 di schienale)
-    profScaffali*: float     ## gli scaffali sopra il comodino sono meno profondi: 26
+    testata*: float          ## piano della testata (= comodino) sopra il piano letto: 58
+                             ## (materasso 17 + 41 di schienale; era 55, alzata di 3)
+    profScaffali*: float     ## gli scaffali sopra il comodino sono meno profondi: 26.5
     nVani*: int              ## vani sopra il comodino, fino al soffitto della nicchia: 3
     altezzaLibri*: float     ## altezza utile minima di un vano per i libri (ipotesi: 25)
     # cassetti in basso
@@ -93,7 +93,7 @@ proc rilievo*(): Parete =
     colonneBasse: [71.0, 29, 52, 38.5], spaziBassi: [7.5, 5.5, 8.5],
     nGradini: 5, passoGradini: 5.5, profGradini: 30, nCassettiBassi: 3, gapCassetti: 4,
     pianoLetto: 104, materasso: [190.0, 78, 17], rete: 0,
-    testata: 55, profScaffali: 26, nVani: 3, altezzaLibri: 25,
+    testata: 58, profScaffali: 26.5, nVani: 3, altezzaLibri: 25,
     profCassetti: 75, cassettoAperto: 1, corsa: 60, diamForo: 4,
     preseSulComodino: false, scatolaPrese: [6.0, 16, 9],
     tavolino: false, gradiniTavolino: 3, profTavolino: 76.8, corsaTavolino: 78.6,
@@ -127,7 +127,7 @@ proc profColonna*(p: Parete): float =
   p.profondita - p.risegaSporge
 
 proc baseLibreria*(p: Parete): float =
-  ## 159: il piano della testata, che fa da comodino.
+  ## 162: il piano della testata, che fa da comodino.
   p.pianoLetto + p.testata
 
 proc cimaLibreria*(p: Parete): float =
@@ -141,11 +141,12 @@ proc profComodino*(p: Parete): float =
 
 proc ripiani*(p: Parete): seq[float] =
   ## Quote dei ripiani (piano superiore) dalla base della libreria:
-  ## nVani vani uguali tra il comodino e il cielo della libreria.
-  let s = p.spessore
+  ## nVani vani con la stessa altezza libera tra il comodino e il cielo
+  ## della libreria. Il passo (vano + spessore) è costante: i piani dei
+  ## ripiani stanno a un passo l'uno dall'altro e dal comodino.
   let passo = (p.cimaLibreria - p.baseLibreria) / float(p.nVani)
   for i in 1 ..< p.nVani:
-    result.add float(i) * passo + s / 2
+    result.add float(i) * passo
 
 proc vanoUtile*(p: Parete): float =
   ## Altezza libera di ciascun vano, tolti gli spessori.
@@ -457,8 +458,8 @@ proc controlli*(p: Parete): seq[string] =
   if p.materasso[0] > campata:
     result.add "materasso lungo " & fmtNum(p.materasso[0]) & " ma la campata è " & fmtNum(campata)
   let schiena = p.testata - p.rete - p.materasso[2]
-  if schiena < 38 or schiena > 40:
-    result.add "la testata sporge " & fmtNum(schiena) & " cm sopra il materasso (deciso: 38-40)"
+  if schiena < 40 or schiena > 42:
+    result.add "la testata sporge " & fmtNum(schiena) & " cm sopra il materasso (deciso: 41)"
   if p.vanoUtile < p.altezzaLibri:
     result.add "i vani della libreria sono alti " & fmtNum(p.vanoUtile) &
       " cm: meno di " & fmtNum(p.altezzaLibri) & " per i libri"
@@ -483,9 +484,13 @@ proc fuoriLastra*(m: Model; lastra = [300.0, 150.0]): seq[string] =
         ": non sta in una lastra " & fmtNum(lastra[0]) & " x " & fmtNum(lastra[1])
 
 proc quote*(p: Parete): seq[DimChain] =
-  ## Le stesse quote della tavola di riferimento, ricavate dai parametri.
+  ## Le stesse quote della tavola di riferimento, ricavate dai parametri,
+  ## più quelle della libreria (ripiani e profondità degli scaffali).
   let H = p.altezza
   let m = p.materasso
+  var libreria = @[p.baseLibreria]
+  for h in p.ripiani: libreria.add p.baseLibreria + h
+  libreria.add p.cimaLibreria
   @[
     # prospetto frontale
     DimChain(view: vFront, vertical: true, at: -22, ext: 0, stops: p.catenaFronte),
@@ -496,6 +501,10 @@ proc quote*(p: Parete): seq[DimChain] =
              stops: @[0.0, p.pianoLetto, p.baseLibreria, p.cimaLibreria, H]),
     DimChain(view: vSide, vertical: true, at: p.profondita + 40, ext: p.profondita,
              stops: @[0.0, p.pianoLetto, p.margineBasso + p.zonaBassa + p.fascia]),
+    # i ripiani della libreria: dal piano del comodino al piano di ogni
+    # ripiano e a quello del soffitto della nicchia, un passo uguale
+    DimChain(view: vSide, vertical: true, at: p.profondita + 40, ext: p.profColonna,
+             stops: libreria),
     DimChain(view: vSide, vertical: false, at: -18, ext: 0, stops: @[0.0, p.profondita]),
     # pianta
     DimChain(view: vPlan, vertical: false, at: p.profondita + 18, ext: p.profondita,
@@ -503,6 +512,9 @@ proc quote*(p: Parete): seq[DimChain] =
     DimChain(view: vPlan, vertical: false, at: p.profondita / 2 - 14, ext: p.profondita / 2 - 14,
              stops: @[(p.xColonna - m[0]) / 2, (p.xColonna + m[0]) / 2]),
     DimChain(view: vPlan, vertical: true, at: 60, ext: 60, stops: @[0.0, p.profondita]),
+    # la profondità degli scaffali della libreria, misurata verso il letto
+    DimChain(view: vPlan, vertical: false, at: -10, ext: 0,
+             stops: @[p.larghezza - p.spessore - p.profScaffali, p.larghezza - p.spessore]),
   ]
 
 proc tavola*(p: Parete; m: Model): string =

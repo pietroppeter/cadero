@@ -17,10 +17,10 @@ suite "parete di riferimento":
     let cx = p.colonneX
     check near(cx[3] + p.colonneBasse[3], p.larghezza - p.margineLato)
 
-  test "vista laterale: piano letto 104, testata 55, libreria fino al soffitto":
-    check near(p.baseLibreria - p.pianoLetto, 55)     # testata (= comodino)
+  test "vista laterale: piano letto 104, testata 58, libreria fino al soffitto":
+    check near(p.baseLibreria - p.pianoLetto, 58)     # testata (= comodino)
     check near(p.cimaLibreria, p.soffittoNicchia)     # libreria fino al soffitto
-    check abs(p.vanoUtile - 33.5) < 0.5               # 3 vani da circa 33.5
+    check abs(p.vanoUtile - 32.5) < 0.5               # 3 vani da circa 32.5
     check near(p.soffittoNicchia, 265)                # un pannello solo sotto i vani alti
     check near(p.margineBasso + p.zonaBassa + p.fascia - p.pianoLetto, 27)
 
@@ -56,6 +56,12 @@ suite "parete di riferimento":
   test "i ripiani stanno dentro la libreria":
     for h in p.ripiani:
       check h > 0 and p.baseLibreria + h < p.cimaLibreria
+    # vani con la stessa altezza libera, quella di vanoUtile
+    var piani = @[p.baseLibreria]
+    for h in p.ripiani: piani.add p.baseLibreria + h
+    piani.add p.cimaLibreria
+    for i in 1 ..< piani.len:
+      check near(piani[i] - p.spessore - piani[i - 1], p.vanoUtile)
 
   test "formato delle quote":
     check fmtNum(198.2) == "198.2"
@@ -150,7 +156,7 @@ suite "parete di riferimento":
 
   test "comodino a filo della risega, scaffali meno profondi":
     check abs(m.find("piano testata (comodino)").size.x - p.risegaLarga) < 0.2
-    check near(m.find("ripiano libreria").size.x, 26)
+    check near(m.find("ripiano libreria").size.x, 26.5)
 
   test "controlli: niente da segnalare, ma il materasso da 80 non entra":
     check p.controlli.len == 0
