@@ -10,16 +10,11 @@ const threeVersion* = "0.160.0"
 
 proc toJson*(m: Model): JsonNode =
   ## Il pannello frontale riceve come fori sia le aperture vuote (nicchia,
-  ## gradini) sia le sagome dei frontali, che vanno ad occuparle.
-  var fronts: seq[RRect]
-  for p in m.parts:
-    if p.kind in {kFront, kBox}:
-      fronts.add p.frontRect
+  ## gradini) sia le sagome dei frontali, che vanno ad occuparle (`foriVisti`).
   var parts = newJArray()
   for p in m.parts:
     var holes = newJArray()
-    # solo il pannello frontale riceve le sagome dei frontali come fori
-    let fori = if p.kind == kPanel and p.holes.len > 0: p.holes & fronts else: p.holes
+    let fori = foriVisti(m, p)
     if fori.len > 0:
       for h in fori:
         holes.add %*{"x": h.x, "z": h.z, "w": h.w, "h": h.h, "r": h.r}

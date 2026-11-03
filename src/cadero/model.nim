@@ -78,6 +78,16 @@ proc frontRect*(p: Part): RRect =
   ## Il contorno della parte vista di fronte.
   rrect(p.pos.x, p.pos.z, p.size.x, p.size.z, p.r)
 
+proc foriVisti*(m: Model; p: Part): seq[RRect] =
+  ## Le aperture di una parte come le disegna il 3D. Il pannello frontale
+  ## (un pannello con aperture) riceve come fori anche le sagome dei frontali
+  ## e dei cassetti, che vanno a occuparle; le altre parti tengono le loro.
+  if p.kind == kPanel and p.holes.len > 0:
+    result = p.holes
+    for q in m.parts:
+      if q.kind in {kFront, kBox}: result.add q.frontRect
+  else: result = p.holes
+
 proc add*(m: var Model; p: Part) = m.parts.add p
 
 proc find*(m: Model; name: string): Part =
