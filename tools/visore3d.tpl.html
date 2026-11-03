@@ -31,8 +31,6 @@ h1 { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 5vw, 
 .stage canvas { display: block; width: 100%; height: 100%; }
 .status { position: absolute; left: 12px; bottom: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); pointer-events: none; }
 .bar { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; justify-content: flex-start; }
-button.modo { border-style: dashed; margin-left: 6px; }
-button.modo[aria-pressed="true"] { border-style: solid; background: var(--accent); color: var(--panel); }
 .group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .label { font-family: var(--display); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
 button { font: 500 14px var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
@@ -79,7 +77,6 @@ __BACK__
       <button id="v-gavone" type="button">Gavone</button>
       <button id="v-tavolino" type="button">Gradini</button>
       <button id="v-gambe" type="button" hidden>Sotto il tavolino</button>
-      <button id="v-cammina" class="modo" type="button" aria-pressed="false" title="Senza rotazione: rotella o pizzico vanno avanti e indietro, trascinare sposta">Cammina</button>
     </div>
     <div class="group" role="group" aria-label="Mobile">
       <span class="label">Mobile</span>
@@ -130,7 +127,7 @@ __BACK__
     __TAVOLA__
     <div class="misure">prospetto frontale, vista laterale e pianta con le quote, scala 1:25 @ A4; il cassetto centrale è disegnato aperto</div>
   </section>
-  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Con <strong>Cammina</strong> non si ruota più: guardi nella direzione della vista scelta, vai avanti e indietro con la rotella o il pizzico, e trascinando con un dito (o con il mouse) ti sposti di lato e in su e giù. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
 <script type="importmap">
@@ -169,7 +166,7 @@ scene.add(sun);
 const ply = new THREE.MeshStandardMaterial({ color: 0xe3c9a0, roughness: 0.8 });
 const front = new THREE.MeshStandardMaterial({ color: 0xead3ad, roughness: 0.8 });
 const mats = { "pannello": ply, "frontale": front, "cassetto": front,
-  "materasso": new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }),
+  "materasso": new THREE.MeshStandardMaterial({ color: 0xf3df9a, roughness: 1 }),   // giallo burro
   "foro": new THREE.MeshStandardMaterial({ color: 0x3a2e22 }),
   "accessorio": new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.4 }),
   "muro": new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 1, transparent: true, opacity: 0.45 }) };
@@ -283,7 +280,7 @@ function build(m) {
     if (p.gruppo && p.apre) {
       let u = byName[p.gruppo];
       if (!u) {
-        u = byName[p.gruppo] = { name: p.gruppo, apre: p.apre, corsa: p.corsa,
+        u = byName[p.gruppo] = { name: p.gruppo, apre: p.apre, corsa: p.corsa, alzata: p.alzata || 0,
           pivot: new THREE.Group(), inner: new THREE.Group(), k: 0, target: 0,
           drawnOpen: false, soglia: Infinity };
         // un gruppo "dentro" un altro (l'antina nel tavolino) si muove con lui
@@ -339,6 +336,12 @@ function pose(u) {
   // i coperchi si sollevano nel vuoto e si allontanano un poco l'uno dall'altro
   if (u.apre === 'alza') { u.pivot.position.y = k * u.corsa; u.pivot.position.z = k * 5 * u.verso; }
   if (u.apre === 'solleva') u.pivot.position.y = k * u.corsa;
+  // il materasso sale sopra la fascia e poi esce dalla nicchia verso chi guarda
+  if (u.apre === 'esce') {
+    const f = 0.3;
+    u.pivot.position.y = Math.min(k / f, 1) * u.alzata;
+    u.pivot.position.z = Math.max(0, (k - f) / (1 - f)) * u.corsa;
+  }
   // l'antina scende, gira intorno alla cerniera e si affianca a destra
   if (u.apre === 'ribalta dx') u.pivot.rotation.z = k * Math.PI;
 }
@@ -383,77 +386,13 @@ const views = {
   // di fianco al tavolino estratto, per vedere lo spazio per le gambe
   gambe:    { pos: [-110, 75, 125], target: [95, 35, 30] },
 };
-// modalità "cammina": come muoversi in prima persona senza ruotare. La
-// direzione dello sguardo resta quella della vista scelta; rotella o pizzico
-// vanno avanti e indietro lungo lo sguardo, trascinare con un dito (o con il
-// mouse) sposta nel piano perpendicolare allo sguardo, insieme al punto di
-// rotazione, così uscendo da Cammina non si salta da nessuna parte.
-const tCammina = document.getElementById('v-cammina');
-let cammina = false;
-function vicino() {          // il punto di rotazione appena davanti agli occhi
-  const dir = controls.target.clone().sub(camera.position).normalize();
-  controls.target.copy(camera.position).addScaledVector(dir, 1);
-}
-function sposta(v) { camera.position.add(v); controls.target.add(v); }
-function avanza(cm) {
-  sposta(controls.target.clone().sub(camera.position).normalize().multiplyScalar(cm));
-}
-function trasla(dxPx, dyPx) {   // nel piano dello schermo: 0.4 cm per pixel
-  const destra = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
-  const su = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
-  sposta(destra.multiplyScalar(-dxPx * 0.4).addScaledVector(su, dyPx * 0.4));
-}
-tCammina.addEventListener('click', () => {
-  cammina = !cammina;
-  tCammina.setAttribute('aria-pressed', String(cammina));
-  controls.enabled = !cammina;
-  dita.clear();
-  if (cammina) vicino();
-  else {                         // tornando a ruotare intorno al mobile, il centro è più avanti
-    const dir = controls.target.clone().sub(camera.position).normalize();
-    controls.target.copy(camera.position).addScaledVector(dir, 150);
-  }
-});
-renderer.domElement.addEventListener('wheel', ev => {
-  if (!cammina) return;
-  ev.preventDefault();
-  avanza(Math.max(-40, Math.min(40, -ev.deltaY * 0.12)));
-}, { passive: false });
-// le dita (o il mouse) appoggiate: una sposta, due con il pizzico avanzano
-const dita = new Map();
-let pizzico = null;
-function distanzaDita() {
-  const [a, b] = [...dita.values()];
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-renderer.domElement.addEventListener('pointerdown', ev => {
-  if (!cammina) return;
-  dita.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-  pizzico = dita.size === 2 ? distanzaDita() : null;
-});
-renderer.domElement.addEventListener('pointermove', ev => {
-  if (!cammina || !dita.has(ev.pointerId) || trascina) return;
-  const p = dita.get(ev.pointerId);
-  const dx = ev.clientX - p.x, dy = ev.clientY - p.y;
-  p.x = ev.clientX; p.y = ev.clientY;
-  if (dita.size === 1) trasla(dx, dy);
-  else if (dita.size === 2) {
-    const d = distanzaDita();
-    if (pizzico !== null) avanza((d - pizzico) * 0.6);
-    pizzico = d;
-  }
-});
-function alzaDito(ev) { dita.delete(ev.pointerId); pizzico = dita.size === 2 ? distanzaDita() : null; }
-window.addEventListener('pointerup', alzaDito);
-window.addEventListener('pointercancel', alzaDito);
-
 let anim = null;
 function goTo(name, instant) {
   const v = typeof views[name] === 'function' ? views[name]() : views[name];
   const to = { pos: new THREE.Vector3(...v.pos), target: new THREE.Vector3(...v.target) };
   camera.fov = v.fov || 35; camera.updateProjectionMatrix();
   if (instant || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    camera.position.copy(to.pos); controls.target.copy(to.target); if (cammina) vicino(); controls.update(); return;
+    camera.position.copy(to.pos); controls.target.copy(to.target); controls.update(); return;
   }
   anim = { from: { pos: camera.position.clone(), target: controls.target.clone() }, to, t0: performance.now() };
 }
@@ -522,7 +461,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
   }
 });
 renderer.domElement.addEventListener('pointerup', ev => {
-  if (trascina) { trascina = null; controls.enabled = !cammina; }
+  if (trascina) { trascina = null; controls.enabled = true; }
   if (!down) return;
   const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y), dt = performance.now() - down.t;
   down = null;
@@ -753,7 +692,7 @@ function loop(now) {
     const k = Math.min(1, (now - anim.t0) / 700), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     camera.position.lerpVectors(anim.from.pos, anim.to.pos, e);
     controls.target.lerpVectors(anim.from.target, anim.to.target, e);
-    if (k >= 1) { anim = null; if (cammina) vicino(); }
+    if (k >= 1) anim = null;
   }
   if (esploso !== esplosoTarget) {
     esploso += (esplosoTarget - esploso) * 0.08;

@@ -298,7 +298,10 @@ proc parete*(p: Parete): Model =
   var mat = part("materasso", kSoft, xInt + (lInt - mL) / 2, s,
                  p.pianoLetto + p.rete, mL, mP, mH, r = 3)
   mat.hiddenFront = true
-  mat.apribile("materasso", "solleva", 60)   # nel visore si alza per vedere sotto
+  # nel visore il materasso esce dalla nicchia: sale sopra la fascia e poi
+  # viene avanti fin fuori dal mobile, così da dentro la nicchia si vede tutto
+  mat.apribile("materasso", "esce", P + 20)
+  mat.alzata = c[3] - p.pianoLetto - p.rete + 1
   result.add mat
 
   # --- colonna destra: gavone, comodino, libreria, prese --------------------
