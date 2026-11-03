@@ -23,6 +23,9 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   descritto anche in `models/parete_parametri.nim` (cursori e tabelle).
 - I vincoli soft (schienale ≥ 40, bordo ≥ 16, spazio tra frontali ≥ spazio minimo,
   vano minimo) sono in `controlli(p)`; `fuoriMuro(p, m)` verifica che niente esca dal muro.
+- Il banco del documento `parametri` copia l'elenco dei parametri cambiati come righe
+  `- gruppo.campo (etichetta): prima → dopo`. Se arriva una richiesta con un elenco
+  così, i valori "dopo" vanno in `rilievo()` (aggiorna test e quote che ne dipendono).
 - Un mobile = oggetto di parametri + funzione che restituisce un `Model`
   (lista di `Part`, scatole allineate agli assi) + funzione delle quote.
   Le misure derivate si calcolano (es. `altezza` = somma della catena del fronte),

@@ -33,6 +33,14 @@ button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent);
 .riassunto b { color: var(--accent); font-weight: 400; } .riassunto .allarme b { color: #c0392b; }
 .pannello { display: grid; gap: 10px; align-content: start; min-width: 0; }
 .pannello .testa { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); }
+.pannello .testa { flex-wrap: wrap; } .pannello .testa .azioni { display: flex; gap: 6px; flex-wrap: wrap; }
+.cambiati { font-size: 13.5px; } .cambiati[hidden], .incolla[hidden] { display: none; }
+.cambiati summary { cursor: pointer; color: var(--accent); }
+.cambiati table { border-collapse: collapse; width: 100%; margin-top: 4px; }
+.cambiati td { padding: 2px 6px 2px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.cambiati td.num { font-family: var(--mono, monospace); white-space: nowrap; text-align: right; }
+.cambiati code { font-size: 12px; color: var(--muted); }
+.incolla { display: grid; gap: 6px; } .incolla textarea { width: 100%; box-sizing: border-box; font-family: var(--mono, monospace); font-size: 12.5px; }
 .avvisi { background: #fbeee9; border: 1px solid #e8b9a8; border-radius: 6px; padding: 8px 12px; font-size: 13.5px; color: #7a2d17; }
 .avvisi ul { margin: 0; padding-left: 18px; } .avvisi p { margin: 0; }
 .avvisi.vuoto { background: var(--paper); border-color: var(--line); color: var(--muted); }
@@ -89,6 +97,12 @@ arancio e sopra i cursori compaiono gli avvisi, compresi i vincoli soft (schiena
 almeno 40, bordo almeno 16, spazio tra le ribalte almeno 4). Più sotto: cosa è
 cambiato nel mobile, cosa resta da decidere (con i pulsanti ▶ **Prova**) e le
 quote.
+
+**Per cambiare i valori di default**: sotto *Quali sono cambiati* c'è l'elenco dei
+parametri diversi dal rilievo. **Copia** lo mette negli appunti, una riga per
+parametro (`campo (etichetta): prima → dopo`): incollato in una richiesta basta
+a fare la PR che cambia `rilievo()`. **Incolla** fa il contrario: riparte dal
+rilievo e applica le righe incollate (vanno bene anche righe `campo = valore`).
 """
 
 nbRawHtml: """<section class="banco" id="banco">
@@ -130,7 +144,9 @@ nbRawHtml: """<section class="banco" id="banco">
     </div>
   </div>
   <div class="pannello">
-    <div class="testa"><span id="n-cambiati">valori del rilievo</span><button type="button" id="ripristina">Torna al rilievo</button></div>
+    <div class="testa"><span id="n-cambiati">valori del rilievo</span><span class="azioni"><button type="button" id="copia">Copia</button><button type="button" id="incolla">Incolla</button><button type="button" id="ripristina">Torna al rilievo</button></span></div>
+    <details class="cambiati" id="cambiati" hidden><summary>Quali sono cambiati</summary><div id="elenco-cambiati"></div></details>
+    <div class="incolla" id="box-incolla" hidden><textarea id="testo-incolla" rows="5" placeholder="Incolla qui l'elenco copiato (righe campo: vecchio → nuovo, oppure campo = valore)"></textarea><div><button type="button" id="applica">Applica</button> <button type="button" id="annulla-incolla">Annulla</button> <small id="esito-incolla"></small></div></div>
     <div class="avvisi" id="avvisi"></div>
     <div id="controlli"></div>
   </div>
