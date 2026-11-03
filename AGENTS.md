@@ -29,6 +29,9 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   (coperchi del gavone: si sollevano e si allontanano tra loro). Nel
   visore tutto parte chiuso e si apre toccandolo; il perno è calcolato dal visore
   sullo spigolo del gruppo. Una parte disegnata aperta (y < 0) parte aperta.
+- Nel visore "Esploso" allontana i pezzi dal centro; le parti con lo stesso `gruppo`
+  restano unite. "Sezioni" disegna in SVG, nel browser, pianta, sezione laterale e
+  sezione frontale ai tagli scelti con i cursori (codice in `tools/visore3d.tpl.html`).
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
