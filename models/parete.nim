@@ -69,6 +69,9 @@ type
     gambaTavolino*: float    ## larghezza delle gambe dietro, pannelli alti e sottili messi
                              ## di traverso, paralleli al frontale (ipotesi: 8)
     tavolinoAperto*: bool    ## disegnarlo estratto
+    antinaTavolino*: bool    ## variante del tavolino: sotto il piano, dietro i cassetti-gradino,
+                             ## un'antina che si ribalta a destra e allarga il piano
+    antinaAperta*: bool      ## disegnarla aperta (solo con il tavolino estratto)
     diamForo*: float         ## fori maniglia (ipotesi: 4)
 
 proc rilievo*(): Parete =
@@ -230,6 +233,20 @@ proc parete*(p: Parete): Model =
     for q in t.mitems:
       q.apribile("tavolino", "tira", p.corsaTavolino)
       result.add q
+    # variante: l'antina ribaltabile. Chiusa sta sotto il piano, solo dietro i
+    # cassetti-gradino (tra il loro fondo e le gambe); è incernierata sullo
+    # spigolo destro del piano e, con il tavolino estratto, si ribalta a destra
+    # e si affianca al piano, alla stessa quota. Il fermo non è disegnato.
+    if p.antinaTavolino:
+      let ya = yB + pC + s + 0.5                # dietro il fondo dei cassetti
+      let da = pT - pC - 2 * s - 1              # fino davanti alle gambe
+      var a = if p.antinaAperta and p.tavolinoAperto:
+          part("antina tavolino", kPanel, xT + wT, ya, zP, wT, da, s)
+        else: part("antina tavolino", kPanel, xT, ya, zP - s, wT, da, s)
+      a.apribile("antina tavolino", "ribalta dx")
+      a.dentro = "tavolino"
+      a.blocco = "tavolino"
+      result.add a
 
   # --- struttura -----------------------------------------------------------
   # Dietro, ai lati, sopra e sotto c'è il muro: niente schienale, niente cielo,

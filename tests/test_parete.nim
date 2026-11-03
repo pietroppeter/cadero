@@ -196,3 +196,26 @@ suite "parete di riferimento":
     for q in parete(rilievo().conTavolino(aperto = false)).parts:
       if q.gruppo == "tavolino": check q.pos.y >= 0 and q.y1 <= pt.profondita
 
+  test "variante: antina ribaltabile sotto il tavolino":
+    var pa = rilievo().conTavolino(aperto = false)
+    pa.antinaTavolino = true
+    let ma = parete(pa)
+    let a = ma.find("antina tavolino")
+    let piano = ma.find("piano tavolino")
+    check a.apre == "ribalta dx" and a.dentro == "tavolino"
+    # chiusa: sotto il piano, solo dietro i cassetti-gradino e davanti alle gambe
+    check near(a.z1, piano.pos.z) and near(a.size.x, piano.size.x)
+    check a.pos.y > ma.find("fondo cassetti").y1
+    for q in ma.parts:
+      if q.name == "gamba tavolino": check a.y1 < q.pos.y
+    check pa.controlli.len == 0
+    # aperta, con il tavolino estratto: affiancata a destra, alla quota del piano
+    var po = rilievo().conTavolino(aperto = true)
+    po.antinaTavolino = true
+    po.antinaAperta = true
+    let mo = parete(po)
+    let ao = mo.find("antina tavolino")
+    let pianoO = mo.find("piano tavolino")
+    check near(ao.pos.x, pianoO.x1) and near(ao.pos.z, pianoO.pos.z)
+    # senza la variante non c'è
+    check not parete(rilievo().conTavolino).has("antina tavolino")
