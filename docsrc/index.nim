@@ -25,6 +25,12 @@ nbRawHtml: """
     <span>La parete a tutto schermo da ruotare e zoomare, con viste predefinite
     (anche da dentro la nicchia), cassetto aperto e fronte nascosto.</span>
   </a>
+  <a class="scheda" href="parametri.html">
+    <b>I parametri della parete</b>
+    <span>Bozza per la revisione: tutti i parametri, come dipendono l'uno
+    dall'altro, i problemi trovati, le proposte e le quote, con il visore 3D che
+    cambia muovendo i cursori.</span>
+  </a>
   <a class="scheda" href="visore_nim.html">
     <b>Come è fatto il visore 3D</b>
     <span>Come funziona il visore e come è passato da JavaScript a Nim compilato

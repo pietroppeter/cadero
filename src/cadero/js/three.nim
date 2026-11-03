@@ -152,6 +152,8 @@ proc newCylinderGeometry*(r1, r2, h: float; segmenti: int): BufferGeometry {.imp
 proc newPlaneGeometry*(w, h: float): BufferGeometry {.importjs: "new THREE.PlaneGeometry(@)".}
 proc newExtrudeGeometry*(s: Shape; params: JsObject): BufferGeometry {.importjs: "new THREE.ExtrudeGeometry(@)".}
 proc newEdgesGeometry*(g: BufferGeometry; soglia = 1.0): BufferGeometry {.importjs: "new THREE.EdgesGeometry(@)".}
+proc dispose*(g: BufferGeometry) {.importjs: "#.dispose()".}
+  ## libera la memoria della scheda video (quando la scena si ricostruisce)
 proc translate*(g: BufferGeometry; x, y, z: float): BufferGeometry {.importjs: "#.translate(@)", discardable.}
 proc rotateX*(g: BufferGeometry; a: float): BufferGeometry {.importjs: "#.rotateX(@)", discardable.}
 proc rotateY*(g: BufferGeometry; a: float): BufferGeometry {.importjs: "#.rotateY(@)", discardable.}
