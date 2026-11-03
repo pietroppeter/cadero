@@ -63,11 +63,16 @@ src/cadero/web.nim       JSON + frammento HTML three.js per nimib (vista 3D picc
 src/cadero/visore.nim    il visore 3D (solo backend JS)
 src/cadero/js/           binding three.js (three.nim) e browser (pagina.nim)
 models/parete.nim        parametri rilievo(), parete(p), quote(p), tavola(p, m)
+models/parete_parametri.nim  gruppi dei parametri per le pagine (etichette, intervalli,
+                         origine), misure derivate, schema delle catene, tavola proposta.
+                         Un parametro nuovo di Parete va aggiunto anche qui.
 docsrc/index.nim         indice dei documenti, home di Pages (-> docs/index.html)
 docsrc/parete_nicchia.nim documento della parete (-> docs/parete_nicchia.html)
 docsrc/come_funziona.nim spiegazione del codice (-> docs/come_funziona.html)
 docsrc/visore3d.nim      il visore 3D (-> docs/visore3d.html), template tools/visore3d.tpl.html
 docsrc/visore_nim.nim    come funziona il visore in Nim (-> docs/visore_nim.html)
+docsrc/parametri.nim     i parametri della parete (-> docs/parametri.html): banco con visore
+                         e cursori (docsrc/banco_parametri.nim, solo JS)
 docsrc/all_docs.nim      importa tutti i documenti: un solo binario
 docsrc/tema.nim          tema nimib con lo stile degli artefatti (nbInit(theme = useTema))
 tests/test_parete.nim    controlli sulle quote della tavola di riferimento

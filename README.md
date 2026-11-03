@@ -27,6 +27,11 @@ dall'[indice](https://pietroppeter.github.io/cadero/) (sorgente:
   (sorgente: [`docsrc/visore3d.nim`](docsrc/visore3d.nim), il visore in Nim
   compilato in JavaScript [`src/cadero/visore.nim`](src/cadero/visore.nim) e la
   pagina [`tools/visore3d.tpl.html`](tools/visore3d.tpl.html))
+- [I parametri della parete](https://pietroppeter.github.io/cadero/parametri.html):
+  bozza per la revisione dei parametri e delle quote, con il visore 3D e un cursore
+  per ogni parametro (sorgente: [`docsrc/parametri.nim`](docsrc/parametri.nim),
+  cursori in [`docsrc/banco_parametri.nim`](docsrc/banco_parametri.nim), descrizione
+  dei parametri in [`models/parete_parametri.nim`](models/parete_parametri.nim))
 - [Come è fatto il visore 3D](https://pietroppeter.github.io/cadero/visore_nim.html):
   come funziona il visore e come è passato da JavaScript a Nim (binding di three.js,
   blocco `nbJsFromCode`) (sorgente: [`docsrc/visore_nim.nim`](docsrc/visore_nim.nim))
@@ -44,11 +49,13 @@ src/cadero/web.nim        vista 3D piccola per i documenti (JSON + three.js)
 src/cadero/visore.nim     il visore 3D, in Nim compilato in JavaScript
 src/cadero/js/            binding di three.js e del browser per il visore
 models/parete.nim         il mobile: parametri + funzione che crea le parti + quote
+models/parete_parametri.nim i parametri descritti: gruppi, origine, derivate, quote proposte
 docsrc/index.nim          l'indice dei documenti
 docsrc/parete_nicchia.nim il documento della parete
 docsrc/come_funziona.nim  la spiegazione del codice
 docsrc/visore3d.nim       la pagina del visore 3D (blocco nbJsFromCode)
 docsrc/visore_nim.nim     come funziona il visore in Nim
+docsrc/parametri.nim      i parametri della parete, con il banco (visore + cursori)
 docsrc/all_docs.nim       tutti i documenti in un solo binario (va aggiornato con i nuovi)
 docsrc/tema.nim           il tema dei documenti (stesso stile degli artefatti)
 tools/visore3d.tpl.html   stile e pulsanti del visore
