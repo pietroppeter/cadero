@@ -41,6 +41,7 @@ models/parete.nim         il mobile: parametri + funzione che crea le parti + qu
 docsrc/index.nim          l'indice dei documenti
 docsrc/parete_nicchia.nim il documento della parete
 docsrc/come_funziona.nim  la spiegazione del codice
+docsrc/all_docs.nim       tutti i documenti in un solo binario (va aggiornato con i nuovi)
 docsrc/tema.nim           il tema dei documenti (stesso stile degli artefatti)
 tools/visore3d.nim        genera la pagina del visore 3D
 tests/test_parete.nim     controlli sulle misure
