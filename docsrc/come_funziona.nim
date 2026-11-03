@@ -251,7 +251,7 @@ nbText: """
 La funzione `parete(p)` usa queste formule per aggiungere le parti in gruppi:
 pannello frontale con le aperture, struttura (fianchi, cielo, fondo, schienali,
 divisorio aperto all'altezza della libreria), nicchia (piano letto, soffitto,
-materasso), colonna destra (gavone, ripiani, prese), ribalte in alto e zona bassa.
+materasso), colonna destra (gavone, ripiani, scatola delle prese), ribalte in alto e zona bassa.
 `quote(p)` restituisce le catene di quote, `tavola(p, m)` dispone le tre viste.
 """
 

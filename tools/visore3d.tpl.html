@@ -31,8 +31,6 @@ h1 { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 5vw, 
 .stage canvas { display: block; width: 100%; height: 100%; }
 .status { position: absolute; left: 12px; bottom: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); pointer-events: none; }
 .bar { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; justify-content: flex-start; }
-button.modo { border-style: dashed; margin-left: 6px; }
-button.modo[aria-pressed="true"] { border-style: solid; background: var(--accent); color: var(--panel); }
 .group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .label { font-family: var(--display); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
 button { font: 500 14px var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
@@ -73,19 +71,14 @@ __BACK__
     <div class="group" role="group" aria-label="Viste">
       <span class="label">Vista</span>
       <button id="v-iniziale" type="button" title="Il punto di vista di partenza">Tre quarti</button>
-      <button id="v-fronte" type="button">Fronte</button>
-      <button id="v-nicchia" type="button">Nicchia</button>
       <button id="v-dentro" type="button">Dentro</button>
-      <button id="v-gavone" type="button">Gavone</button>
-      <button id="v-tavolino" type="button">Gradini</button>
-      <button id="v-gambe" type="button" hidden>Sotto il tavolino</button>
-      <button id="v-cammina" class="modo" type="button" aria-pressed="false" title="Senza rotazione: rotella o pizzico vanno avanti e indietro, trascinare sposta">Cammina</button>
     </div>
     <div class="group" role="group" aria-label="Mobile">
       <span class="label">Mobile</span>
       <button id="m-base" type="button" aria-pressed="true">Base</button>
       <button id="m-tavolino" type="button" aria-pressed="false">Con tavolino</button>
       <button id="m-antina" type="button" aria-pressed="false" hidden title="Un'antina sotto il piano del tavolino che si ribalta a destra: con il tavolino aperto, tocca il piano dietro i cassetti">Antina tavolino</button>
+      <button id="m-prese" type="button" aria-pressed="false" title="La scatola con presa, USB-C e interruttore: appesa sotto il primo scaffale o, premuto, appoggiata sul comodino">Prese sul comodino</button>
       <button id="m-risega" type="button" aria-pressed="false" title="Senza i pannelli che rivestono la risega: si vede il muro con la carta da parati">Scopri risega</button>
     </div>
     <div class="group" role="group" aria-label="Apertura">
@@ -130,7 +123,7 @@ __BACK__
     __TAVOLA__
     <div class="misure">prospetto frontale, vista laterale e pianta con le quote, scala 1:25 @ A4; il cassetto centrale è disegnato aperto</div>
   </section>
-  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Con <strong>Cammina</strong> non si ruota più: guardi nella direzione della vista scelta, vai avanti e indietro con la rotella o il pizzico, e trascinando con un dito (o con il mouse) ti sposti di lato e in su e giù. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
 <script type="importmap">
@@ -145,10 +138,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // variante con il tavolino. Le parti con un "gruppo" si aprono toccandole.
 // le varianti: base o con tavolino, con la risega rivestita o scoperta
 // (e, solo con il tavolino, con l'antina ribaltabile)
-const models = { base: __MODEL__, tavolino: __MODEL_TAVOLINO__,
-                 baseScoperta: __MODEL_SCOPERTA__, tavolinoScoperta: __MODEL_TAVOLINO_SCOPERTA__,
-                 tavolinoAntina: __MODEL_TAVOLINO_ANTINA__,
-                 tavolinoScopertaAntina: __MODEL_TAVOLINO_SCOPERTA_ANTINA__ };
+// (con l'antina solo con il tavolino) e con le prese sotto lo scaffale o sul comodino:
+// tutte le combinazioni, generate da tools/visore3d.nim
+const models = __MODELS__;
 const carta = __CARTA__;   // la carta da parati sul muro (facoltativa)
 let model = models.base;
 const el = document.getElementById('stage');
@@ -168,8 +160,45 @@ scene.add(sun);
 
 const ply = new THREE.MeshStandardMaterial({ color: 0xe3c9a0, roughness: 0.8 });
 const front = new THREE.MeshStandardMaterial({ color: 0xead3ad, roughness: 0.8 });
+// il materasso: tessuto avorio, sopra e sotto trapuntato a rombi con un bottoncino
+// a ogni incrocio, sui lati una fascia rigata. Le piastrelle sono di 20 cm.
+function tessuto(disegna) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+  const x = cv.getContext('2d');
+  x.fillStyle = '#f8f3e6'; x.fillRect(0, 0, 128, 128);
+  disegna(x);
+  const t = new THREE.CanvasTexture(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 });
+}
+const trapunta = tessuto(x => {
+  x.strokeStyle = '#d9cfb6'; x.lineWidth = 3;
+  x.beginPath(); x.moveTo(0, 64); x.lineTo(64, 0); x.lineTo(128, 64); x.lineTo(64, 128); x.closePath();
+  x.stroke();
+  x.fillStyle = '#cbbf9f';
+  for (const [a, b] of [[0, 64], [64, 0], [128, 64], [64, 128]]) { x.beginPath(); x.arc(a, b, 4, 0, 7); x.fill(); }
+});
+const fascia = tessuto(x => {
+  x.fillStyle = '#ece6d8';
+  for (let i = 0; i < 128; i += 32) x.fillRect(i, 0, 10, 128);
+  x.fillStyle = '#c9bfa8'; x.fillRect(0, 0, 128, 6); x.fillRect(0, 122, 128, 6);   // i cordoncini
+});
+const matMaterasso = [fascia, fascia, trapunta, trapunta, fascia, fascia];   // ±x, ±y, ±z
+function uvMaterasso(g) {   // uv in cm sulle facce, per ripetere il tessuto a 20 cm
+  const uv = g.attributes.uv, pos = g.attributes.position, nor = g.attributes.normal;
+  g.computeBoundingBox(); const b = g.boundingBox;
+  for (let i = 0; i < uv.count; i++) {
+    const [px, py, pz] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
+    if (Math.abs(nor.getY(i)) > 0.5) uv.setXY(i, px / 20, pz / 20);
+    else {   // sui lati la fascia copre tutta l'altezza, le righe vanno ripetute in lunghezza
+      const u = Math.abs(nor.getX(i)) > 0.5 ? pz : px;
+      uv.setXY(i, u / 20, (py - b.min.y) / (b.max.y - b.min.y));
+    }
+  }
+}
 const mats = { "pannello": ply, "frontale": front, "cassetto": front,
-  "materasso": new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }),
+  "materasso": null,   // vedi sotto: tessuto disegnato su un canvas
   "foro": new THREE.MeshStandardMaterial({ color: 0x3a2e22 }),
   "accessorio": new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.4 }),
   "muro": new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 1, transparent: true, opacity: 0.45 }) };
@@ -266,7 +295,8 @@ function build(m) {
       g.translate(p.x + p.w / 2, p.z + p.h / 2, -(p.y + p.d / 2));
     }
     const obj = new THREE.Group();
-    const mesh = new THREE.Mesh(g, mats[p.kind]);
+    if (p.kind === "materasso") uvMaterasso(g);
+    const mesh = new THREE.Mesh(g, p.kind === "materasso" ? matMaterasso : mats[p.kind]);
     obj.add(mesh);
     if (p.kind !== "foro" && p.kind !== "materasso" && p.kind !== "muro")
       obj.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), edgeMat));
@@ -283,7 +313,7 @@ function build(m) {
     if (p.gruppo && p.apre) {
       let u = byName[p.gruppo];
       if (!u) {
-        u = byName[p.gruppo] = { name: p.gruppo, apre: p.apre, corsa: p.corsa,
+        u = byName[p.gruppo] = { name: p.gruppo, apre: p.apre, corsa: p.corsa, alzata: p.alzata || 0,
           pivot: new THREE.Group(), inner: new THREE.Group(), k: 0, target: 0,
           drawnOpen: false, soglia: Infinity };
         // un gruppo "dentro" un altro (l'antina nel tavolino) si muove con lui
@@ -339,6 +369,12 @@ function pose(u) {
   // i coperchi si sollevano nel vuoto e si allontanano un poco l'uno dall'altro
   if (u.apre === 'alza') { u.pivot.position.y = k * u.corsa; u.pivot.position.z = k * 5 * u.verso; }
   if (u.apre === 'solleva') u.pivot.position.y = k * u.corsa;
+  // il materasso sale sopra la fascia e poi esce dalla nicchia verso chi guarda
+  if (u.apre === 'esce') {
+    const f = 0.3;
+    u.pivot.position.y = Math.min(k / f, 1) * u.alzata;
+    u.pivot.position.z = Math.max(0, (k - f) / (1 - f)) * u.corsa;
+  }
   // l'antina scende, gira intorno alla cerniera e si affianca a destra
   if (u.apre === 'ribalta dx') u.pivot.rotation.z = k * Math.PI;
 }
@@ -373,98 +409,23 @@ const views = {
     const d = Math.max(m.y / 2 / t, m.x / 2 / (t * camera.aspect)) * 1.12 + m.z / 2;
     return { pos: [c.x, c.y, c.z + d], target: [c.x, c.y, c.z] };
   },
-  nicchia: { pos: [-30, 215, 230], target: [175, 180, -40] },
   // dentro la nicchia, al centro e un po' in alto: si vedono libreria, comodino e gavone
   dentro:  { pos: [40, 200, -45], target: [200, 160, -40], fov: 72 },
-  // sopra il comodino, abbastanza lontano da vedere il gavone intero
-  gavone:  { pos: [110, 228, -24], target: [216, 152, -38], fov: 60 },
-  // davanti alla scaletta, un po' da sinistra e dall'alto
-  tavolino: { pos: [-40, 150, 230], target: [110, 40, 10] },
-  // di fianco al tavolino estratto, per vedere lo spazio per le gambe
-  gambe:    { pos: [-110, 75, 125], target: [95, 35, 30] },
 };
-// modalità "cammina": come muoversi in prima persona senza ruotare. La
-// direzione dello sguardo resta quella della vista scelta; rotella o pizzico
-// vanno avanti e indietro lungo lo sguardo, trascinare con un dito (o con il
-// mouse) sposta nel piano perpendicolare allo sguardo, insieme al punto di
-// rotazione, così uscendo da Cammina non si salta da nessuna parte.
-const tCammina = document.getElementById('v-cammina');
-let cammina = false;
-function vicino() {          // il punto di rotazione appena davanti agli occhi
-  const dir = controls.target.clone().sub(camera.position).normalize();
-  controls.target.copy(camera.position).addScaledVector(dir, 1);
-}
-function sposta(v) { camera.position.add(v); controls.target.add(v); }
-function avanza(cm) {
-  sposta(controls.target.clone().sub(camera.position).normalize().multiplyScalar(cm));
-}
-function trasla(dxPx, dyPx) {   // nel piano dello schermo: 0.4 cm per pixel
-  const destra = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
-  const su = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
-  sposta(destra.multiplyScalar(-dxPx * 0.4).addScaledVector(su, dyPx * 0.4));
-}
-tCammina.addEventListener('click', () => {
-  cammina = !cammina;
-  tCammina.setAttribute('aria-pressed', String(cammina));
-  controls.enabled = !cammina;
-  dita.clear();
-  if (cammina) vicino();
-  else {                         // tornando a ruotare intorno al mobile, il centro è più avanti
-    const dir = controls.target.clone().sub(camera.position).normalize();
-    controls.target.copy(camera.position).addScaledVector(dir, 150);
-  }
-});
-renderer.domElement.addEventListener('wheel', ev => {
-  if (!cammina) return;
-  ev.preventDefault();
-  avanza(Math.max(-40, Math.min(40, -ev.deltaY * 0.12)));
-}, { passive: false });
-// le dita (o il mouse) appoggiate: una sposta, due con il pizzico avanzano
-const dita = new Map();
-let pizzico = null;
-function distanzaDita() {
-  const [a, b] = [...dita.values()];
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-renderer.domElement.addEventListener('pointerdown', ev => {
-  if (!cammina) return;
-  dita.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-  pizzico = dita.size === 2 ? distanzaDita() : null;
-});
-renderer.domElement.addEventListener('pointermove', ev => {
-  if (!cammina || !dita.has(ev.pointerId) || trascina) return;
-  const p = dita.get(ev.pointerId);
-  const dx = ev.clientX - p.x, dy = ev.clientY - p.y;
-  p.x = ev.clientX; p.y = ev.clientY;
-  if (dita.size === 1) trasla(dx, dy);
-  else if (dita.size === 2) {
-    const d = distanzaDita();
-    if (pizzico !== null) avanza((d - pizzico) * 0.6);
-    pizzico = d;
-  }
-});
-function alzaDito(ev) { dita.delete(ev.pointerId); pizzico = dita.size === 2 ? distanzaDita() : null; }
-window.addEventListener('pointerup', alzaDito);
-window.addEventListener('pointercancel', alzaDito);
-
 let anim = null;
 function goTo(name, instant) {
   const v = typeof views[name] === 'function' ? views[name]() : views[name];
   const to = { pos: new THREE.Vector3(...v.pos), target: new THREE.Vector3(...v.target) };
   camera.fov = v.fov || 35; camera.updateProjectionMatrix();
   if (instant || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    camera.position.copy(to.pos); controls.target.copy(to.target); if (cammina) vicino(); controls.update(); return;
+    camera.position.copy(to.pos); controls.target.copy(to.target); controls.update(); return;
   }
   anim = { from: { pos: camera.position.clone(), target: controls.target.clone() }, to, t0: performance.now() };
 }
 goTo('iniziale', true);
 
-for (const name of Object.keys(views))
-  document.getElementById('v-' + name).addEventListener('click', () => {
-    goTo(name);
-    // per vedere sotto il tavolino lo si estrae
-    if (name === 'gambe') setOpen(unitByName('tavolino'), true);
-  });
+for (const name of ['iniziale', 'dentro'])   // "fronte" serve solo a calcolare la distanza
+  document.getElementById('v-' + name).addEventListener('click', () => goTo(name));
 
 // toccare una parte apribile la apre o la chiude (un tocco, non un trascinamento)
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -522,7 +483,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
   }
 });
 renderer.domElement.addEventListener('pointerup', ev => {
-  if (trascina) { trascina = null; controls.enabled = !cammina; }
+  if (trascina) { trascina = null; controls.enabled = true; }
   if (!down) return;
   const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y), dt = performance.now() - down.t;
   down = null;
@@ -571,22 +532,22 @@ tEsploso.addEventListener('click', () => {
 let variante = 'base';
 const tRisega = document.getElementById('m-risega');
 const tAntina = document.getElementById('m-antina');
+const tPrese = document.getElementById('m-prese');
 function cambiaModello() {
   tAntina.hidden = variante !== 'tavolino';
   model = models[variante + (pressed(tRisega) ? 'Scoperta' : '') +
-                 (variante === 'tavolino' && pressed(tAntina) ? 'Antina' : '')];
+                 (variante === 'tavolino' && pressed(tAntina) ? 'Antina' : '') +
+                 (pressed(tPrese) ? 'Comodino' : '')];
   for (const n of ['base', 'tavolino']) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === variante));
   build(model); applyToggles(); applyEsploso(); pianiTaglio();
   if (pressed(tSez)) aggiornaSezioni();
-  document.getElementById('v-gambe').hidden = variante !== 'tavolino';
   status.textContent = model.parts.length + ' parti';
 }
 for (const name of ['base', 'tavolino'])
   document.getElementById('m-' + name).addEventListener('click', () => {
     variante = name; cambiaModello();
-    if (name === 'tavolino') goTo('tavolino');
   });
-for (const b of [tRisega, tAntina])
+for (const b of [tRisega, tAntina, tPrese])
   b.addEventListener('click', () => { b.setAttribute('aria-pressed', String(!pressed(b))); cambiaModello(); });
 applyToggles();
 // la tavola sotto il visore si scarica com'è
@@ -753,7 +714,7 @@ function loop(now) {
     const k = Math.min(1, (now - anim.t0) / 700), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     camera.position.lerpVectors(anim.from.pos, anim.to.pos, e);
     controls.target.lerpVectors(anim.from.target, anim.to.target, e);
-    if (k >= 1) { anim = null; if (cammina) vicino(); }
+    if (k >= 1) anim = null;
   }
   if (esploso !== esplosoTarget) {
     esploso += (esplosoTarget - esploso) * 0.08;

@@ -44,10 +44,12 @@ type
     apre*: string       ## come si apre il gruppo nel visore: "" fisso, "tira" (esce verso
                         ## chi guarda), "sx"/"dx" (anta con cerniere a sinistra/destra),
                         ## "su" (ribalta che si alza), "alza" (coperchio che si solleva
-                        ## e si allontana dagli altri), "solleva" (sale e basta),
+                        ## e si allontana dagli altri), "solleva" (sale e basta), "esce"
+                        ## (sale di `alzata` e poi esce verso chi guarda di `corsa`),
                         ## "ribalta dx" (pannello orizzontale incernierato sullo spigolo
                         ## in alto a destra: gira di 180° e si affianca a destra)
-    corsa*: float       ## per "tira": di quanto esce
+    corsa*: float       ## per "tira" ed "esce": di quanto esce
+    alzata*: float      ## per "esce": di quanto sale prima di uscire
     dentro*: string     ## il gruppo apribile che porta con sé questo (es. l'antina dentro
                         ## il tavolino): si apre solo quando quello è aperto
 

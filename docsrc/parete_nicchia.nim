@@ -179,8 +179,12 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
   incernierato sullo spigolo destro del piano. Con il tavolino estratto si ribalta a
   destra e si affianca al piano alla stessa quota, raddoppiandone la larghezza nella parte
   dietro. Il fermo che la tiene aperta non è ancora disegnato.
-- **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
-  comodino: posizione indicativa.
+- **Scatola delle prese** (presa schuko, 2 USB-C e interruttore della luce, placca a 4
+  moduli; ingombro ipotizzato 6 × 16 × 9): contro il fianco destro, vicino al fronte,
+  rivolta verso il letto. Il cavo arriva nel muro a destra, dietro il fianco, e passa da
+  un foro nel fianco. Due posizioni: appesa sotto il primo scaffale (di base) oppure,
+  con `preseSulComodino` (nel visore "Prese sul comodino"), appoggiata sul comodino; in
+  quel caso l'apertura del gavone si stringe e finisce 2 cm prima della scatola.
 - **Cassetti in basso** profondi 75, con cassa (fondo, fianchi, schiena) 1 cm più stretta
   del frontale per lato; scorrono tra due fianchi fissi da terra al piano letto (le guide,
   nel centimetro per lato, non sono disegnate); escono di 60, il centrale è disegnato aperto.
