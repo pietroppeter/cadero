@@ -16,6 +16,9 @@ let tavolino = base.conTavolino(aperto = false)
 var scoperta = base
 scoperta.risegaScoperta = true
 let tavolinoScoperta = scoperta.conTavolino(aperto = false)
+proc conAntina(p: Parete): Parete =
+  result = p
+  result.antinaTavolino = true
 
 # la carta da parati (facoltativa): una piastrella del motivo, che si ripete
 # sul muro; se il file manca il pulsante non compare.
@@ -27,6 +30,8 @@ let carta = if fileExists(cartaFile):
 
 proc paginaVisore(): string =
   readFile(dir / "visore3d.tpl.html")
+    .replace("__MODEL_TAVOLINO_SCOPERTA_ANTINA__", $toJson(parete(tavolinoScoperta.conAntina)))
+    .replace("__MODEL_TAVOLINO_ANTINA__", $toJson(parete(tavolino.conAntina)))
     .replace("__MODEL_TAVOLINO_SCOPERTA__", $toJson(parete(tavolinoScoperta)))
     .replace("__MODEL_TAVOLINO__", $toJson(parete(tavolino)))
     .replace("__MODEL_SCOPERTA__", $toJson(parete(scoperta)))

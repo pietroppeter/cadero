@@ -174,6 +174,11 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
   (1.4 di gioco dal muro) a 62.6 da terra, sopra il terzo gradino. Cassetti-gradino
   profondi 20 (le scatole fisse 30); gambe dietro di traverso, larghe 8. Esce di tutta la sua profondità;
   i fianchi e le gambe scorrono sul pavimento (pattini o feltrini da scegliere).
+- **Antina del tavolino** (variante `antinaTavolino`, nel visore "Antina tavolino"): un
+  pannello sotto il piano, solo dietro i cassetti-gradino (tra il loro fondo e le gambe),
+  incernierato sullo spigolo destro del piano. Con il tavolino estratto si ribalta a
+  destra e si affianca al piano alla stessa quota, raddoppiandone la larghezza nella parte
+  dietro. Il fermo che la tiene aperta non è ancora disegnato.
 - **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
   comodino: posizione indicativa.
 - **Cassetti in basso** profondi 75, con cassa (fondo, fianchi, schiena) 1 cm più stretta

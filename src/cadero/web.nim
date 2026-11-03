@@ -34,7 +34,7 @@ proc toJson*(m: Model): JsonNode =
       "x": p.pos.x, "y": p.pos.y, "z": p.pos.z,
       "w": p.size.x, "d": p.size.y, "h": p.size.z,
       "r": p.r, "holes": holes, "gruppo": p.gruppo, "blocco": p.blocco,
-      "apre": p.apre, "corsa": p.corsa,
+      "apre": p.apre, "corsa": p.corsa, "dentro": p.dentro,
       "holesTop": holesTop, "notchTop": notchTop}
   %*{"name": m.name, "parts": parts}
 
