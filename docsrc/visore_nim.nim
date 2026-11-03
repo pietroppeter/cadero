@@ -5,7 +5,7 @@ import nimib, tema
 import nimib/highlight
 
 nbInit(theme = useTema)
-nb.title = "Il visore 3D in Nim"
+nb.title = "Come è fatto il visore 3D"
 
 let radice = currentSourcePath().parentDir.parentDir
 
@@ -29,7 +29,7 @@ proc mostra(file, inizio: string; fine = "") =
     "<pre><code class=\"nim hljs\">" & highlightNim(codice).strip(chars = {'\n'}) & "</code></pre>"
 
 nbText: """
-# Il visore 3D in Nim
+# Come è fatto il visore 3D
 
 Il [visore 3D](visore3d.html) è la pagina dove la parete si gira, si apre e si
 taglia. Fino a questa versione era una pagina HTML con circa 600 righe di
@@ -128,7 +128,9 @@ documentazione di three.js accanto.
 
 ### Come arriva three.js
 
-three.js si carica da CDN come modulo ES, con un importmap (come prima). Un modulo
+three.js è copiato nel repository (`vendor/three/`, la versione 0.160.0) e la
+generazione dei documenti lo mette in `docs/three/`, accanto alle pagine: nessuna
+chiamata a un CDN. Si carica come modulo ES, con un importmap. Un modulo
 parte *dopo* gli script normali, e quello generato da Nim è uno script normale.
 Allora un piccolo modulo nella pagina mette three.js in `window.THREE` e manda un
 evento; il codice Nim aspetta quell'evento con `quandoThreePronto`:

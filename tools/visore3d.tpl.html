@@ -126,12 +126,13 @@ __BACK__
   <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
-<!-- three.js è un modulo ES: lo si carica con un importmap e lo si mette in
+<!-- three.js è un modulo ES, copiato nel repository (vendor/three, messo in
+     three/ accanto alla pagina: niente CDN): lo si carica con un importmap e lo si mette in
      window.THREE, insieme a OrbitControls, per il codice Nim compilato in JS
      (uno script normale, sotto). L'evento "three-pronto" fa partire il visore. -->
 <script type="importmap">
-{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+{"imports": {"three": "./three/build/three.module.min.js",
+  "three/addons/": "./three/examples/jsm/"}}
 </script>
 <script type="module">
 import * as THREE from 'three';

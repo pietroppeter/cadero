@@ -26,7 +26,7 @@ nbRawHtml: """
     (anche da dentro la nicchia), cassetto aperto e fronte nascosto.</span>
   </a>
   <a class="scheda" href="visore_nim.html">
-    <b>Il visore 3D in Nim</b>
+    <b>Come è fatto il visore 3D</b>
     <span>Come funziona il visore e come è passato da JavaScript a Nim compilato
     in JavaScript: binding di three.js, il blocco nbJsFromCode, la verifica.</span>
   </a>

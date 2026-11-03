@@ -9,6 +9,7 @@
 import std/[json, strutils]
 import nimib
 import nimib/themes as nbThemes
+import ../src/cadero/web
 
 const fonts* = """<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">"""
@@ -96,6 +97,7 @@ func linkIndice(blk: JsonNode, nb: Nb): string =
 
 proc useTema*(nb: var Nb) =
   nbThemes.useDefault(nb)
+  copiaThree($nb.doc.homeDir)   # three.js accanto ai documenti (la vista 3D lo carica da three/)
   nb.doc.context["stylesheet"] = %fonts
   nb.doc.context["highlight"] = %""
   nb.doc.context["nb_style"] = %stile

@@ -27,7 +27,7 @@ dall'[indice](https://pietroppeter.github.io/cadero/) (sorgente:
   (sorgente: [`docsrc/visore3d.nim`](docsrc/visore3d.nim), il visore in Nim
   compilato in JavaScript [`src/cadero/visore.nim`](src/cadero/visore.nim) e la
   pagina [`tools/visore3d.tpl.html`](tools/visore3d.tpl.html))
-- [Il visore 3D in Nim](https://pietroppeter.github.io/cadero/visore_nim.html):
+- [Come è fatto il visore 3D](https://pietroppeter.github.io/cadero/visore_nim.html):
   come funziona il visore e come è passato da JavaScript a Nim (binding di three.js,
   blocco `nbJsFromCode`) (sorgente: [`docsrc/visore_nim.nim`](docsrc/visore_nim.nim))
 

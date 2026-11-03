@@ -70,4 +70,5 @@ nbJsFromCode(cartaSrc):
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
   quandoThreePronto(proc () = avviaVisore(varianti, carta))
 
+copiaThree($nb.doc.homeDir)   # three.js accanto alla pagina, in three/
 nbSave

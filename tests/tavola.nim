@@ -4,6 +4,6 @@ import ../src/cadero, ../models/parete
 let p = rilievo()
 let m = parete(p)
 writeFile("tavola.svg", tavola(p, m))
-writeFile("parete3d.html", "<!doctype html><meta charset=utf-8><body style='margin:0'>" & viewer3d(m, height = 700))
+writeFile("parete3d.html", "<!doctype html><meta charset=utf-8><body style='margin:0'>" & viewer3d(m, height = 700, three = threeCdn))
 for r in bom(m):
   echo r.count, " x ", r.name, " ", fmtNum(r.dims[0]), " x ", fmtNum(r.dims[1]), " x ", fmtNum(r.dims[2])
