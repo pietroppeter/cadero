@@ -33,9 +33,10 @@ button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent);
 .riassunto b { color: var(--accent); font-weight: 400; } .riassunto .allarme b { color: #c0392b; }
 .pannello { display: grid; gap: 10px; align-content: start; min-width: 0; }
 .pannello .testa { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); }
-.pannello .testa { flex-wrap: wrap; } .pannello .testa .azioni { display: flex; gap: 6px; flex-wrap: wrap; }
-.cambiati { font-size: 13.5px; } .cambiati[hidden], .incolla[hidden] { display: none; }
-.cambiati summary { cursor: pointer; color: var(--accent); }
+.pannello .testa { flex-wrap: wrap; }
+.cambiati { font-size: 13.5px; display: grid; gap: 8px; } .incolla[hidden], .pannello .testa a[hidden] { display: none; }
+.cambiati .testa { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); }
+.cambiati .testa .azioni, .pannello .testa .azioni { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .cambiati table { border-collapse: collapse; width: 100%; margin-top: 4px; }
 .cambiati td { padding: 2px 6px 2px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 .cambiati td.num { font-family: var(--mono, monospace); white-space: nowrap; text-align: right; }
@@ -98,11 +99,8 @@ almeno 40, bordo almeno 16, spazio tra le ribalte almeno 4). Più sotto: cosa è
 cambiato nel mobile, cosa resta da decidere (con i pulsanti ▶ **Prova**) e le
 quote.
 
-**Per cambiare i valori di default**: sotto *Quali sono cambiati* c'è l'elenco dei
-parametri diversi dal rilievo. **Copia** lo mette negli appunti, una riga per
-parametro (`campo (etichetta): prima → dopo`): incollato in una richiesta basta
-a fare la PR che cambia `rilievo()`. **Incolla** fa il contrario: riparte dal
-rilievo e applica le righe incollate (vanno bene anche righe `campo = valore`).
+In fondo alla pagina, in **Parametri cambiati**, c'è l'elenco dei parametri diversi
+dal rilievo, con Copia e Incolla per chiedere di cambiare i valori di default.
 """
 
 nbRawHtml: """<section class="banco" id="banco">
@@ -144,9 +142,7 @@ nbRawHtml: """<section class="banco" id="banco">
     </div>
   </div>
   <div class="pannello">
-    <div class="testa"><span id="n-cambiati">valori del rilievo</span><span class="azioni"><button type="button" id="copia">Copia</button><button type="button" id="incolla">Incolla</button><button type="button" id="ripristina">Torna al rilievo</button></span></div>
-    <details class="cambiati" id="cambiati" hidden><summary>Quali sono cambiati</summary><div id="elenco-cambiati"></div></details>
-    <div class="incolla" id="box-incolla" hidden><textarea id="testo-incolla" rows="5" placeholder="Incolla qui l'elenco copiato (righe campo: vecchio → nuovo, oppure campo = valore)"></textarea><div><button type="button" id="applica">Applica</button> <button type="button" id="annulla-incolla">Annulla</button> <small id="esito-incolla"></small></div></div>
+    <div class="testa"><span id="n-cambiati">valori del rilievo</span><span class="azioni"><a href="#parametri-cambiati" id="vai-cambiati" hidden>quali?</a><button type="button" id="ripristina">Torna al rilievo</button></span></div>
     <div class="avvisi" id="avvisi"></div>
     <div id="controlli"></div>
   </div>
@@ -337,6 +333,22 @@ schienale e vani; in pianta risega, materasso con il suo gioco e scaffali.</p>
 # la carta da parati del visore (vedi visore3d.nim)
 let cartaFile = currentSourcePath().parentDir.parentDir / "tools" / "carta-da-parati.jpg"
 let cartaSrc = if fileExists(cartaFile): "data:image/jpeg;base64," & encode(readFile(cartaFile)) else: ""
+
+nbText: """
+## Parametri cambiati
+
+I parametri del banco diversi dal rilievo. **Copia** mette negli appunti una riga per
+parametro (`- gruppo.campo (etichetta): prima → dopo`): incollata in una richiesta
+basta a fare la PR che cambia i valori di default (`rilievo()`). **Incolla** fa il
+contrario: riparte dal rilievo e applica le righe incollate (vanno bene anche righe
+`campo = valore`).
+"""
+
+nbRawHtml: """<section class="cambiati" id="parametri-cambiati">
+  <div class="testa"><span id="n-cambiati-fondo">valori del rilievo</span><span class="azioni"><button type="button" id="copia">Copia</button><button type="button" id="incolla">Incolla</button><a href="#banco">↑ al banco</a></span></div>
+  <div id="elenco-cambiati"></div>
+  <div class="incolla" id="box-incolla" hidden><textarea id="testo-incolla" rows="5" placeholder="Incolla qui l'elenco copiato (righe campo: prima → dopo, oppure campo = valore)"></textarea><div><button type="button" id="applica">Applica</button> <button type="button" id="annulla-incolla">Annulla</button> <small id="esito-incolla"></small></div></div>
+</section>"""
 
 nbRawHtml: """<script type="importmap">
 {"imports": {"three": "./three/build/three.module.min.js",

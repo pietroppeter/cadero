@@ -124,7 +124,7 @@ proc leggiTesto(t: string): (int, seq[string]) =
 
 proc elencoCambiati(): string =
   let c = cambiati()
-  if c.len == 0: return ""
+  if c.len == 0: return "<p>Nessuno: il banco ha i valori del rilievo.</p>"
   result = "<table>"
   for (q, a, b) in c:
     result.add "<tr><td>" & q.etichetta & "<br><code>" & q.campo & "</code></td><td class=\"num\">" &
@@ -156,10 +156,12 @@ proc allinea() =
     if i < v.len:
       let fissato = i < q.libreria.vani.len and q.libreria.vani[i] > 0
       r.querySelector(".vano").textContent = cstring((if fissato: "fissato: " else: "libero: ") & fmtNum(v[i]) & " cm")
-  el("n-cambiati").textContent = cstring(if cambiati == 0: "valori del rilievo"
-                                         elif cambiati == 1: "1 parametro cambiato"
-                                         else: $cambiati & " parametri cambiati")
-  el("cambiati").nascosto(cambiati == 0)
+  let titolo = cstring(if cambiati == 0: "valori del rilievo"
+                       elif cambiati == 1: "1 parametro cambiato"
+                       else: $cambiati & " parametri cambiati")
+  el("n-cambiati").textContent = titolo
+  el("n-cambiati-fondo").textContent = titolo
+  el("vai-cambiati").nascosto(cambiati == 0)
   el("copia").nascosto(cambiati == 0)
   el("elenco-cambiati").html(elencoCambiati())
 
@@ -244,9 +246,7 @@ proc avviaBanco*(carta: Carta) =
     var esito = if n == 0: "nessun parametro riconosciuto" else: "applicati " & $n & " parametri"
     if scarti.len > 0: esito.add " · non capite: " & scarti.join("; ")
     el("esito-incolla").textContent = cstring(esito)
-    if n > 0:
-      el("cambiati").setAttribute("open", "")
-      aggiorna())
+    if n > 0: aggiorna())
   let prove = tutti("button[data-prova]")
   for i in 0 ..< prove.len:
     closureScope:
