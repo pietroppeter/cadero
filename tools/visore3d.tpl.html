@@ -45,6 +45,10 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sezioni { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
 .taglio[data-vista=pianta] { grid-column: 1 / -1; }
 .sezioni[hidden] { display: none; }
+.tavola { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 12px; display: grid; gap: 8px; }
+.tavola h2 { font-family: var(--display); font-weight: 600; font-size: 20px; margin: 0; letter-spacing: 0.01em; }
+.tavola .riga { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tavola svg { display: block; width: 100%; height: auto; border-radius: 4px; }
 .taglio { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 12px; display: grid; gap: 8px; min-width: 0; }
 .taglio h2 { font-family: var(--display); font-weight: 600; font-size: 20px; margin: 0; letter-spacing: 0.01em; }
 .taglio label { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--muted); }
@@ -52,7 +56,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .taglio output { font-family: var(--mono); font-size: 13px; color: var(--fg); min-width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
 .taglio svg { width: 100%; height: auto; max-height: 70vh; display: block; background: #fff; border: 1px solid var(--line); border-radius: 4px; }
 .taglio .riga { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.taglio .misure { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.taglio .misure, .tavola .misure { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 .taglio button { padding: 3px 10px; font-size: 13px; }
 .taglio h2 { cursor: pointer; } .taglio h2::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: #2b8fd6; margin-right: 8px; vertical-align: 2px; }
 .taglio.scelta { border-color: #e04a2f; } .taglio.scelta h2::before { background: #e04a2f; }
@@ -120,6 +124,11 @@ __BACK__
       <div class="misure">guardando verso il muro, a una profondità y dal fronte</div>
     </div>
   </div>
+  <section class="tavola" aria-label="La tavola">
+    <div class="riga"><h2>La tavola</h2><button type="button" id="scarica-tavola">Scarica SVG</button></div>
+    __TAVOLA__
+    <div class="misure">prospetto frontale, vista laterale e pianta con le quote, scala 1:25 @ A4; il cassetto centrale è disegnato aperto</div>
+  </section>
   <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Con <strong>Cammina</strong> non si ruota più: guardi nella direzione della vista scelta, vai avanti e indietro con la rotella o il pizzico, e trascinando con un dito (o con il mouse) ti sposti di lato e in su e giù. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
@@ -552,6 +561,13 @@ tRisega.addEventListener('click', () => {
   tRisega.setAttribute('aria-pressed', String(!pressed(tRisega))); cambiaModello();
 });
 applyToggles();
+// la tavola sotto il visore si scarica com'è
+document.getElementById('scarica-tavola').addEventListener('click', () => {
+  const svg = document.querySelector('.tavola svg');
+  const url = URL.createObjectURL(new Blob([svg.outerHTML], { type: 'image/svg+xml' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'tavola.svg' });
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 
 // --- sezioni: tre piani di taglio scelti con i cursori, disegnati in 2D ------
 // Dal modello (tutto chiuso): le parti tagliate sono piene, quelle oltre il

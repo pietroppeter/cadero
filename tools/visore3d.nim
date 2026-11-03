@@ -32,6 +32,7 @@ proc paginaVisore(): string =
     .replace("__MODEL_SCOPERTA__", $toJson(parete(scoperta)))
     .replace("__MODEL__", $toJson(parete(base)))
     .replace("__CARTA__", carta)
+    .replace("__TAVOLA__", (let p = rilievo(); tavola(p, parete(p))))
 
 proc scriviArtefatto*() =
   ## tools/parete-3d.html: solo il contenuto, per l'artefatto claude.ai.
