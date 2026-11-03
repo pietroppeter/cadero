@@ -245,13 +245,13 @@ nbCode:
   let hGradino = (p.zonaBassa - p.passoGradini * float(p.nGradini - 1)) / float(p.nGradini)
   echo "altezza di un gradino: ", fmtNum(hGradino)
   let wAlto = (p.larghezza - 2 * p.margineLato - 2 * p.gapAlti) / 3
-  echo "larghezza di un cassetto alto: ", fmtNum(wAlto)
+  echo "larghezza di una ribalta alta: ", fmtNum(wAlto)
 
 nbText: """
 La funzione `parete(p)` usa queste formule per aggiungere le parti in gruppi:
 pannello frontale con le aperture, struttura (fianchi, cielo, fondo, schienali,
 divisorio aperto all'altezza della libreria), nicchia (piano letto, soffitto,
-materasso), colonna destra (gavone, ripiani, prese), cassetti alti e zona bassa.
+materasso), colonna destra (gavone, ripiani, prese), ribalte in alto e zona bassa.
 `quote(p)` restituisce le catene di quote, `tavola(p, m)` dispone le tre viste.
 """
 

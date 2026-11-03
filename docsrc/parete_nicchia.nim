@@ -43,7 +43,7 @@ nbText: """
 ## Vista 3D
 
 Per vederla a tutto schermo, con viste predefinite (anche da dentro la nicchia),
-il cassetto aperto e il fronte nascosto: [visore 3D](visore3d.html).
+le parti che si aprono toccandole e l'esploso: [visore 3D](visore3d.html).
 """
 nbRawHtml: viewer3d(m)
 
@@ -72,26 +72,26 @@ nbRawHtml: foglio.render()
 nbText: """
 ## Variante: tavolino estraibile
 
-I primi tre gradini stanno nel frontale di un blocco che si estrae del tutto e sta
-in piedi su quattro gambe corte con pattini; da chiuso le gambe dietro arrivano vicino
-allo schienale del mobile, senza toccarlo. Il piano del blocco fa da tavolino; chiuso, è di nuovo una scaletta.
-Il volume dietro i gradini, che prima restava vuoto, diventa il corpo del tavolino.
-
-Sotto il piano il blocco è pieno: per sedersi serve l'**aletta a libro**. Chiusa sta
-sopra il piano; aperta ruota sulla cerniera del bordo sinistro e finisce a fianco,
-alla stessa altezza, sostenuta da due gambe a ribalta: il piano raddoppia e sotto
-l'aletta c'è lo spazio per le gambe.
+I primi tre gradini stanno nel frontale di un blocco che si estrae del tutto. Il
+frontale ha gli spigoli dritti (tondi sono solo i vani) e nasconde il piano, che fa
+da tavolino. Davanti i gradini sono cassetti senza frontale: due fianchi da terra al
+piano, un fondo in comune dietro e un ripiano sotto ogni gradino. Dietro i cassetti
+non c'è altro, solo due gambe a pannello alte e sottili sotto il piano, messe di
+traverso agli angoli: tengono il blocco anche di lato e lasciano libero il fianco,
+da dove entrano le gambe di chi si siede. Da chiuso le gambe arrivano vicino al muro, senza
+toccarlo, ed è di nuovo una scaletta.
 """
 
 nbCode:
-  let pt = rilievo().conTavolino(alettaAperta = true)
+  let pt = rilievo().conTavolino
   let mt = parete(pt)
   let piano = mt.find("piano tavolino")
-  let aletta = mt.find("aletta")
-  echo "piano con l'aletta aperta: ", fmtNum(piano.size.x + aletta.size.x), " × ",
-       fmtNum(aletta.size.y), " cm, alto ", fmtNum(piano.z1), " da terra"
-  echo "spazio per le gambe sotto l'aletta: ", fmtNum(aletta.size.x - 3), " × ",
-       fmtNum(aletta.pos.z), " cm"
+  let fondo = mt.find("fondo cassetti")
+  let gamba = mt.find("gamba tavolino")
+  echo "piano: ", fmtNum(piano.size.x), " × ", fmtNum(piano.size.y), " cm, alto ",
+       fmtNum(piano.z1), " da terra"
+  echo "spazio per le gambe, seduti di lato: largo ", fmtNum(gamba.pos.y - fondo.y1),
+       ", sotto il piano ", fmtNum(piano.size.x), ", alto ", fmtNum(piano.pos.z), " cm"
 
   var foglioT = initSheet()
   let fronteT = View(kind: vFront)
@@ -138,30 +138,42 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Risega del muro**: pilastro dietro a destra per tutta l'altezza, sporge 7 e largo 38.
   La colonna destra è quindi profonda 73. Il rivestimento è a L, per tutta l'altezza:
   la faccia larga è coperta dallo schienale della colonna, il bordo sottile da un
-  pannellino che si unisce allo schienale della nicchia e a quello della colonna.
-- **Materasso** 76 × 190, spesso 17 (su misura: 80 non entra nei 76.4 cm tra fronte e
-  schienale), appoggiato direttamente sul piano a 104.
+  pannellino che si unisce allo schienale della colonna e arriva al muro.
+- **Niente fondo e niente schienale** (Pietro): il mobile poggia sul pavimento con fianchi
+  e divisori, dietro c'è il muro con la carta da parati, che nella nicchia si vede.
+- **Materasso** 78 × 190, spesso 17 (su misura: 80 non entra nei 78.2 cm tra fronte e
+  muro), appoggiato direttamente sul piano a 104.
 - **Testata e libreria** (decisioni dopo il confronto con i nonni): piano della testata
   55 sopra il piano letto (17 di materasso + 38 di schienale), profondo 37.9 a filo della
   risega, fa da comodino. Sopra, fino al soffitto della nicchia (260), tre vani alti
   circa 32 con scaffali profondi 26 appoggiati al fianco destro. Il divisorio è aperto
   tra il comodino (159) e il soffitto; sotto fa da testata.
-- **Gavone**: un vano chiuso dentro la colonna, tra il piano letto (104) e il comodino
-  (159). Come si apre è da decidere.
+- **Gavone**: il vano chiuso dentro la colonna, tra il piano letto (104), che gli fa da
+  fondo, e il comodino (159). Si apre dall'alto: il piano del comodino ha un'apertura
+  stondata (28 × 57.4, a 4 cm dai fianchi e 6 da fronte e schiena) in cui appoggiano due
+  coperchi leggeri da 1 cm, ognuno metà apertura, che si alzano.
 - **Scatole dei gradini**: dietro ogni gradino una scatola aperta sul davanti, profonda
   30 (da definire), come un cassetto senza frontale.
-- **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), profondo 75 (1.4 di
-  gioco dallo schienale), piano
-  a 62.6 da terra (il cielo del terzo gradino). Esce di tutta la sua profondità; quattro
-  gambe corte con pattini. Con l'aletta aperta il piano è 65.2 × 76.8; le gambe dell'aletta, a ribalta, sono da
-  disegnare meglio (da chiusa dove stanno?).
+- **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), piano profondo 76.8
+  (1.4 di gioco dal muro) a 62.6 da terra, sopra il terzo gradino. Cassetti-gradino
+  profondi 20 (le scatole fisse 30); gambe dietro di traverso, larghe 8. Esce di tutta la sua profondità;
+  i fianchi e le gambe scorrono sul pavimento (pattini o feltrini da scegliere).
 - **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
   comodino: posizione indicativa.
-- **Cassetti in basso** profondi 75, il centrale disegnato aperto di 23 cm.
+- **Cassetti in basso** profondi 75, con cassa (fondo, fianchi, schiena) 1 cm più stretta
+  del frontale per lato; escono di 60, il centrale è disegnato aperto.
+- **Ante in basso**: dietro ognuna una scatola con i fianchi da terra al piano letto,
+  che fa da cielo, fondo e schiena. Nell'anta a sinistra due ripiani, a un terzo e due
+  terzi dell'altezza; nell'anta stretta un bastone appendiabiti da fianco a fianco, a
+  metà profondità e 7 cm sotto il cielo.
+- **Vani alti**: un piano sotto, una schiena e due divisori tra le ribalte, profondi
+  quanto la colonna (69.4).
 - **Fori maniglia** di 4 cm; quelli delle ante a 10 cm dal bordo e 12 dall'alto.
 - Le **linee tratteggiate** davanti al mobile nella laterale e nella pianta del disegno
   originale non sono riprodotte: non è chiaro cosa rappresentino.
-- I **cassetti alti** hanno solo il frontale: la profondità non è indicata.
+- In alto ci sono tre vani con **ribalte** che si alzano (nel disegno sembravano cassetti).
+- **Carta da parati** Vårklockor (Josef Frank, Svenskt Tenn): le misure non sono note.
+  Dalla foto il motivo è a mezza caduta; ho assunto rotolo da 53 cm e rapporto di 53.
 """
 
 nbSave

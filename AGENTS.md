@@ -24,8 +24,19 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   si rivede tutto insieme alla fine.
 - Tipi di parte (`Kind`) e come appaiono nelle viste: vedi `src/cadero/drawing.nim`.
   `kWall` è il muro (es. la risega): si disegna tratteggiato, non va in distinta.
-- Parti che si muovono insieme nel 3D (cassetto aperto, tavolino) hanno `gruppo`; sono
-  disegnate aperte (y < 0) e il visore le fa rientrare con un pulsante per gruppo.
+- Le parti apribili si segnano con `apribile(gruppo, apre, corsa)`: `apre` è "tira"
+  (cassetti, tavolino), "sx"/"dx" (ante, lato della cerniera), "su" (ribalte) o "alza"
+  (coperchi del gavone: si sollevano e si allontanano tra loro) o "solleva" (il
+  materasso, sale per far vedere sotto). Nel
+  visore tutto parte chiuso e si apre toccandolo; il perno è calcolato dal visore
+  sullo spigolo del gruppo. Una parte disegnata aperta (y < 0) parte aperta.
+- Nel visore "Esploso" allontana i pezzi dal centro; le parti con lo stesso `gruppo`
+  restano unite. "Sezioni" disegna in SVG, nel browser, pianta, sezione laterale e
+  sezione frontale ai tagli scelti con i cursori (codice in `tools/visore3d.tpl.html`).
+- Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
+  nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
+- La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
+  106 × 52.6 cm, Vårklockor di Josef Frank); se manca il pulsante non compare.
 - Le varianti sono funzioni sui parametri (es. `rilievo().conTavolino`); il visore 3D
   riceve un modello per variante (`__MODEL__`, `__MODEL_TAVOLINO__`).
 - Le cose che non tornano (misure che non ci stanno, decisioni in conflitto) vanno in

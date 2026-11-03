@@ -29,8 +29,9 @@ suite "parete di riferimento":
 
   test "tutto sta dentro l'ingombro (tranne il cassetto aperto)":
     for q in m.parts:
-      if q.kind in {kBox, kKnob} and q.pos.y < 0: continue
+      if q.gruppo != "" and q.pos.y < 0: continue   # aperto
       if q.kind == kSoft: continue      # il materasso lo verificano i controlli
+      if q.name == "muro (carta da parati)": continue   # il muro dietro, fuori dal mobile
       check q.pos.x >= -0.01 and q.x1 <= p.larghezza + 0.01
       check q.pos.z >= -0.01 and q.z1 <= p.altezza + 0.01
       check q.pos.y >= -0.01 and q.y1 <= p.profondita + 0.01
@@ -42,7 +43,7 @@ suite "parete di riferimento":
   test "distinta":
     var cassetti = 0
     for r in bom(m):
-      if r.kind == kBox: cassetti += r.count
+      if r.name == "frontale cassetto": cassetti += r.count
     check cassetti == p.nCassettiBassi
 
   test "variante: cambiando la nicchia cambia l'altezza":
@@ -72,7 +73,9 @@ suite "parete di riferimento":
     let sc = m.find("schienale colonna")
     check near(sc.pos.x, pan.pos.x) and near(sc.y1, pan.pos.y)
     check near(m.find("divisorio").y1, sc.pos.y)
-    check near(m.find("schienale").x1, pan.pos.x)
+    # niente fondo e niente schienale: dietro c'è il muro
+    check not m.has("schienale") and not m.has("fondo")
+    check near(m.find("piano letto").y1, p.profondita)
     for row in bom(m): check row.kind != kWall           # il muro non va in distinta
 
   test "una scatola dietro ogni gradino, profonda 30":
@@ -82,6 +85,21 @@ suite "parete di riferimento":
         inc n
         check near(q.pos.y, p.spessore + p.profGradini)
     check n == p.nGradini
+
+  test "gavone: apertura nel comodino e due coperchi":
+    let com = m.find("piano testata (comodino)")
+    check com.holesPiano.len == 1
+    let h = com.holesPiano[0]
+    var n = 0
+    var area = 0.0
+    for q in m.parts:
+      if q.name == "coperchio gavone":
+        inc n
+        area += q.size.x * q.size.y
+        check q.apre == "alza" and near(q.z1, com.z1)
+        check q.pos.x >= h.x and q.x1 <= h.x + h.w and q.pos.y >= h.z and q.y1 <= h.z + h.h
+    check n == 2 and area > 0.95 * h.w * h.h
+    check near(m.find("fondo gavone").z1, p.pianoLetto)
 
   test "comodino a filo della risega, scaffali meno profondi":
     check abs(m.find("piano testata (comodino)").size.x - p.risegaLarga) < 0.2
@@ -108,33 +126,26 @@ suite "parete di riferimento":
     # il piano è un'altezza da tavolino per bambini e sta sotto il quarto gradino
     let piano = mt.find("piano tavolino")
     check piano.z1 > 55 and piano.z1 < 66
-    var gambe = 0
+    # davanti poggia sui fianchi, da terra al piano; dietro su due gambe a pannello
+    var gambe, fianchi = 0
     for q in mt.parts:
-      if q.name == "gamba": inc gambe
-    check gambe == 4
+      if q.name == "gamba tavolino":
+        inc gambe
+        check near(q.pos.z, 0) and near(q.z1, piano.pos.z) and near(q.y1, piano.y1)
+      if q.name == "fianco tavolino":
+        inc fianchi
+        check near(q.pos.z, 0) and near(q.z1, piano.pos.z)
+    check gambe == 2 and fianchi == 2
+    # un ripiano sotto ogni gradino e il fondo dei cassetti a profGradini dal frontale
+    var ripiani = 0
+    for q in mt.parts:
+      if q.name == "ripiano gradino": inc ripiani
+    check ripiani == pt.gradiniTavolino
+    check near(mt.find("fondo cassetti").pos.y, fr.y1 + pt.profCassettiTavolino)
+    # frontale e apertura a spigoli dritti: tondi solo i vani
+    check fr.r == 0
     check pt.controlli.len == 0
     # chiuso, tutto sta dentro il mobile
     for q in parete(rilievo().conTavolino(aperto = false)).parts:
       if q.gruppo == "tavolino": check q.pos.y >= 0 and q.y1 <= pt.profondita
 
-  test "aletta del tavolino":
-    let pa = rilievo().conTavolino(alettaAperta = true)
-    let ma = parete(pa)
-    let piano = ma.find("piano tavolino")
-    let al = ma.find("aletta")
-    check near(al.x1, piano.pos.x)                # aperta, a fianco del piano
-    check near(al.z1, piano.z1)                   # alla stessa altezza
-    check near(piano.size.x + al.size.x, 2 * piano.size.x)
-    var gambe = 0
-    for q in ma.parts:
-      if q.name == "gamba aletta": inc gambe
-    check gambe == 2
-    # chiusa sta sopra il piano e l'apertura nel fronte la contiene
-    let mc = parete(rilievo().conTavolino(aperto = false))
-    let alc = mc.find("aletta")
-    check near(alc.pos.z, mc.find("piano tavolino").z1)
-    var ok = false
-    for h in mc.find("fronte").holes:
-      if near(h.z + h.h, alc.z1): ok = true
-    check ok
-    check pa.controlli.len == 0

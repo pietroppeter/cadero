@@ -22,7 +22,8 @@ dall'[indice](https://pietroppeter.github.io/cadero/) (sorgente:
   (sorgente: [`docsrc/come_funziona.nim`](docsrc/come_funziona.nim))
 - [Visore 3D](https://pietroppeter.github.io/cadero/visore3d.html): la parete a
   tutto schermo, da ruotare e zoomare, con viste predefinite anche da dentro la
-  nicchia, cassetto aperto e fronte nascosto
+  nicchia; cassetti, ante, ribalte e tavolino si aprono toccandoli; esploso e
+  sezioni (pianta, laterale, frontale) con i piani di taglio scelti a mano
   (sorgente: [`tools/visore3d.tpl.html`](tools/visore3d.tpl.html) e
   [`tools/visore3d.nim`](tools/visore3d.nim))
 

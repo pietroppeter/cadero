@@ -31,14 +31,28 @@ type
     size*: Vec3         ## larghezza, profondità, altezza
     r*: float           ## raggio degli angoli visti di fronte
     holes*: seq[RRect]  ## aperture vuote (pannello frontale, frontale del tavolino)
+    holesPiano*: seq[RRect]  ## aperture in un pannello orizzontale, viste dall'alto:
+                             ## x come sempre, `z` e `h` qui sono y e profondità
     hiddenFront*: bool  ## disegnata tratteggiata nel prospetto frontale
-    gruppo*: string     ## parti che si muovono insieme nel 3D (es. "cassetto", "tavolino")
+    gruppo*: string     ## parti che si muovono insieme nel 3D (es. "cassetto 1", "tavolino"):
+                        ## si aprono insieme e nell'esploso restano unite
+    apre*: string       ## come si apre il gruppo nel visore: "" fisso, "tira" (esce verso
+                        ## chi guarda), "sx"/"dx" (anta con cerniere a sinistra/destra),
+                        ## "su" (ribalta che si alza), "alza" (coperchio che si solleva
+                        ## e si allontana dagli altri), "solleva" (sale e basta)
+    corsa*: float       ## per "tira": di quanto esce
 
   Model* = object
     name*: string
     parts*: seq[Part]
 
 proc v3*(x, y, z: float): Vec3 = Vec3(x: x, y: y, z: z)
+
+proc apribile*(p: var Part; gruppo, apre: string; corsa = 0.0) =
+  ## Segna la parte come apribile nel visore 3D, insieme al resto del suo gruppo.
+  p.gruppo = gruppo
+  p.apre = apre
+  p.corsa = corsa
 
 proc part*(name: string; kind: Kind; x, y, z, w, d, h: float; r = 0.0): Part =
   Part(name: name, kind: kind, pos: v3(x, y, z), size: v3(w, d, h), r: r)
@@ -59,6 +73,11 @@ proc find*(m: Model; name: string): Part =
   for p in m.parts:
     if p.name == name: return p
   raise newException(KeyError, "parte non trovata: " & name)
+
+proc has*(m: Model; name: string): bool =
+  ## C'è almeno una parte con questo nome?
+  for p in m.parts:
+    if p.name == name: return true
 
 type BomRow* = object
   name*: string

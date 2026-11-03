@@ -42,7 +42,7 @@ type
     gapCassetti*: float      ## (rilevato: 4)
     # letto
     pianoLetto*: float       ## quota del piano letto: 104
-    materasso*: array[3, float]   ## 190 x 76 x 17 (80 non entra: tra fronte e schienale ci sono 76.4)
+    materasso*: array[3, float]   ## 190 x 78 x 17 su misura (80 non entra: tra fronte e muro ci sono 78.2)
     rete*: float             ## spazio tra piano e materasso (0: il materasso poggia sul piano)
     # nicchia
     sottoCassetti*: float    ## soffitto della nicchia sotto i cassetti alti (rilevato: 5)
@@ -56,17 +56,19 @@ type
     # cassetti in basso
     profCassetti*: float     ## (rilevato: 75)
     cassettoAperto*: int     ## quale cassetto basso disegnare aperto (-1 nessuno)
-    corsa*: float            ## di quanto esce (rilevato: 23)
+    corsa*: float            ## di quanto escono i cassetti (ipotesi: 60, su 75 di profondità)
     # variante: tavolino estraibile al posto dei primi gradini
     tavolino*: bool          ## false: mobile base
     gradiniTavolino*: int    ## quanti gradini, dal basso, stanno nel tavolino (Pietro: 3)
-    profTavolino*: float     ## profondità del blocco: chiuso, le gambe dietro arrivano
-                             ## vicino allo schienale senza toccarlo (ipotesi: 75, 1.4 di gioco)
+    profTavolino*: float     ## profondità del piano: chiuso, le gambe dietro arrivano
+                             ## vicino al muro senza toccarlo (ipotesi: 76.8, 1.4 di gioco)
     corsaTavolino*: float    ## di quanto si estrae nel disegno: tutto (profTavolino + spessore);
-                             ## con le gambe davanti e dietro sta in piedi da solo
+                             ## davanti poggia sui fianchi, dietro sulle due gambe
+    profCassettiTavolino*: float ## profondità dei cassetti-gradino del tavolino (ipotesi: 20,
+                             ## meno delle scatole fisse, per lasciare spazio alle gambe)
+    gambaTavolino*: float    ## larghezza delle gambe dietro, pannelli alti e sottili messi
+                             ## di traverso, paralleli al frontale (ipotesi: 8)
     tavolinoAperto*: bool    ## disegnarlo estratto
-    aletta*: bool            ## aletta a libro sul piano: si apre di lato e raddoppia il piano
-    alettaAperta*: bool      ## disegnarla aperta (solo con il tavolino estratto)
     diamForo*: float         ## fori maniglia (ipotesi: 4)
 
 proc rilievo*(): Parete =
@@ -80,18 +82,17 @@ proc rilievo*(): Parete =
     nicchiaX: 16, nicchiaL: 165.5, raggioNicchia: 18, raggio: 3,
     colonneBasse: [71.0, 29, 52, 38.5], spaziBassi: [7.5, 5.5, 8.5],
     nGradini: 5, passoGradini: 5.5, profGradini: 30, nCassettiBassi: 3, gapCassetti: 4,
-    pianoLetto: 104, materasso: [190.0, 76, 17], rete: 0,
+    pianoLetto: 104, materasso: [190.0, 78, 17], rete: 0,
     sottoCassetti: 5, testata: 55, profScaffali: 26, nVani: 3, altezzaLibri: 25,
-    profCassetti: 75, cassettoAperto: 1, corsa: 23, diamForo: 4,
-    tavolino: false, gradiniTavolino: 3, profTavolino: 75, corsaTavolino: 76.8,
-    tavolinoAperto: false, aletta: true, alettaAperta: false)
+    profCassetti: 75, cassettoAperto: 1, corsa: 60, diamForo: 4,
+    tavolino: false, gradiniTavolino: 3, profTavolino: 76.8, corsaTavolino: 78.6,
+    profCassettiTavolino: 20, gambaTavolino: 8, tavolinoAperto: false)
 
-proc conTavolino*(p: Parete; aperto = true; alettaAperta = false): Parete =
-  ## La variante con il tavolino estraibile (e la sua aletta).
+proc conTavolino*(p: Parete; aperto = true): Parete =
+  ## La variante con il tavolino estraibile.
   result = p
   result.tavolino = true
   result.tavolinoAperto = aperto
-  result.alettaAperta = aperto and alettaAperta
 
 proc altezza*(p: Parete): float =
   ## L'altezza non è un parametro: è la somma della catena del fronte.
@@ -168,18 +169,16 @@ proc parete*(p: Parete): Model =
   let wG = p.colonneBasse[1]
   proc zGradino(i: int): float = zBasso + float(i) * (hGradino + p.passoGradini)
   # con la variante, i primi gradini stanno nel tavolino: il fronte ha
-  # un'unica apertura rettangolare che li contiene
+  # un'unica apertura che li contiene e arriva a terra, perché i fianchi del
+  # tavolino scendono fino al pavimento
   let nT = if p.tavolino: p.gradiniTavolino else: 0
   let xT = cx[1] - s                       # il tavolino è largo quanto le scatole dei gradini
   let wT = wG + 2 * s
-  let zT0 = zBasso - s                     # il fondo del primo gradino è il fondo del tavolino
-  let zT1 = zGradino(nT - 1) + hGradino + s   # il cielo dell'ultimo gradino è il piano
+  let zT1 = zGradino(nT - 1) + hGradino + s   # il piano sta sopra l'ultimo gradino
   for i in nT ..< p.nGradini:
     fronte.holes.add rrect(cx[1], zGradino(i), wG, hGradino, p.raggio)
   if nT > 0:
-    # l'apertura comprende anche l'aletta chiusa, appoggiata sul piano
-    let hAletta = if p.aletta: s else: 0.0
-    fronte.holes.add rrect(xT, zT0, wT, zT1 + hAletta - zT0, p.raggio)
+    fronte.holes.add rrect(xT, 0, wT, zT1, 0)   # spigoli dritti: tondi solo i vani
   result.add fronte
 
   # dietro ogni gradino una scatola aperta sul davanti, come un cassetto senza
@@ -196,50 +195,38 @@ proc parete*(p: Parete): Model =
       q.gruppo = gruppo
       m.add q
   for i in nT ..< p.nGradini:
-    result.scatola(i, s, p.profGradini)
+    result.scatola(i, s, p.profGradini, "scatola gradino " & $(i + 1))
 
   # --- variante: tavolino estraibile ---------------------------------------
-  # Un blocco su gambe con pattini: il frontale porta i primi gradini, dentro ci sono le loro
-  # scatole, il piano in alto fa da tavolino. Chiuso è una scaletta come prima.
+  # Il frontale porta i primi gradini; dietro c'è il piano, nascosto dal frontale.
+  # Davanti i gradini sono cassetti senza frontale: due fianchi da terra al
+  # piano, un fondo in comune dietro e un pannello orizzontale sotto ogni
+  # gradino. Dietro i cassetti non c'è altro: solo due gambe, pannelli alti e
+  # sottili sotto il piano, così sotto la parte dietro c'è spazio per le gambe.
   if nT > 0:
     let y0 = if p.tavolinoAperto: -p.corsaTavolino else: 0.0
     let yB = y0 + s                          # dietro il frontale
     let pT = p.profTavolino
+    let pC = p.profCassettiTavolino          # profondità dei cassetti-gradino
+    let zP = zT1 - s                         # sotto il piano
     var t: seq[Part]
-    var fr = part("frontale tavolino", kFront, xT, y0, zT0, wT, s, zT1 - zT0, p.raggio)
+    var fr = part("frontale tavolino", kFront, xT, y0, 0, wT, s, zT1, 0)
     for i in 0 ..< nT:
       fr.holes.add rrect(cx[1], zGradino(i), wG, hGradino, p.raggio)
     t.add fr
-    t.add part("piano tavolino", kPanel, xT, yB, zT1 - s, wT, pT, s)
-    t.add part("fondo tavolino", kPanel, xT, yB, zT0, wT, pT, s)
-    t.add part("fianco tavolino", kPanel, xT, yB, zT0 + s, s, pT, zT1 - zT0 - 2 * s)
-    t.add part("fianco tavolino", kPanel, xT + wT - s, yB, zT0 + s, s, pT, zT1 - zT0 - 2 * s)
-    t.add part("schiena tavolino", kPanel, xT + s, yB + pT - s, zT0 + s, wT - 2 * s, s,
-               zT1 - zT0 - 2 * s)
-    # quattro gambe corte agli angoli, con pattini che scorrono sul pavimento:
-    # davanti e dietro, così estratto sta in piedi da solo
-    for dx in [s, wT - s - 3]:
-      for dy in [0.0, pT - 3]:
-        t.add part("gamba", kPanel, xT + dx, yB + dy, 0, 3, 3, zT0)
-    # aletta a libro, incernierata sul bordo sinistro del piano, lunga quanto
-    # tutto il tavolino. Chiusa sta sopra il piano; aperta ruota di 180° sulla
-    # cerniera e finisce a fianco, alla stessa altezza del piano, con sotto lo
-    # spazio per le gambe e due gambe a ribalta sul bordo esterno.
-    if p.aletta:
-      let lA = s + pT
-      if p.alettaAperta:
-        t.add part("aletta", kPanel, xT - wT, y0, zT1 - s, wT, lA, s)
-        for dy in [1.0, lA - 4]:
-          t.add part("gamba aletta", kPanel, xT - wT + 1, y0 + dy, 0, 3, 3, zT1 - s)
-      else:
-        t.add part("aletta", kPanel, xT, y0, zT1, wT, lA, s)
-    for q in t.mitems:
-      q.gruppo = "tavolino"
-      result.add q
-    # le scatole dei gradini dentro il blocco: fondo e cielo li danno il fondo
-    # del tavolino, il piano e i cieli dei gradini sotto
+    t.add part("piano tavolino", kPanel, xT, yB, zP, wT, pT, s)
+    t.add part("fianco tavolino", kPanel, xT, yB, 0, s, pC + s, zP)
+    t.add part("fianco tavolino", kPanel, xT + wT - s, yB, 0, s, pC + s, zP)
+    t.add part("fondo cassetti", kPanel, xT + s, yB + pC, 0, wT - 2 * s, s, zP)
     for i in 0 ..< nT:
-      result.scatola(i, yB, p.profGradini, "tavolino", fondo = i > 0, cielo = i < nT - 1)
+      t.add part("ripiano gradino", kPanel, xT + s, yB, zGradino(i) - s, wT - 2 * s, pC, s)
+    # gambe di traverso agli angoli dietro: tengono il blocco anche di lato e
+    # lasciano libero il fianco, da dove entrano le gambe di chi si siede
+    for x in [xT, xT + wT - p.gambaTavolino]:
+      t.add part("gamba tavolino", kPanel, x, yB + pT - s, 0, p.gambaTavolino, s, zP)
+    for q in t.mitems:
+      q.apribile("tavolino", "tira", p.corsaTavolino)
+      result.add q
 
   # --- struttura -----------------------------------------------------------
   result.add part("fianco sx", kPanel, 0, s, 0, s, P - s, H)
@@ -247,21 +234,19 @@ proc parete*(p: Parete): Model =
   # il divisorio è aperto all'altezza della libreria: sotto fa da testata
   # il divisorio arriva fino al rivestimento della risega
   let pDiv = p.profColonna - 2 * s
-  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, s, s, pDiv,
-                       p.baseLibreria - 2 * s)
+  # sotto il piano letto c'è la scatola dell'anta stretta: il divisorio parte da lì
+  var divisorio = part("divisorio", kPanel, xCol - s / 2, s, p.pianoLetto - s, s, pDiv,
+                       p.baseLibreria - p.pianoLetto)
   divisorio.hiddenFront = true
   result.add divisorio
-  var divisorioAlto = part("divisorio alto", kPanel, xCol - s / 2, s, p.cimaLibreria, s, pDiv,
-                           H - s - p.cimaLibreria)
-  divisorioAlto.hiddenFront = true
-  result.add divisorioAlto
   result.add part("cielo", kPanel, s, s, H - s, L - 2 * s, P - s, s)
-  result.add part("fondo", kPanel, s, s, 0, L - 2 * s, P - s, s)
-  result.add part("schienale", kPanel, s, P - s, s, xCol - 1.5 * s, s, H - 2 * s)
+  # niente fondo sul pavimento e niente schienale: dietro c'è il muro con la
+  # carta da parati, che nella nicchia si vede direttamente (Pietro)
+  result.add part("muro (carta da parati)", kWall, 0, P, 0, L, 2, H)
   # la risega (muro, non è un pezzo da costruire) e il suo rivestimento a L,
   # per tutta l'altezza: la faccia larga è coperta dallo schienale della colonna,
   # che parte dal piano del divisorio; il bordo sottile (7 cm, verso la nicchia)
-  # da un pannellino che si unisce allo schienale della nicchia e a quello della colonna
+  # da un pannellino che si unisce allo schienale della colonna e arriva al muro
   result.add part("risega (muro)", kWall, L - p.risegaLarga, p.profColonna, 0,
                   p.risegaLarga, p.risegaSporge, H)
   result.add part("schienale colonna", kPanel, xCol - s / 2, p.profColonna - s, s,
@@ -272,13 +257,15 @@ proc parete*(p: Parete): Model =
   # --- nicchia letto -------------------------------------------------------
   let xInt = s                       # interno della campata sinistra
   let lInt = xCol - s / 2 - s
-  result.add part("piano letto", kPanel, xInt, s, p.pianoLetto - s, lInt, P - 2 * s, s)
-  result.add part("soffitto nicchia", kPanel, xInt, s, p.soffittoNicchia - s, lInt, P - 2 * s, s)
+  # piano e soffitto della nicchia arrivano fino al muro
+  result.add part("piano letto", kPanel, xInt, s, p.pianoLetto - s, lInt, P - s, s)
+  result.add part("soffitto nicchia", kPanel, xInt, s, p.soffittoNicchia - s, lInt, P - s, s)
   let (mL, mP, mH) = (p.materasso[0], p.materasso[1], p.materasso[2])
   # contro il fronte; se è più largo dello spazio interno sporge dietro (vedi controlli)
   var mat = part("materasso", kSoft, xInt + (lInt - mL) / 2, s,
                  p.pianoLetto + p.rete, mL, mP, mH, r = 3)
   mat.hiddenFront = true
+  mat.apribile("materasso", "solleva", 60)   # nel visore si alza per vedere sotto
   result.add mat
 
   # --- colonna destra: gavone, comodino, libreria, prese --------------------
@@ -288,8 +275,20 @@ proc parete*(p: Parete): Model =
   result.add part("fondo gavone", kPanel, xc, s, p.pianoLetto - s, lc, pc, s)
   # il piano della testata copre anche il divisorio: profondo 38 verso il letto
   let xCom = xCol - s / 2
-  result.add part("piano testata (comodino)", kPanel, xCom, s, p.baseLibreria - s,
-                  p.profComodino, pc, s)
+  # il gavone: lo spazio chiuso sotto il comodino, con il fondo al piano letto.
+  # Ci si accede dall'alto: il piano del comodino ha un'apertura stondata in
+  # cui appoggiano due coperchi leggeri, ognuno metà apertura, che si alzano.
+  var com = part("piano testata (comodino)", kPanel, xCom, s, p.baseLibreria - s,
+                 p.profComodino, pc, s)
+  let (xG, yG, wG2, dG) = (xc + 4, s + 6, lc - 8, pc - 12)   # l'apertura del gavone
+  com.holesPiano.add rrect(xG, yG, wG2, dG, 4)
+  result.add com
+  for k in 0..1:
+    var cop = part("coperchio gavone", kPanel, xG + 0.2, yG + 0.2 + float(k) * dG / 2,
+                   p.baseLibreria - 1, wG2 - 0.4, dG / 2 - 0.4, 1, r = 4)
+    cop.hiddenFront = true
+    cop.apribile("coperchio " & $(k + 1), "alza", 14)
+    result.add cop
   # scaffali meno profondi, appoggiati al fianco destro
   let xScaf = L - s - p.profScaffali
   for h in p.ripiani:
@@ -299,39 +298,101 @@ proc parete*(p: Parete): Model =
   result.add part("prese (2 USB-C, 1 schuko)", kAccessory, xc + lc - 14, s, p.baseLibreria + 8,
                   12, 0.6, 7)
 
-  # --- cassetti alti -------------------------------------------------------
+  # --- in alto: tre vani con ribalte che si alzano --------------------------
+  # sotto un piano, dietro una schiena, in mezzo due divisori; ai lati i fianchi
   let wAlto = (L - 2 * p.margineLato - 2 * p.gapAlti) / 3
+  let dV = p.profColonna - 3 * s          # davanti allo schienale della colonna
+  result.add part("fondo vani alti", kPanel, s, s, zAlti - s, L - 2 * s, dV, s)
+  result.add part("schiena vani alti", kPanel, s, s + dV, zAlti - s, L - 2 * s, s, H - zAlti)
   for i in 0..2:
     let x = p.margineLato + float(i) * (wAlto + p.gapAlti)
-    result.add part("frontale cassetto alto", kFront, x, 0, zAlti, wAlto, s, p.cassettiAlti, p.raggio)
-    result.add part("foro", kKnob, x + wAlto / 2, 0, zAlti + p.cassettiAlti / 2,
+    if i > 0:
+      var d = part("divisorio vani alti", kPanel, x - p.gapAlti / 2 - s / 2, s, zAlti, s, dV, H - s - zAlti)
+      d.hiddenFront = true
+      result.add d
+    var rib = part("ribalta alta", kFront, x, 0, zAlti, wAlto, s, p.cassettiAlti, p.raggio)
+    var foro = part("foro", kKnob, x + wAlto / 2, 0, zAlti + p.cassettiAlti / 2,
                     p.diamForo, 0, p.diamForo)
+    rib.apribile("ribalta " & $(i + 1), "su")
+    foro.apribile("ribalta " & $(i + 1), "su")
+    result.add rib
+    result.add foro
 
   # --- zona bassa ----------------------------------------------------------
   let zTop = zBasso + p.zonaBassa
-  result.add part("anta", kFront, cx[0], 0, zBasso, p.colonneBasse[0], s, p.zonaBassa, p.raggio)
-  result.add part("foro", kKnob, cx[0] + p.colonneBasse[0] - 10, 0, zTop - 12,
-                  p.diamForo, 0, p.diamForo)
+  # dietro ogni anta una scatola aperta sul davanti: fianchi da terra fino al
+  # piano letto (che fa da cielo), fondo sotto l'anta, schiena dietro
+  # (le parti della scatola hanno lo stesso gruppo: nell'esploso restano insieme)
+  proc scatolaAnta(m: var Model; nome: string; x, w, prof: float) =
+    let zCielo = p.pianoLetto - s
+    for xf in [x - s, x + w]:
+      var f = part("fianco " & nome, kPanel, xf, s, 0, s, prof + s, zCielo)
+      f.hiddenFront = true
+      f.gruppo = "scatola " & nome
+      m.add f
+    var fo = part("fondo " & nome, kPanel, x, s, zBasso - s, w, prof, s)
+    fo.gruppo = "scatola " & nome
+    m.add fo
+    var sc = part("schiena " & nome, kPanel, x, s + prof, zBasso, w, s, zCielo - zBasso)
+    sc.hiddenFront = true
+    sc.gruppo = "scatola " & nome
+    m.add sc
+  # anta a sinistra: si apre verso sinistra, dentro un ripiano a metà
+  let wA = p.colonneBasse[0]
+  result.scatolaAnta("anta", cx[0], wA, p.profCassetti)
+  for k in 1..2:   # due ripiani, a un terzo e due terzi dell'altezza
+    var rip = part("ripiano anta", kPanel, cx[0], s, zBasso + p.zonaBassa * float(k) / 3 - s / 2,
+                   wA, p.profCassetti - 2, s)
+    rip.hiddenFront = true
+    rip.gruppo = "scatola anta"
+    result.add rip
+  var anta = part("anta", kFront, cx[0], 0, zBasso, wA, s, p.zonaBassa, p.raggio)
+  var foroAnta = part("foro", kKnob, cx[0] + wA - 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
+  anta.apribile("anta", "sx")
+  foroAnta.apribile("anta", "sx")
+  result.add anta
+  result.add foroAnta
+  # cassetti veri: frontale e, dietro, una cassa con fondo, fianchi e schiena
   let hC = (p.zonaBassa - p.gapCassetti * float(p.nCassettiBassi - 1)) / float(p.nCassettiBassi)
+  let wC = p.colonneBasse[2]
   for i in 0 ..< p.nCassettiBassi:
     let z = zTop - hC - float(i) * (hC + p.gapCassetti)
     let y = if i == p.cassettoAperto: -p.corsa else: 0.0
-    var cas = part("cassetto", kBox, cx[2], y, z, p.colonneBasse[2], p.profCassetti, hC, p.raggio)
-    var foro = part("foro", kKnob, cx[2] + p.colonneBasse[2] / 2, y, z + hC / 2,
-                    p.diamForo, 0, p.diamForo)
-    if y < 0: (cas.gruppo = "cassetto"; foro.gruppo = "cassetto")
-    result.add cas
-    result.add foro
-  result.add part("anta stretta", kFront, cx[3], 0, zBasso, p.colonneBasse[3], s, p.zonaBassa, p.raggio)
-  result.add part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
+    let (xi, wi, hi, di) = (cx[2] + 1, wC - 2, hC - 3, p.profCassetti - s)   # la cassa, dietro il frontale
+    var parti = @[
+      part("frontale cassetto", kFront, cx[2], y, z, wC, s, hC, p.raggio),
+      part("foro", kKnob, cx[2] + wC / 2, y, z + hC / 2, p.diamForo, 0, p.diamForo),
+      part("fondo cassetto", kPanel, xi + s, y + s, z + 1, wi - 2 * s, di - s, s),
+      part("fianco cassetto", kPanel, xi, y + s, z + 1, s, di, hi),
+      part("fianco cassetto", kPanel, xi + wi - s, y + s, z + 1, s, di, hi),
+      part("schiena cassetto", kPanel, xi + s, y + s + di - s, z + 1 + s, wi - 2 * s, s, hi - s)]
+    for q in parti.mitems:
+      if q.kind == kPanel: q.hiddenFront = true
+      q.apribile("cassetto " & $(i + 1), "tira", p.corsa)
+      result.add q
+  # anta stretta sotto la colonna destra: si apre verso destra, dentro un
+  # bastone appendiabiti da un fianco all'altro, a metà profondità
+  let wD = p.colonneBasse[3]
+  let profD = p.profColonna - 3 * s
+  result.scatolaAnta("anta stretta", cx[3], wD, profD)
+  var bastone = part("bastone appendiabiti", kAccessory, cx[3], s + profD / 2 - 1.25,
+                     p.pianoLetto - s - 7, wD, 2.5, 2.5)
+  bastone.gruppo = "scatola anta stretta"
+  result.add bastone
+  var antaDx = part("anta stretta", kFront, cx[3], 0, zBasso, wD, s, p.zonaBassa, p.raggio)
+  var foroDx = part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
+  antaDx.apribile("anta stretta", "dx")
+  foroDx.apribile("anta stretta", "dx")
+  result.add antaDx
+  result.add foroDx
 
 proc controlli*(p: Parete): seq[string] =
   ## Le cose che non tornano: misure che non ci stanno o decisioni in conflitto.
   let s = p.spessore
-  let interno = p.profondita - 2 * s           # tra fronte e schienale della nicchia
+  let interno = p.profondita - s               # tra fronte e muro (niente schienale)
   if p.materasso[1] > interno:
-    result.add "materasso largo " & fmtNum(p.materasso[1]) & " ma tra fronte e schienale ci sono " &
-      fmtNum(interno) & " cm (senza schienale, contro il muro: " & fmtNum(p.profondita - s) & ")"
+    result.add "materasso largo " & fmtNum(p.materasso[1]) & " ma tra fronte e muro ci sono " &
+      fmtNum(interno) & " cm"
   let campata = p.xColonna - s / 2 - s
   if p.materasso[0] > campata:
     result.add "materasso lungo " & fmtNum(p.materasso[0]) & " ma la campata è " & fmtNum(campata)
@@ -344,17 +405,8 @@ proc controlli*(p: Parete): seq[string] =
   if abs(p.risegaLarga - p.profComodino) > 1:
     result.add "comodino profondo " & fmtNum(p.profComodino) & " ma la risega è larga " &
       fmtNum(p.risegaLarga) & ": non è a filo"
-  if p.tavolino and s + p.profTavolino > p.profondita - s:
-    result.add "il tavolino chiuso urta lo schienale"
-  if p.tavolino and p.aletta:
-    # tra l'aletta chiusa e il primo gradino fisso deve restare del pannello
-    let hG = (p.zonaBassa - p.passoGradini * float(p.nGradini - 1)) / float(p.nGradini)
-    let zSopra = p.margineBasso + float(p.gradiniTavolino) * (hG + p.passoGradini)
-    let zAletta = p.margineBasso + float(p.gradiniTavolino) * hG +
-      float(p.gradiniTavolino - 1) * p.passoGradini + 2 * s
-    if zSopra - zAletta < 1.5:
-      result.add "tra l'apertura del tavolino e il gradino sopra restano solo " &
-        fmtNum(zSopra - zAletta) & " cm di pannello"
+  if p.tavolino and s + p.profTavolino > p.profondita - 0.5:
+    result.add "il tavolino chiuso arriva al muro"
   if p.tavolino and p.corsaTavolino > p.profTavolino + s + 0.01:
     result.add "il tavolino esce di " & fmtNum(p.corsaTavolino) & " ma è profondo solo " &
       fmtNum(p.profTavolino + s)

@@ -23,11 +23,16 @@ proc toJson*(m: Model): JsonNode =
     if fori.len > 0:
       for h in fori:
         holes.add %*{"x": h.x, "z": h.z, "w": h.w, "h": h.h, "r": h.r}
+    var holesTop = newJArray()
+    for h in p.holesPiano:
+      holesTop.add %*{"x": h.x, "y": h.z, "w": h.w, "d": h.h, "r": h.r}
     parts.add %*{
       "name": p.name, "kind": $p.kind,
       "x": p.pos.x, "y": p.pos.y, "z": p.pos.z,
       "w": p.size.x, "d": p.size.y, "h": p.size.z,
-      "r": p.r, "holes": holes, "gruppo": p.gruppo}
+      "r": p.r, "holes": holes, "gruppo": p.gruppo,
+      "apre": p.apre, "corsa": p.corsa,
+      "holesTop": holesTop}
   %*{"name": m.name, "parts": parts}
 
 proc viewer3d*(m: Model; id = "cadero3d"; height = 520): string =

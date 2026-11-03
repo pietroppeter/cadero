@@ -4,14 +4,28 @@
 ##
 ## L'artefatto vuole solo il contenuto (niente doctype); per Pages la pagina
 ## viene completata con doctype, charset e viewport, più un link ai documenti.
-import std/[json, os, strutils]
+import std/[base64, json, os, strutils]
 import ../src/cadero, ../models/parete
 
 let dir = currentSourcePath().parentDir
+
+# nel visore tutto parte chiuso: cassetti, ante, ribalte e tavolino si aprono toccandoli
+var base = rilievo()
+base.cassettoAperto = -1
+let tavolino = base.conTavolino(aperto = false)
+
+# la carta da parati (facoltativa): una piastrella del motivo, che si ripete
+# sul muro; se il file manca il pulsante non compare.
+# Misure assunte: due teli da 53 cm affiancati (motivo a mezza caduta), rapporto 52.6.
+let cartaFile = dir / "carta-da-parati.jpg"
+let carta = if fileExists(cartaFile):
+    "{\"src\": \"data:image/jpeg;base64," & encode(readFile(cartaFile)) & "\", \"w\": 106, \"h\": 52.6}"
+  else: "null"
+
 let tpl = readFile(dir / "visore3d.tpl.html")
-  .replace("__MODEL_TAVOLINO__", $toJson(parete(rilievo().conTavolino)))
-  .replace("__MODEL_ALETTA__", $toJson(parete(rilievo().conTavolino(alettaAperta = true))))
-  .replace("__MODEL__", $toJson(parete(rilievo())))
+  .replace("__MODEL_TAVOLINO__", $toJson(parete(tavolino)))
+  .replace("__MODEL__", $toJson(parete(base)))
+  .replace("__CARTA__", carta)
 
 if paramCount() == 0:
   let dest = dir / "parete-3d.html"
