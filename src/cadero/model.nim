@@ -33,9 +33,14 @@ type
     holes*: seq[RRect]  ## aperture vuote (pannello frontale, frontale del tavolino)
     holesPiano*: seq[RRect]  ## aperture in un pannello orizzontale, viste dall'alto:
                              ## x come sempre, `z` e `h` qui sono y e profondità
+    taccheP*: seq[RRect]     ## tacche ad angolo in un pannello orizzontale, viste dall'alto
+                             ## (come `holesPiano`): il rettangolo tolto da un angolo, per
+                             ## girare intorno a un ostacolo come la risega
     hiddenFront*: bool  ## disegnata tratteggiata nel prospetto frontale
     gruppo*: string     ## parti che si muovono insieme nel 3D (es. "cassetto 1", "tavolino"):
                         ## si aprono insieme e nell'esploso restano unite
+    blocco*: string     ## nell'esploso restano insieme le parti con lo stesso blocco (se
+                        ## c'è, vale al posto del gruppo): es. i cassetti con i loro fianchi
     apre*: string       ## come si apre il gruppo nel visore: "" fisso, "tira" (esce verso
                         ## chi guarda), "sx"/"dx" (anta con cerniere a sinistra/destra),
                         ## "su" (ribalta che si alza), "alza" (coperchio che si solleva

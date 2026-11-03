@@ -114,6 +114,15 @@ nbCode:
   for c in p80.controlli: echo "- ", c
 
 nbText: """
+Un controllo a parte guarda se ogni pezzo si ricava da una lastra di multistrato
+(ipotesi: 300 × 150). Il fronte, 316 × 237, no: va diviso, e dove dividerlo è
+ancora da decidere.
+"""
+
+nbCode:
+  for f in fuoriLastra(m): echo "- ", f
+
+nbText: """
 ## Distinta dei pezzi
 
 Pezzi uguali sono contati insieme; misure dalla più grande alla più piccola.
@@ -136,24 +145,31 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Posizioni orizzontali** di frontali e aperture, rilevate in scala: margini laterali
   12.5, nicchia da 16 a 181.5 con raggio 18, colonne in basso larghe 71, 29, 52 e 38.5.
 - **Risega del muro**: pilastro dietro a destra per tutta l'altezza, sporge 7 e largo 38.
-  La colonna destra è quindi profonda 73. Il rivestimento è a L, per tutta l'altezza:
-  la faccia larga è coperta dallo schienale della colonna, il bordo sottile da un
-  pannellino che si unisce allo schienale della colonna e arriva al muro.
-- **Niente fondo e niente schienale** (Pietro): il mobile poggia sul pavimento con fianchi
-  e divisori, dietro c'è il muro con la carta da parati, che nella nicchia si vede.
+  La colonna destra è quindi profonda 73. È rivestita da un pannello sulla faccia larga
+  e da un pannellino lungo sul bordo sottile, spezzati in tre come i fianchi. Variante
+  `risegaScoperta` (nel visore "Scopri risega"): niente rivestimento, la carta da parati
+  è applicata con cura anche su tutta la risega (Pietro).
+- **Vincoli costruttivi** (Pietro): dietro, ai lati, sopra e sotto c'è il muro, quindi
+  niente schienale, niente cielo e niente fondo. Ci sono due soli pannelli lunghi
+  orizzontali, da un fianco all'altro: il **piano letto**, che sotto la testata fa da
+  fondo al gavone, e il **soffitto della nicchia**, che fa anche da fondo ai vani alti
+  (prima erano due pannelli). Dietro a destra hanno una tacca per girare intorno alla
+  risega (e il suo rivestimento). I **fianchi** sono tre per lato, spezzati dai due pannelli lunghi. Il
+  divisorio tra nicchia e colonna poggia sul piano letto e porta il comodino.
 - **Materasso** 78 × 190, spesso 17 (su misura: 80 non entra nei 78.2 cm tra fronte e
   muro), appoggiato direttamente sul piano a 104.
 - **Testata e libreria** (decisioni dopo il confronto con i nonni): piano della testata
   55 sopra il piano letto (17 di materasso + 38 di schienale), profondo 37.9 a filo della
-  risega, fa da comodino. Sopra, fino al soffitto della nicchia (260), tre vani alti
-  circa 32 con scaffali profondi 26 appoggiati al fianco destro. Il divisorio è aperto
+  risega, fa da comodino. Sopra, fino al soffitto della nicchia (265), tre vani alti
+  circa 33.5 con scaffali profondi 26 appoggiati al fianco destro. Il divisorio è aperto
   tra il comodino (159) e il soffitto; sotto fa da testata.
 - **Gavone**: il vano chiuso dentro la colonna, tra il piano letto (104), che gli fa da
   fondo, e il comodino (159). Si apre dall'alto: il piano del comodino ha un'apertura
   stondata (28 × 57.4, a 4 cm dai fianchi e 6 da fronte e schiena) in cui appoggiano due
   coperchi leggeri da 1 cm, ognuno metà apertura, che si alzano.
-- **Scatole dei gradini**: dietro ogni gradino una scatola aperta sul davanti, profonda
-  30 (da definire), come un cassetto senza frontale.
+- **Scatola dei gradini**: una sola, profonda 30 (da definire), che non sta sospesa: due
+  fianchi da terra al piano letto (con il tavolino, da sopra il tavolino), un fondo dietro
+  e un ripiano sotto ogni gradino, dove si appoggia il piede.
 - **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), piano profondo 76.8
   (1.4 di gioco dal muro) a 62.6 da terra, sopra il terzo gradino. Cassetti-gradino
   profondi 20 (le scatole fisse 30); gambe dietro di traverso, larghe 8. Esce di tutta la sua profondità;
@@ -161,13 +177,14 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Prese** (2 USB-C e 1 schuko) sulla faccia interna del fronte, 8 cm sopra il
   comodino: posizione indicativa.
 - **Cassetti in basso** profondi 75, con cassa (fondo, fianchi, schiena) 1 cm più stretta
-  del frontale per lato; escono di 60, il centrale è disegnato aperto.
+  del frontale per lato; scorrono tra due fianchi fissi da terra al piano letto (le guide,
+  nel centimetro per lato, non sono disegnate); escono di 60, il centrale è disegnato aperto.
 - **Ante in basso**: dietro ognuna una scatola con i fianchi da terra al piano letto,
   che fa da cielo, fondo e schiena. Nell'anta a sinistra due ripiani, a un terzo e due
   terzi dell'altezza; nell'anta stretta un bastone appendiabiti da fianco a fianco, a
   metà profondità e 7 cm sotto il cielo.
-- **Vani alti**: un piano sotto, una schiena e due divisori tra le ribalte, profondi
-  quanto la colonna (69.4).
+- **Vani alti**: sotto il soffitto della nicchia, dietro e sopra il muro, ai lati i
+  fianchi alti; due divisori tra le ribalte, dal soffitto della nicchia al muro.
 - **Fori maniglia** di 4 cm; quelli delle ante a 10 cm dal bordo e 12 dall'alto.
 - Le **linee tratteggiate** davanti al mobile nella laterale e nella pianta del disegno
   originale non sono riprodotte: non è chiaro cosa rappresentino.

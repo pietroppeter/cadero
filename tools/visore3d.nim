@@ -13,6 +13,9 @@ let dir = currentSourcePath().parentDir
 var base = rilievo()
 base.cassettoAperto = -1
 let tavolino = base.conTavolino(aperto = false)
+var scoperta = base
+scoperta.risegaScoperta = true
+let tavolinoScoperta = scoperta.conTavolino(aperto = false)
 
 # la carta da parati (facoltativa): una piastrella del motivo, che si ripete
 # sul muro; se il file manca il pulsante non compare.
@@ -23,7 +26,9 @@ let carta = if fileExists(cartaFile):
   else: "null"
 
 let tpl = readFile(dir / "visore3d.tpl.html")
+  .replace("__MODEL_TAVOLINO_SCOPERTA__", $toJson(parete(tavolinoScoperta)))
   .replace("__MODEL_TAVOLINO__", $toJson(parete(tavolino)))
+  .replace("__MODEL_SCOPERTA__", $toJson(parete(scoperta)))
   .replace("__MODEL__", $toJson(parete(base)))
   .replace("__CARTA__", carta)
 

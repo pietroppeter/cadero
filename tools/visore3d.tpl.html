@@ -68,18 +68,20 @@ __BACK__
   <div class="bar">
     <div class="group" role="group" aria-label="Viste">
       <span class="label">Vista</span>
+      <button id="v-iniziale" type="button" title="Il punto di vista di partenza">Tre quarti</button>
       <button id="v-fronte" type="button">Fronte</button>
       <button id="v-nicchia" type="button">Nicchia</button>
       <button id="v-dentro" type="button">Dentro</button>
       <button id="v-gavone" type="button">Gavone</button>
       <button id="v-tavolino" type="button">Gradini</button>
       <button id="v-gambe" type="button" hidden>Sotto il tavolino</button>
-      <button id="v-cammina" class="modo" type="button" aria-pressed="false" title="Rotella o pizzico per andare avanti e indietro invece dello zoom">Cammina</button>
+      <button id="v-cammina" class="modo" type="button" aria-pressed="false" title="Senza rotazione: rotella o pizzico vanno avanti e indietro, trascinare sposta">Cammina</button>
     </div>
     <div class="group" role="group" aria-label="Mobile">
       <span class="label">Mobile</span>
       <button id="m-base" type="button" aria-pressed="true">Base</button>
       <button id="m-tavolino" type="button" aria-pressed="false">Con tavolino</button>
+      <button id="m-risega" type="button" aria-pressed="false" title="Senza i pannelli che rivestono la risega: si vede il muro con la carta da parati">Scopri risega</button>
     </div>
     <div class="group" role="group" aria-label="Apertura">
       <span class="label">Apertura</span>
@@ -118,7 +120,7 @@ __BACK__
       <div class="misure">guardando verso il muro, a una profondità y dal fronte</div>
     </div>
   </div>
-  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Con <strong>Cammina</strong> la rotella o il pizzico ti portano avanti e indietro invece di zoomare, e trascinando ti guardi intorno: così arrivi in qualsiasi punto. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Con <strong>Cammina</strong> non si ruota più: guardi nella direzione della vista scelta, vai avanti e indietro con la rotella o il pizzico, e trascinando con un dito (o con il mouse) ti sposti di lato e in su e giù. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
 <script type="importmap">
@@ -131,7 +133,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // due modelli generati dal codice Nim, tutto chiuso: il mobile base e la
 // variante con il tavolino. Le parti con un "gruppo" si aprono toccandole.
-const models = { base: __MODEL__, tavolino: __MODEL_TAVOLINO__ };
+// le varianti: base o con tavolino, con la risega rivestita o scoperta
+const models = { base: __MODEL__, tavolino: __MODEL_TAVOLINO__,
+                 baseScoperta: __MODEL_SCOPERTA__, tavolinoScoperta: __MODEL_TAVOLINO_SCOPERTA__ };
 const carta = __CARTA__;   // la carta da parati sul muro (facoltativa)
 let model = models.base;
 const el = document.getElementById('stage');
@@ -187,8 +191,25 @@ function extruded(p) {
 
 // un pannello orizzontale con aperture (il piano del comodino): la sagoma
 // vista dall'alto, estrusa verso l'alto per il suo spessore
+// il contorno visto dall'alto: un rettangolo, con le tacche tolte dagli angoli
+function contornoTop(p) {
+  const c = [[p.x, p.y], [p.x + p.w, p.y], [p.x + p.w, p.y + p.d], [p.x, p.y + p.d]];
+  const pts = [];
+  c.forEach(([cx, cy], k) => {
+    const n = (p.notchTop || []).find(n => cx >= n.x - 0.01 && cx <= n.x + n.w + 0.01 &&
+                                          cy >= n.y - 0.01 && cy <= n.y + n.d + 0.01);
+    if (!n) { pts.push([cx, cy]); return; }
+    const ix = Math.abs(cx - n.x) < 0.01 ? n.x + n.w : n.x;     // l'angolo interno
+    const iy = Math.abs(cy - n.y) < 0.01 ? n.y + n.d : n.y;
+    const prev = c[(k + 3) % 4];
+    pts.push(prev[1] === cy ? [ix, cy] : [cx, iy], [ix, iy], prev[1] === cy ? [cx, iy] : [ix, cy]);
+  });
+  return pts;
+}
 function extrudedTop(p) {
-  const shape = roundRect(new THREE.Shape(), p.x, p.y, p.w, p.d, 0);
+  const shape = new THREE.Shape();
+  contornoTop(p).forEach(([x, y], i) => i ? shape.lineTo(x, y) : shape.moveTo(x, y));
+  shape.closePath();
   for (const h of p.holesTop) shape.holes.push(roundRect(new THREE.Path(), h.x, h.y, h.w, h.d, h.r));
   const g = new THREE.ExtrudeGeometry(shape, { depth: p.h, bevelEnabled: false, curveSegments: 8 });
   g.rotateX(-Math.PI / 2);          // (x, y, z) -> (x, z, -y): y CAD -> -z three
@@ -206,11 +227,15 @@ function build(m) {
   const byName = {}, wrapByName = {};
   // il contenitore che l'esploso sposta: uno per gruppo, uno per ogni altra parte
   function wrapOf(p) {
-    if (p.gruppo && wrapByName[p.gruppo]) return wrapByName[p.gruppo].wrap;
+    const chiave = p.blocco || p.gruppo;   // il blocco tiene insieme più gruppi
+    if (chiave && wrapByName[chiave]) {
+      if (p.apre) wrapByName[chiave].apribile = true;
+      return wrapByName[chiave].wrap;
+    }
     const pz = { wrap: new THREE.Group(), fisso: p.kind === 'muro', fronte: p.name === 'fronte',
                  apribile: !!p.apre };
     group.add(pz.wrap); pezzi.push(pz);
-    if (p.gruppo) wrapByName[p.gruppo] = pz;
+    if (chiave) wrapByName[chiave] = pz;
     return pz.wrap;
   }
   for (const p of m.parts) {
@@ -219,7 +244,7 @@ function build(m) {
       g = new THREE.CylinderGeometry(p.w / 2, p.w / 2, 0.4, 20);
       g.rotateX(Math.PI / 2);
       g.translate(p.x, p.z, -p.y + 0.15);
-    } else if (p.holesTop && p.holesTop.length > 0) {
+    } else if ((p.holesTop && p.holesTop.length > 0) || (p.notchTop && p.notchTop.length > 0)) {
       g = extrudedTop(p);
     } else if (p.holes.length > 0 || ((p.kind === "frontale" || p.kind === "cassetto") && p.r > 0)) {
       g = extruded(p);
@@ -234,9 +259,12 @@ function build(m) {
       obj.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), edgeMat));
     if (p.kind === "muro" && p.name.includes("carta")) {
       // coordinate uv in cm sulla faccia verso la stanza, per ripetere il motivo
-      const uv = g.attributes.uv, pos = g.attributes.position;
-      for (let i = 0; i < uv.count; i++)
-        uv.setXY(i, pos.getX(i) / carta?.w || 0, pos.getY(i) / carta?.h || 0);
+      // (sulle facce di fianco, come quella della risega, u va lungo la profondità)
+      const uv = g.attributes.uv, pos = g.attributes.position, nor = g.attributes.normal;
+      for (let i = 0; i < uv.count; i++) {
+        const u = Math.abs(nor.getX(i)) > 0.5 ? pos.getZ(i) : pos.getX(i);
+        uv.setXY(i, u / carta?.w || 0, pos.getY(i) / carta?.h || 0);
+      }
       walls.push(mesh);
     }
     if (p.gruppo && p.apre) {
@@ -312,6 +340,11 @@ controls.maxDistance = size * 4;
 
 // punti di vista (in cm, coordinate three)
 const views = {
+  // il punto di vista di partenza: di tre quarti, alla stessa distanza di "Fronte"
+  iniziale: () => {
+    const d = views.fronte().pos[2] - c.z;
+    return { pos: [c.x - d * 0.42, c.y + d * 0.12, c.z + d * 0.92], target: [c.x, c.y, c.z] };
+  },
   // il mobile intero, alla distanza giusta per lo schermo (anche in verticale)
   fronte:  () => {
     const t = Math.tan(THREE.MathUtils.degToRad(35) / 2), m = box.getSize(new THREE.Vector3());
@@ -328,37 +361,69 @@ const views = {
   // di fianco al tavolino estratto, per vedere lo spazio per le gambe
   gambe:    { pos: [-110, 75, 125], target: [95, 35, 30] },
 };
-// modalità "cammina": la rotella (o il pizzico) porta avanti e indietro
-// invece dello zoom, e trascinando ci si guarda intorno
+// modalità "cammina": come muoversi in prima persona senza ruotare. La
+// direzione dello sguardo resta quella della vista scelta; rotella o pizzico
+// vanno avanti e indietro lungo lo sguardo, trascinare con un dito (o con il
+// mouse) sposta nel piano perpendicolare allo sguardo, insieme al punto di
+// rotazione, così uscendo da Cammina non si salta da nessuna parte.
 const tCammina = document.getElementById('v-cammina');
 let cammina = false;
 function vicino() {          // il punto di rotazione appena davanti agli occhi
   const dir = controls.target.clone().sub(camera.position).normalize();
-  controls.target.copy(camera.position).addScaledVector(dir, 20);
+  controls.target.copy(camera.position).addScaledVector(dir, 1);
 }
+function sposta(v) { camera.position.add(v); controls.target.add(v); }
 function avanza(cm) {
-  const dir = controls.target.clone().sub(camera.position).normalize();
-  camera.position.addScaledVector(dir, cm); controls.target.addScaledVector(dir, cm);
+  sposta(controls.target.clone().sub(camera.position).normalize().multiplyScalar(cm));
+}
+function trasla(dxPx, dyPx) {   // nel piano dello schermo: 0.4 cm per pixel
+  const destra = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+  const su = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+  sposta(destra.multiplyScalar(-dxPx * 0.4).addScaledVector(su, dyPx * 0.4));
 }
 tCammina.addEventListener('click', () => {
   cammina = !cammina;
   tCammina.setAttribute('aria-pressed', String(cammina));
-  controls.enableZoom = !cammina;
+  controls.enabled = !cammina;
+  dita.clear();
   if (cammina) vicino();
+  else {                         // tornando a ruotare intorno al mobile, il centro è più avanti
+    const dir = controls.target.clone().sub(camera.position).normalize();
+    controls.target.copy(camera.position).addScaledVector(dir, 150);
+  }
 });
 renderer.domElement.addEventListener('wheel', ev => {
   if (!cammina) return;
   ev.preventDefault();
   avanza(Math.max(-40, Math.min(40, -ev.deltaY * 0.12)));
 }, { passive: false });
+// le dita (o il mouse) appoggiate: una sposta, due con il pizzico avanzano
+const dita = new Map();
 let pizzico = null;
-renderer.domElement.addEventListener('touchmove', ev => {
-  if (!cammina || ev.touches.length !== 2) { pizzico = null; return; }
-  const [a, b] = ev.touches, d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-  if (pizzico !== null) avanza((d - pizzico) * 0.6);
-  pizzico = d;
-}, { passive: true });
-renderer.domElement.addEventListener('touchend', () => { pizzico = null; });
+function distanzaDita() {
+  const [a, b] = [...dita.values()];
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+renderer.domElement.addEventListener('pointerdown', ev => {
+  if (!cammina) return;
+  dita.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  pizzico = dita.size === 2 ? distanzaDita() : null;
+});
+renderer.domElement.addEventListener('pointermove', ev => {
+  if (!cammina || !dita.has(ev.pointerId) || trascina) return;
+  const p = dita.get(ev.pointerId);
+  const dx = ev.clientX - p.x, dy = ev.clientY - p.y;
+  p.x = ev.clientX; p.y = ev.clientY;
+  if (dita.size === 1) trasla(dx, dy);
+  else if (dita.size === 2) {
+    const d = distanzaDita();
+    if (pizzico !== null) avanza((d - pizzico) * 0.6);
+    pizzico = d;
+  }
+});
+function alzaDito(ev) { dita.delete(ev.pointerId); pizzico = dita.size === 2 ? distanzaDita() : null; }
+window.addEventListener('pointerup', alzaDito);
+window.addEventListener('pointercancel', alzaDito);
 
 let anim = null;
 function goTo(name, instant) {
@@ -370,12 +435,7 @@ function goTo(name, instant) {
   }
   anim = { from: { pos: camera.position.clone(), target: controls.target.clone() }, to, t0: performance.now() };
 }
-{ // all'inizio: di tre quarti, alla stessa distanza della vista "Fronte"
-  const d = views.fronte().pos[2] - c.z;
-  camera.position.set(c.x - d * 0.42, c.y + d * 0.12, c.z + d * 0.92);
-}
-controls.target.copy(c);
-controls.update();
+goTo('iniziale', true);
 
 for (const name of Object.keys(views))
   document.getElementById('v-' + name).addEventListener('click', () => {
@@ -430,7 +490,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
   }
 });
 renderer.domElement.addEventListener('pointerup', ev => {
-  if (trascina) { trascina = null; controls.enabled = true; }
+  if (trascina) { trascina = null; controls.enabled = !cammina; }
   if (!down) return;
   const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y), dt = performance.now() - down.t;
   down = null;
@@ -473,18 +533,24 @@ tEsploso.addEventListener('click', () => {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { esploso = esplosoTarget; applyEsploso(); }
 });
 // cambio di variante: si ricostruisce la scena con l'altro modello
-for (const name of Object.keys(models)) {
-  const btn = document.getElementById('m-' + name);
-  btn.addEventListener('click', () => {
-    model = models[name];
-    for (const n of Object.keys(models)) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === name));
-    build(model); applyToggles(); applyEsploso(); pianiTaglio();
-    if (pressed(tSez)) aggiornaSezioni();
-    document.getElementById('v-gambe').hidden = name !== 'tavolino';
-    if (name === 'tavolino') goTo('tavolino');
-    status.textContent = model.parts.length + ' parti';
-  });
+let variante = 'base';
+const tRisega = document.getElementById('m-risega');
+function cambiaModello() {
+  model = models[variante + (pressed(tRisega) ? 'Scoperta' : '')];
+  for (const n of ['base', 'tavolino']) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === variante));
+  build(model); applyToggles(); applyEsploso(); pianiTaglio();
+  if (pressed(tSez)) aggiornaSezioni();
+  document.getElementById('v-gambe').hidden = variante !== 'tavolino';
+  status.textContent = model.parts.length + ' parti';
 }
+for (const name of ['base', 'tavolino'])
+  document.getElementById('m-' + name).addEventListener('click', () => {
+    variante = name; cambiaModello();
+    if (name === 'tavolino') goTo('tavolino');
+  });
+tRisega.addEventListener('click', () => {
+  tRisega.setAttribute('aria-pressed', String(!pressed(tRisega))); cambiaModello();
+});
 applyToggles();
 
 // --- sezioni: tre piani di taglio scelti con i cursori, disegnati in 2D ------
@@ -535,6 +601,11 @@ function disegna(nome) {
     if (p.kind === 'foro') continue;
     const [a, b, c2, d] = R(p); grow(a, b, c2, d);
     if (p.kind === 'muro') { gM.append(el2('path', { d: rr(a, b, c2, d) })); continue; }
+    if (nome === 'pianta' && p.notchTop && p.notchTop.length && !v.cut(p, c) && v.oltre(p, c)) {
+      // in pianta un pannello con una tacca: il suo contorno vero
+      gO.append(el2('path', { d: 'M' + contornoTop(p).map(([x, y]) => x + ' ' + (fv - y)).join(' L') + ' Z' }));
+      continue;
+    }
     if (v.cut(p, c) && p.kind !== 'materasso' && p.kind !== 'accessorio') {
       if (nome === 'prospetto') {     // pannello tagliato di piatto: pieno meno le aperture
         let dd = rr(a, b, c2, d, p.kind === 'frontale' ? p.r : 0);

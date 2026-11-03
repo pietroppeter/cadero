@@ -26,13 +26,16 @@ proc toJson*(m: Model): JsonNode =
     var holesTop = newJArray()
     for h in p.holesPiano:
       holesTop.add %*{"x": h.x, "y": h.z, "w": h.w, "d": h.h, "r": h.r}
+    var notchTop = newJArray()
+    for h in p.taccheP:
+      notchTop.add %*{"x": h.x, "y": h.z, "w": h.w, "d": h.h}
     parts.add %*{
       "name": p.name, "kind": $p.kind,
       "x": p.pos.x, "y": p.pos.y, "z": p.pos.z,
       "w": p.size.x, "d": p.size.y, "h": p.size.z,
-      "r": p.r, "holes": holes, "gruppo": p.gruppo,
+      "r": p.r, "holes": holes, "gruppo": p.gruppo, "blocco": p.blocco,
       "apre": p.apre, "corsa": p.corsa,
-      "holesTop": holesTop}
+      "holesTop": holesTop, "notchTop": notchTop}
   %*{"name": m.name, "parts": parts}
 
 proc viewer3d*(m: Model; id = "cadero3d"; height = 520): string =
