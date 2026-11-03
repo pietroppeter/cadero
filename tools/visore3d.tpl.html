@@ -110,7 +110,7 @@ __BACK__
       <div class="misure">guardando verso il muro, a una profondità y dal fronte</div>
     </div>
   </div>
-  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Nelle viste "Dentro" sei seduto sul materasso: trascinando ti guardi intorno. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Nelle viste "Dentro" sei seduto sul materasso: trascinando ti guardi intorno. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
 <script type="importmap">
@@ -285,6 +285,7 @@ function pose(u) {
   if (u.apre === 'su') u.pivot.rotation.x = -k * 1.6;
   // i coperchi si sollevano nel vuoto e si allontanano un poco l'uno dall'altro
   if (u.apre === 'alza') { u.pivot.position.y = k * u.corsa; u.pivot.position.z = k * 5 * u.verso; }
+  if (u.apre === 'solleva') u.pivot.position.y = k * u.corsa;
 }
 const unitByName = n => units.find(u => u.name === n);
 function setOpen(u, open, instant) {

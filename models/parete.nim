@@ -265,6 +265,7 @@ proc parete*(p: Parete): Model =
   var mat = part("materasso", kSoft, xInt + (lInt - mL) / 2, s,
                  p.pianoLetto + p.rete, mL, mP, mH, r = 3)
   mat.hiddenFront = true
+  mat.apribile("materasso", "solleva", 60)   # nel visore si alza per vedere sotto
   result.add mat
 
   # --- colonna destra: gavone, comodino, libreria, prese --------------------

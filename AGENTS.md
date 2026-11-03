@@ -26,7 +26,8 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   `kWall` è il muro (es. la risega): si disegna tratteggiato, non va in distinta.
 - Le parti apribili si segnano con `apribile(gruppo, apre, corsa)`: `apre` è "tira"
   (cassetti, tavolino), "sx"/"dx" (ante, lato della cerniera), "su" (ribalte) o "alza"
-  (coperchi del gavone: si sollevano e si allontanano tra loro). Nel
+  (coperchi del gavone: si sollevano e si allontanano tra loro) o "solleva" (il
+  materasso, sale per far vedere sotto). Nel
   visore tutto parte chiuso e si apre toccandolo; il perno è calcolato dal visore
   sullo spigolo del gruppo. Una parte disegnata aperta (y < 0) parte aperta.
 - Nel visore "Esploso" allontana i pezzi dal centro; le parti con lo stesso `gruppo`

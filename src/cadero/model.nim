@@ -38,7 +38,8 @@ type
                         ## si aprono insieme e nell'esploso restano unite
     apre*: string       ## come si apre il gruppo nel visore: "" fisso, "tira" (esce verso
                         ## chi guarda), "sx"/"dx" (anta con cerniere a sinistra/destra),
-                        ## "su" (ribalta che si alza), "alza" (coperchio che si solleva)
+                        ## "su" (ribalta che si alza), "alza" (coperchio che si solleva
+                        ## e si allontana dagli altri), "solleva" (sale e basta)
     corsa*: float       ## per "tira": di quanto esce
 
   Model* = object
