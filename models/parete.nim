@@ -73,6 +73,13 @@ type
                              ## un'antina che si ribalta a destra e allarga il piano
     antinaAperta*: bool      ## disegnarla aperta (solo con il tavolino estratto)
     diamForo*: float         ## fori maniglia (ipotesi: 4)
+    # scatola elettrica in testa al letto: una presa schuko, due USB-C e
+    # l'interruttore della luce. Il cavo arriva nel muro a destra, dietro il
+    # fianco, e passa da un foro nel fianco dentro la scatola.
+    preseSulComodino*: bool  ## false: appesa sotto il primo scaffale; true: appoggiata
+                             ## sul comodino (l'apertura del gavone si stringe)
+    scatolaPrese*: array[3, float]  ## sporgenza dal fianco, lunghezza, altezza
+                                    ## (ipotesi: 6 x 16 x 9, placca a 4 moduli)
 
 proc rilievo*(): Parete =
   ## I parametri ricavati dal disegno di riferimento.
@@ -88,6 +95,7 @@ proc rilievo*(): Parete =
     pianoLetto: 104, materasso: [190.0, 78, 17], rete: 0,
     testata: 55, profScaffali: 26, nVani: 3, altezzaLibri: 25,
     profCassetti: 75, cassettoAperto: 1, corsa: 60, diamForo: 4,
+    preseSulComodino: false, scatolaPrese: [6.0, 16, 9],
     tavolino: false, gradiniTavolino: 3, profTavolino: 76.8, corsaTavolino: 78.6,
     profCassettiTavolino: 20, gambaTavolino: 8, tavolinoAperto: false)
 
@@ -315,7 +323,15 @@ proc parete*(p: Parete): Model =
   # cui appoggiano due coperchi leggeri, ognuno metà apertura, che si alzano.
   var com = part("piano testata (comodino)", kPanel, xCom, s, p.baseLibreria - s,
                  p.profComodino, pc, s)
-  let (xG, yG, wG2, dG) = (xc + 4, s + 6, lc - 8, pc - 12)   # l'apertura del gavone
+  # la scatola delle prese, contro il fianco destro vicino al fronte, rivolta
+  # verso il letto
+  let (sp, lp, hp) = (p.scatolaPrese[0], p.scatolaPrese[1], p.scatolaPrese[2])
+  let xP = L - s - sp
+  let yP = s + 2
+  # se la scatola sta sul comodino, l'apertura del gavone si ferma 2 cm prima
+  let fineG = if p.preseSulComodino: xP - 2 else: xc + lc - 4
+  let (xG, yG, dG) = (xc + 4, s + 6, pc - 12)   # l'apertura del gavone
+  let wG2 = fineG - xG
   com.holesPiano.add rrect(xG, yG, wG2, dG, 4)
   result.add com
   for k in 0..1:
@@ -330,8 +346,10 @@ proc parete*(p: Parete): Model =
   for h in p.ripiani:
     result.add part("ripiano libreria", kPanel, xScaf, s, p.baseLibreria + h - s,
                     p.profScaffali, pc, s)
-  result.add part("prese (2 USB-C, 1 schuko)", kAccessory, xc + lc - 14, s, p.baseLibreria + 8,
-                  12, 0.6, 7)
+  let zP = if p.preseSulComodino: p.baseLibreria
+           else: p.baseLibreria + p.ripiani[0] - s - hp      # appesa sotto il primo scaffale
+  result.add part("scatola prese (schuko, 2 USB-C, interruttore luce)", kAccessory,
+                  xP, yP, zP, sp, lp, hp)
 
   # --- in alto: tre vani con ribalte che si alzano --------------------------
   # sotto il soffitto della nicchia, dietro e sopra il muro, ai lati i fianchi

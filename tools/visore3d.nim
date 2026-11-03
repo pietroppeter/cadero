@@ -10,15 +10,24 @@ import ../src/cadero, ../models/parete
 let dir = currentSourcePath().parentDir
 
 # nel visore tutto parte chiuso: cassetti, ante, ribalte e tavolino si aprono toccandoli
-var base = rilievo()
-base.cassettoAperto = -1
-let tavolino = base.conTavolino(aperto = false)
-var scoperta = base
-scoperta.risegaScoperta = true
-let tavolinoScoperta = scoperta.conTavolino(aperto = false)
-proc conAntina(p: Parete): Parete =
-  result = p
-  result.antinaTavolino = true
+# Tutte le combinazioni delle opzioni, con la chiave che usa il visore:
+# "base" o "tavolino", poi "Scoperta" (risega), "Antina" (solo con il
+# tavolino), "Comodino" (prese sul comodino); es. "tavolinoScopertaComodino".
+proc modelli(): JsonNode =
+  result = newJObject()
+  for tav in [false, true]:
+    for scoperta in [false, true]:
+      for antina in (if tav: @[false, true] else: @[false]):
+        for comodino in [false, true]:
+          var p = rilievo()
+          p.cassettoAperto = -1
+          if tav: p = p.conTavolino(aperto = false)
+          p.risegaScoperta = scoperta
+          p.antinaTavolino = antina
+          p.preseSulComodino = comodino
+          let chiave = (if tav: "tavolino" else: "base") & (if scoperta: "Scoperta" else: "") &
+                       (if antina: "Antina" else: "") & (if comodino: "Comodino" else: "")
+          result[chiave] = toJson(parete(p))
 
 # la carta da parati (facoltativa): una piastrella del motivo, che si ripete
 # sul muro; se il file manca il pulsante non compare.
@@ -30,12 +39,7 @@ let carta = if fileExists(cartaFile):
 
 proc paginaVisore(): string =
   readFile(dir / "visore3d.tpl.html")
-    .replace("__MODEL_TAVOLINO_SCOPERTA_ANTINA__", $toJson(parete(tavolinoScoperta.conAntina)))
-    .replace("__MODEL_TAVOLINO_ANTINA__", $toJson(parete(tavolino.conAntina)))
-    .replace("__MODEL_TAVOLINO_SCOPERTA__", $toJson(parete(tavolinoScoperta)))
-    .replace("__MODEL_TAVOLINO__", $toJson(parete(tavolino)))
-    .replace("__MODEL_SCOPERTA__", $toJson(parete(scoperta)))
-    .replace("__MODEL__", $toJson(parete(base)))
+    .replace("__MODELS__", $modelli())
     .replace("__CARTA__", carta)
     .replace("__TAVOLA__", (let p = rilievo(); tavola(p, parete(p))))
 

@@ -219,3 +219,23 @@ suite "parete di riferimento":
     check near(ao.pos.x, pianoO.x1) and near(ao.pos.z, pianoO.pos.z)
     # senza la variante non c'è
     check not parete(rilievo().conTavolino).has("antina tavolino")
+
+  test "scatola delle prese: sotto lo scaffale o sul comodino":
+    const nome = "scatola prese (schuko, 2 USB-C, interruttore luce)"
+    let sc = m.find(nome)
+    let fianco = m.find("fianco dx medio")
+    check near(sc.x1, fianco.pos.x)                      # contro il fianco destro
+    var primo = Inf
+    for q in m.parts:
+      if q.name == "ripiano libreria": primo = min(primo, q.pos.z)
+    check near(sc.z1, primo)                             # appesa sotto il primo scaffale
+    let wBase = m.find("piano testata (comodino)").holesPiano[0].w
+    var pc = rilievo()
+    pc.preseSulComodino = true
+    let mc = parete(pc)
+    let sc2 = mc.find(nome)
+    let com = mc.find("piano testata (comodino)")
+    check near(sc2.pos.z, com.z1)                        # appoggiata sul comodino
+    let h = com.holesPiano[0]
+    check h.x + h.w <= sc2.pos.x - 1.9 and h.w < wBase   # il gavone si stringe
+    check pc.controlli.len == 0
