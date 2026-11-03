@@ -193,11 +193,11 @@ sezioni in SVG (`disegna`).
 4. **La pagina come documento nimib**, con un renderer suo (copia di quello di
    nimib) che riempie il template del visore invece del tema dei documenti.
 5. **Verifica.** Vecchio e nuovo visore aperti in Chromium headless con le stesse
-   azioni (vista iniziale, apri tutto, fronte, tocco su un cassetto, tavolino,
-   antina, sotto il tavolino, dentro con la risega scoperta, gavone senza carta,
-   senza fronte, esploso, sezioni, sezione selezionata e cursore spostato), con le
-   animazioni disattivate: le 14 immagini sono identiche al pixel e gli SVG delle
-   tre sezioni identici carattere per carattere.
+   azioni (vista iniziale, apri tutto, chiudi tutto, due tocchi su ante e cassetti,
+   tavolino, antina aperta, prese sul comodino, dentro con la risega scoperta,
+   senza carta da parati, senza fronte, esploso, sezioni, sezione selezionata e
+   cursore spostato), con le animazioni disattivate: le 15 immagini sono identiche
+   al pixel e gli SVG delle tre sezioni identici carattere per carattere.
 
 ### Cose da sapere
 
@@ -214,8 +214,12 @@ sezioni in SVG (`disegna`).
 - **`importjs` vuole un modello.** Per leggere una costante come
   `THREE.RepeatWrapping` il modello va tra parentesi: `"(THREE.RepeatWrapping)"`.
 - **Peso della pagina.** Il JavaScript generato (visore + modello + libreria
-  standard di Nim) è più grande dei sei JSON di prima: la pagina passa da circa
-  230 KB a circa 490 KB (la carta da parati ne pesa 60).
+  standard di Nim) prende il posto dei 12 modelli JSON: la pagina passa da circa
+  350 KB a circa 495 KB (la carta da parati ne pesa 60). Con più varianti la
+  differenza cresce a favore di Nim: una variante in più è una chiamata, non un JSON.
+- **Il blocco è ricopiato come testo.** nimib trasforma il blocco `nbJsFromCode`
+  in testo e lo ricompila: un'espressione come `(if a: "x" else: "") & (if b: ...)`
+  su più righe non sopravvive alla copia. Meglio istruzioni semplici, una per riga.
 - **Compilazione.** `nimble docs` ora chiama anche `nim js` per il blocco del
   visore: qualche secondo in più.
 

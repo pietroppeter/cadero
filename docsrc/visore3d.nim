@@ -59,8 +59,13 @@ nbJsFromCode(cartaSrc):
           p.risegaScoperta = scoperta
           p.antinaTavolino = antina
           p.preseSulComodino = comodino
-          let chiave = (if tav: "tavolino" else: "base") & (if scoperta: "Scoperta" else: "") &
-                       (if antina: "Antina" else: "") & (if comodino: "Comodino" else: "")
+          # (la chiave si scrive a pezzi: nimib ricopia il blocco come testo e
+          # un `(if ...) & (if ...)` su più righe non sopravvive alla copia)
+          var chiave = "base"
+          if tav: chiave = "tavolino"
+          if scoperta: chiave.add "Scoperta"
+          if antina: chiave.add "Antina"
+          if comodino: chiave.add "Comodino"
           varianti[chiave] = parete(p)
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
   quandoThreePronto(proc () = avviaVisore(varianti, carta))
