@@ -25,9 +25,12 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
 - Tipi di parte (`Kind`) e come appaiono nelle viste: vedi `src/cadero/drawing.nim`.
   `kWall` è il muro (es. la risega): si disegna tratteggiato, non va in distinta.
 - Le parti apribili si segnano con `apribile(gruppo, apre, corsa)`: `apre` è "tira"
-  (cassetti, tavolino), "sx"/"dx" (ante, lato della cerniera) o "su" (ribalte). Nel
+  (cassetti, tavolino), "sx"/"dx" (ante, lato della cerniera), "su" (ribalte) o "alza"
+  (coperchi del gavone: si sollevano e si allontanano tra loro). Nel
   visore tutto parte chiuso e si apre toccandolo; il perno è calcolato dal visore
   sullo spigolo del gruppo. Una parte disegnata aperta (y < 0) parte aperta.
+- Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
+  nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
   106 × 52.6 cm, Vårklockor di Josef Frank); se manca il pulsante non compare.
 - Le varianti sono funzioni sui parametri (es. `rilievo().conTavolino`); il visore 3D

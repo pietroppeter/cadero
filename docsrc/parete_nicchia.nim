@@ -148,8 +148,10 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
   risega, fa da comodino. Sopra, fino al soffitto della nicchia (260), tre vani alti
   circa 32 con scaffali profondi 26 appoggiati al fianco destro. Il divisorio è aperto
   tra il comodino (159) e il soffitto; sotto fa da testata.
-- **Gavone**: un vano chiuso dentro la colonna, tra il piano letto (104) e il comodino
-  (159). Come si apre è da decidere.
+- **Gavone**: il vano chiuso dentro la colonna, tra il piano letto (104), che gli fa da
+  fondo, e il comodino (159). Si apre dall'alto: il piano del comodino ha un'apertura
+  stondata (28 × 57.4, a 4 cm dai fianchi e 6 da fronte e schiena) in cui appoggiano due
+  coperchi leggeri da 1 cm, ognuno metà apertura, che si alzano.
 - **Scatole dei gradini**: dietro ogni gradino una scatola aperta sul davanti, profonda
   30 (da definire), come un cassetto senza frontale.
 - **Tavolino** (variante): largo quanto le scatole dei gradini (32.6), piano profondo 76.8
@@ -161,8 +163,9 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Cassetti in basso** profondi 75, con cassa (fondo, fianchi, schiena) 1 cm più stretta
   del frontale per lato; escono di 60, il centrale è disegnato aperto.
 - **Ante in basso**: dietro ognuna una scatola con i fianchi da terra al piano letto,
-  che fa da cielo, fondo e schiena. Nell'anta a sinistra un ripiano a metà altezza;
-  nell'anta stretta un bastone appendiabiti dal davanti al dietro, 7 cm sotto il cielo.
+  che fa da cielo, fondo e schiena. Nell'anta a sinistra due ripiani, a un terzo e due
+  terzi dell'altezza; nell'anta stretta un bastone appendiabiti da fianco a fianco, a
+  metà profondità e 7 cm sotto il cielo.
 - **Vani alti**: un piano sotto, una schiena e due divisori tra le ribalte, profondi
   quanto la colonna (69.4).
 - **Fori maniglia** di 4 cm; quelli delle ante a 10 cm dal bordo e 12 dall'alto.

@@ -86,6 +86,21 @@ suite "parete di riferimento":
         check near(q.pos.y, p.spessore + p.profGradini)
     check n == p.nGradini
 
+  test "gavone: apertura nel comodino e due coperchi":
+    let com = m.find("piano testata (comodino)")
+    check com.holesPiano.len == 1
+    let h = com.holesPiano[0]
+    var n = 0
+    var area = 0.0
+    for q in m.parts:
+      if q.name == "coperchio gavone":
+        inc n
+        area += q.size.x * q.size.y
+        check q.apre == "alza" and near(q.z1, com.z1)
+        check q.pos.x >= h.x and q.x1 <= h.x + h.w and q.pos.y >= h.z and q.y1 <= h.z + h.h
+    check n == 2 and area > 0.95 * h.w * h.h
+    check near(m.find("fondo gavone").z1, p.pianoLetto)
+
   test "comodino a filo della risega, scaffali meno profondi":
     check abs(m.find("piano testata (comodino)").size.x - p.risegaLarga) < 0.2
     check near(m.find("ripiano libreria").size.x, 26)

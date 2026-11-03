@@ -274,8 +274,20 @@ proc parete*(p: Parete): Model =
   result.add part("fondo gavone", kPanel, xc, s, p.pianoLetto - s, lc, pc, s)
   # il piano della testata copre anche il divisorio: profondo 38 verso il letto
   let xCom = xCol - s / 2
-  result.add part("piano testata (comodino)", kPanel, xCom, s, p.baseLibreria - s,
-                  p.profComodino, pc, s)
+  # il gavone: lo spazio chiuso sotto il comodino, con il fondo al piano letto.
+  # Ci si accede dall'alto: il piano del comodino ha un'apertura stondata in
+  # cui appoggiano due coperchi leggeri, ognuno metà apertura, che si alzano.
+  var com = part("piano testata (comodino)", kPanel, xCom, s, p.baseLibreria - s,
+                 p.profComodino, pc, s)
+  let (xG, yG, wG2, dG) = (xc + 4, s + 6, lc - 8, pc - 12)   # l'apertura del gavone
+  com.holesPiano.add rrect(xG, yG, wG2, dG, 4)
+  result.add com
+  for k in 0..1:
+    var cop = part("coperchio gavone", kPanel, xG + 0.2, yG + 0.2 + float(k) * dG / 2,
+                   p.baseLibreria - 1, wG2 - 0.4, dG / 2 - 0.4, 1, r = 4)
+    cop.hiddenFront = true
+    cop.apribile("coperchio " & $(k + 1), "alza", 14)
+    result.add cop
   # scaffali meno profondi, appoggiati al fianco destro
   let xScaf = L - s - p.profScaffali
   for h in p.ripiani:
@@ -322,9 +334,11 @@ proc parete*(p: Parete): Model =
   # anta a sinistra: si apre verso sinistra, dentro un ripiano a metà
   let wA = p.colonneBasse[0]
   result.scatolaAnta("anta", cx[0], wA, p.profCassetti)
-  var rip = part("ripiano anta", kPanel, cx[0], s, zBasso + p.zonaBassa / 2 - s / 2, wA, p.profCassetti - 2, s)
-  rip.hiddenFront = true
-  result.add rip
+  for k in 1..2:   # due ripiani, a un terzo e due terzi dell'altezza
+    var rip = part("ripiano anta", kPanel, cx[0], s, zBasso + p.zonaBassa * float(k) / 3 - s / 2,
+                   wA, p.profCassetti - 2, s)
+    rip.hiddenFront = true
+    result.add rip
   var anta = part("anta", kFront, cx[0], 0, zBasso, wA, s, p.zonaBassa, p.raggio)
   var foroAnta = part("foro", kKnob, cx[0] + wA - 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
   anta.apribile("anta", "sx")
@@ -350,12 +364,12 @@ proc parete*(p: Parete): Model =
       q.apribile("cassetto " & $(i + 1), "tira", p.corsa)
       result.add q
   # anta stretta sotto la colonna destra: si apre verso destra, dentro un
-  # bastone appendiabiti dal davanti al dietro (la colonna è stretta e profonda)
+  # bastone appendiabiti da un fianco all'altro, a metà profondità
   let wD = p.colonneBasse[3]
   let profD = p.profColonna - 3 * s
   result.scatolaAnta("anta stretta", cx[3], wD, profD)
-  result.add part("bastone appendiabiti", kAccessory, cx[3] + wD / 2 - 1.25, s + 3,
-                  p.pianoLetto - s - 7, 2.5, profD - 6, 2.5)
+  result.add part("bastone appendiabiti", kAccessory, cx[3], s + profD / 2 - 1.25,
+                  p.pianoLetto - s - 7, wD, 2.5, 2.5)
   var antaDx = part("anta stretta", kFront, cx[3], 0, zBasso, wD, s, p.zonaBassa, p.raggio)
   var foroDx = part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
   antaDx.apribile("anta stretta", "dx")

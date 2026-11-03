@@ -31,11 +31,13 @@ type
     size*: Vec3         ## larghezza, profondità, altezza
     r*: float           ## raggio degli angoli visti di fronte
     holes*: seq[RRect]  ## aperture vuote (pannello frontale, frontale del tavolino)
+    holesPiano*: seq[RRect]  ## aperture in un pannello orizzontale, viste dall'alto:
+                             ## x come sempre, `z` e `h` qui sono y e profondità
     hiddenFront*: bool  ## disegnata tratteggiata nel prospetto frontale
     gruppo*: string     ## parti che si muovono insieme nel 3D (es. "cassetto 1", "tavolino")
     apre*: string       ## come si apre il gruppo nel visore: "" fisso, "tira" (esce verso
                         ## chi guarda), "sx"/"dx" (anta con cerniere a sinistra/destra),
-                        ## "su" (ribalta che si alza)
+                        ## "su" (ribalta che si alza), "alza" (coperchio che si solleva)
     corsa*: float       ## per "tira": di quanto esce
 
   Model* = object

@@ -58,6 +58,7 @@ __BACK__
       <button id="v-alto" type="button">Dall'alto</button>
       <button id="v-dentro" type="button">Dentro: verso la libreria</button>
       <button id="v-testata" type="button">Dentro: dalla testata</button>
+      <button id="v-gavone" type="button">Dentro: il gavone</button>
       <button id="v-tavolino" type="button">Gradini e tavolino</button>
       <button id="v-gambe" type="button">Sotto il tavolino</button>
     </div>
@@ -72,7 +73,7 @@ __BACK__
       <button id="t-fronte" type="button" aria-pressed="false">Nascondi il fronte</button>
     </div>
   </div>
-  <p class="note"><strong>Tocca cassetti, ante, ribalte e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Nelle viste "Dentro" sei seduto sul materasso: trascinando ti guardi intorno. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Nelle viste "Dentro" sei seduto sul materasso: trascinando ti guardi intorno. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
 <script type="importmap">
@@ -139,6 +140,17 @@ function extruded(p) {
   return g;
 }
 
+// un pannello orizzontale con aperture (il piano del comodino): la sagoma
+// vista dall'alto, estrusa verso l'alto per il suo spessore
+function extrudedTop(p) {
+  const shape = roundRect(new THREE.Shape(), p.x, p.y, p.w, p.d, 0);
+  for (const h of p.holesTop) shape.holes.push(roundRect(new THREE.Path(), h.x, h.y, h.w, h.d, h.r));
+  const g = new THREE.ExtrudeGeometry(shape, { depth: p.h, bevelEnabled: false, curveSegments: 8 });
+  g.rotateX(-Math.PI / 2);          // (x, y, z) -> (x, z, -y): y CAD -> -z three
+  g.translate(0, p.z, 0);
+  return g;
+}
+
 let group = new THREE.Group();
 let units = [];       // gruppi apribili: cassetti, ante, ribalte, tavolino
 let frontPanel = [], walls = [];
@@ -152,6 +164,8 @@ function build(m) {
       g = new THREE.CylinderGeometry(p.w / 2, p.w / 2, 0.4, 20);
       g.rotateX(Math.PI / 2);
       g.translate(p.x, p.z, -p.y + 0.15);
+    } else if (p.holesTop && p.holesTop.length > 0) {
+      g = extrudedTop(p);
     } else if (p.holes.length > 0 || ((p.kind === "frontale" || p.kind === "cassetto") && p.r > 0)) {
       g = extruded(p);
     } else {
@@ -193,7 +207,12 @@ function build(m) {
     if (u.apre === 'su') P.set(0, b.max.y, b.max.z);
     u.pivot.position.copy(P); u.inner.position.copy(P).negate();
     if (u.drawnOpen) u.k = u.target = 1;
+    u.centro = b.getCenter(new THREE.Vector3());
   }
+  // per "alza": chi sta davanti va avanti, chi sta dietro va indietro
+  const alzati = units.filter(u => u.apre === 'alza');
+  const zMedio = alzati.reduce((a, u) => a + u.centro.z, 0) / (alzati.length || 1);
+  for (const u of alzati) u.verso = Math.sign(u.centro.z - zMedio) || 0;
   scene.add(group);
 }
 build(model);
@@ -204,6 +223,8 @@ function pose(u) {
   if (u.apre === 'sx') u.pivot.rotation.y = -k * 1.75;
   if (u.apre === 'dx') u.pivot.rotation.y = k * 1.75;
   if (u.apre === 'su') u.pivot.rotation.x = -k * 1.6;
+  // i coperchi si sollevano nel vuoto e si allontanano un poco l'uno dall'altro
+  if (u.apre === 'alza') { u.pivot.position.y = k * u.corsa; u.pivot.position.z = k * 5 * u.verso; }
 }
 const unitByName = n => units.find(u => u.name === n);
 function setOpen(u, open, instant) {
@@ -229,6 +250,8 @@ const views = {
   // dentro la nicchia, seduti sul materasso (occhi a circa 175 cm da terra)
   dentro:  { pos: [20, 178, -50], target: [50, 176, -45], fov: 72 },
   testata: { pos: [180, 180, -60], target: [150, 172, -52], fov: 72 },
+  // in ginocchio sul materasso, guardando giù verso il comodino e il gavone
+  gavone:  { pos: [150, 205, -30], target: [216, 152, -38], fov: 60 },
   // davanti alla scaletta, un po' da sinistra e dall'alto
   tavolino: { pos: [-40, 150, 230], target: [110, 40, 10] },
   // di fianco al tavolino estratto, per vedere lo spazio per le gambe
