@@ -195,7 +195,7 @@ proc parete*(p: Parete): Model =
       q.gruppo = gruppo
       m.add q
   for i in nT ..< p.nGradini:
-    result.scatola(i, s, p.profGradini)
+    result.scatola(i, s, p.profGradini, "scatola gradino " & $(i + 1))
 
   # --- variante: tavolino estraibile ---------------------------------------
   # Il frontale porta i primi gradini; dietro c'è il piano, nascosto dal frontale.
@@ -321,15 +321,20 @@ proc parete*(p: Parete): Model =
   let zTop = zBasso + p.zonaBassa
   # dietro ogni anta una scatola aperta sul davanti: fianchi da terra fino al
   # piano letto (che fa da cielo), fondo sotto l'anta, schiena dietro
+  # (le parti della scatola hanno lo stesso gruppo: nell'esploso restano insieme)
   proc scatolaAnta(m: var Model; nome: string; x, w, prof: float) =
     let zCielo = p.pianoLetto - s
     for xf in [x - s, x + w]:
       var f = part("fianco " & nome, kPanel, xf, s, 0, s, prof + s, zCielo)
       f.hiddenFront = true
+      f.gruppo = "scatola " & nome
       m.add f
-    m.add part("fondo " & nome, kPanel, x, s, zBasso - s, w, prof, s)
+    var fo = part("fondo " & nome, kPanel, x, s, zBasso - s, w, prof, s)
+    fo.gruppo = "scatola " & nome
+    m.add fo
     var sc = part("schiena " & nome, kPanel, x, s + prof, zBasso, w, s, zCielo - zBasso)
     sc.hiddenFront = true
+    sc.gruppo = "scatola " & nome
     m.add sc
   # anta a sinistra: si apre verso sinistra, dentro un ripiano a metà
   let wA = p.colonneBasse[0]
@@ -338,6 +343,7 @@ proc parete*(p: Parete): Model =
     var rip = part("ripiano anta", kPanel, cx[0], s, zBasso + p.zonaBassa * float(k) / 3 - s / 2,
                    wA, p.profCassetti - 2, s)
     rip.hiddenFront = true
+    rip.gruppo = "scatola anta"
     result.add rip
   var anta = part("anta", kFront, cx[0], 0, zBasso, wA, s, p.zonaBassa, p.raggio)
   var foroAnta = part("foro", kKnob, cx[0] + wA - 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
@@ -368,8 +374,10 @@ proc parete*(p: Parete): Model =
   let wD = p.colonneBasse[3]
   let profD = p.profColonna - 3 * s
   result.scatolaAnta("anta stretta", cx[3], wD, profD)
-  result.add part("bastone appendiabiti", kAccessory, cx[3], s + profD / 2 - 1.25,
-                  p.pianoLetto - s - 7, wD, 2.5, 2.5)
+  var bastone = part("bastone appendiabiti", kAccessory, cx[3], s + profD / 2 - 1.25,
+                     p.pianoLetto - s - 7, wD, 2.5, 2.5)
+  bastone.gruppo = "scatola anta stretta"
+  result.add bastone
   var antaDx = part("anta stretta", kFront, cx[3], 0, zBasso, wD, s, p.zonaBassa, p.raggio)
   var foroDx = part("foro", kKnob, cx[3] + 10, 0, zTop - 12, p.diamForo, 0, p.diamForo)
   antaDx.apribile("anta stretta", "dx")

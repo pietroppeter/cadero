@@ -34,7 +34,8 @@ type
     holesPiano*: seq[RRect]  ## aperture in un pannello orizzontale, viste dall'alto:
                              ## x come sempre, `z` e `h` qui sono y e profondità
     hiddenFront*: bool  ## disegnata tratteggiata nel prospetto frontale
-    gruppo*: string     ## parti che si muovono insieme nel 3D (es. "cassetto 1", "tavolino")
+    gruppo*: string     ## parti che si muovono insieme nel 3D (es. "cassetto 1", "tavolino"):
+                        ## si aprono insieme e nell'esploso restano unite
     apre*: string       ## come si apre il gruppo nel visore: "" fisso, "tira" (esce verso
                         ## chi guarda), "sx"/"dx" (anta con cerniere a sinistra/destra),
                         ## "su" (ribalta che si alza), "alza" (coperchio che si solleva)
