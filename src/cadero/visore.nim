@@ -101,6 +101,8 @@ var
   tagli: Table[string, int]
   selezionato = ""
   tSez, boxSez: Element
+  geometrie: seq[BufferGeometry]   ## della scena di ora: si liberano quando si ricostruisce
+  aggiorna: proc (m: Model)        ## ricostruisce la scena con un altro modello (vedi `mostra`)
 
 const
   colPiano = 0x2b8fd6   ## piano di taglio
@@ -247,7 +249,8 @@ proc costruisci(m: Model) =
   ## (mesh + spigoli); le parti con un gruppo apribile vanno dentro la sua
   ## coppia pivot/inner; ogni pezzo dell'esploso ha il suo contenitore `wrap`.
   if group != nil and group.parent != nil: scene.remove(group)
-  group = newGroup(); units = @[]; frontPanel = @[]; walls = @[]; pezzi = @[]
+  for g in geometrie: g.dispose()
+  group = newGroup(); units = @[]; frontPanel = @[]; walls = @[]; pezzi = @[]; geometrie = @[]
   var byName: Table[string, Unita]
   var wrapByName: Table[string, Pezzo]
   # il contenitore che l'esploso sposta: uno per gruppo, uno per ogni altra parte
@@ -264,12 +267,15 @@ proc costruisci(m: Model) =
 
   for p in m.parts:
     let g = geometria(p)
+    geometrie.add g
     let obj = newGroup()
     let mesh = if p.kind == kSoft: (uvMaterasso(g); newMesh(g, matMaterasso))
                else: newMesh(g, mats[p.kind])
     obj.add(mesh)
     if p.kind notin {kKnob, kSoft, kWall}:
-      obj.add(newLineSegments(newEdgesGeometry(g, 30), edgeMat))
+      let e = newEdgesGeometry(g, 30)
+      geometrie.add e
+      obj.add(newLineSegments(e, edgeMat))
     if p.kind == kWall and "carta" in p.name:
       uvCarta(g)
       walls.add mesh
@@ -620,6 +626,10 @@ proc aggiornaSezioni() =
   for v in viste: disegna(v.nome)
   posizionaPiani()
 
+proc mostra*(m: Model) =
+  ## Mostra un altro modello nel visore già avviato (la camera resta dov'è).
+  if aggiorna != nil: aggiorna(m)
+
 # --- l'avvio ------------------------------------------------------------------------
 proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   ## Avvia il visore nella pagina. `varianti` ha un modello per ogni combinazione
@@ -764,6 +774,18 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       let b = b
       b.addEventListener("click", proc (ev: Event) = b.premi(not premuto(b)); cambiaModello())
   applyToggles()
+  # un modello qualsiasi (la pagina dei parametri): ricostruisce la scena e
+  # rimette aperto quello che era aperto
+  aggiorna = proc (m: Model) =
+    var aperti: Table[string, float]
+    for u in units: aperti[u.nome] = u.target
+    modello = preparato(m)
+    costruisci(modello); applyToggles(); applyEsploso(); pianiTaglio()
+    for u in units:
+      if u.nome in aperti and not u.disegnataAperta:
+        u.target = aperti[u.nome]; u.k = u.target; posa(u)
+    if premuto(tSez): aggiornaSezioni()
+    status.textContent = cstring($modello.parts.len & " parti")
   # la tavola sotto il visore si scarica com'è
   el("scarica-tavola").addEventListener("click", proc (ev: Event) =
     scarica(document.querySelector(".tavola svg").outerHTML, "tavola.svg"))
