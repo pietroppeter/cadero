@@ -20,6 +20,12 @@ nbRawHtml: """
     pianta con le quote, vista 3D, una variante con misure diverse, distinta dei
     pezzi ed elenco delle ipotesi da verificare.</span>
   </a>
+  <a class="scheda" href="modello_falegnami.html">
+    <b>Il modello dei falegnami</b>
+    <span>La parete come l'hanno disegnata i falegnami, divisa nei mobili da
+    costruire: tavola, calcoli della nicchia, confronto con la nostra, cose da
+    chiedere e distinta. Nel visore 3D: pulsante Falegnami.</span>
+  </a>
   <a class="scheda" href="visore3d.html">
     <b>Visore 3D</b>
     <span>La parete a tutto schermo da ruotare e zoomare, con viste predefinite

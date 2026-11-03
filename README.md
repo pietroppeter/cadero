@@ -32,6 +32,11 @@ dall'[indice](https://pietroppeter.github.io/cadero/) (sorgente:
   per ogni parametro (sorgente: [`docsrc/parametri.nim`](docsrc/parametri.nim),
   cursori in [`docsrc/banco_parametri.nim`](docsrc/banco_parametri.nim), descrizione
   dei parametri in [`models/parete_parametri.nim`](models/parete_parametri.nim))
+- [Il modello dei falegnami](https://pietroppeter.github.io/cadero/modello_falegnami.html):
+  la parete come l'hanno disegnata i falegnami, divisa nei mobili da costruire, con
+  il confronto con la nostra e le cose da chiedere; nel visore 3D si sceglie con
+  "Falegnami" (sorgente: [`docsrc/modello_falegnami.nim`](docsrc/modello_falegnami.nim),
+  modello in [`models/falegnami.nim`](models/falegnami.nim))
 - [Come è fatto il visore 3D](https://pietroppeter.github.io/cadero/visore_nim.html):
   come funziona il visore e come è passato da JavaScript a Nim (binding di three.js,
   blocco `nbJsFromCode`) (sorgente: [`docsrc/visore_nim.nim`](docsrc/visore_nim.nim))
@@ -50,17 +55,19 @@ src/cadero/visore.nim     il visore 3D, in Nim compilato in JavaScript
 src/cadero/js/            binding di three.js e del browser per il visore
 models/parete.nim         il mobile: parametri + funzione che crea le parti + quote
 models/parete_parametri.nim i parametri descritti: gruppi, origine, derivate, quote proposte
+models/falegnami.nim      il modello dei falegnami: gli stessi spazi divisi in mobili
 docsrc/index.nim          l'indice dei documenti
 docsrc/parete_nicchia.nim il documento della parete
 docsrc/come_funziona.nim  la spiegazione del codice
 docsrc/visore3d.nim       la pagina del visore 3D (blocco nbJsFromCode)
 docsrc/visore_nim.nim     come funziona il visore in Nim
 docsrc/parametri.nim      i parametri della parete, con il banco (visore + cursori)
+docsrc/modello_falegnami.nim il modello dei falegnami, confrontato con il nostro
 docsrc/all_docs.nim       tutti i documenti in un solo binario (va aggiornato con i nuovi)
 docsrc/tema.nim           il tema dei documenti (stesso stile degli artefatti)
 tools/visore3d.tpl.html   stile e pulsanti del visore
 tools/visore3d.nim        dalla pagina del visore all'artefatto claude.ai
-tests/test_parete.nim     controlli sulle misure
+tests/test_parete.nim     controlli sulle misure (anche del modello dei falegnami)
 ```
 
 L'idea di fondo: un mobile è una funzione dei suoi parametri. `parete(rilievo())`

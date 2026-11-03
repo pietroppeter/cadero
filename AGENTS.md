@@ -3,7 +3,10 @@
 ## Il progetto
 
 Mini CAD in Nim per mobili fatti di pannelli, esplorato con documenti nimib.
-Il primo (e per ora unico) mobile è la parete con nicchia letto in `models/parete.nim`.
+Il mobile è la parete con nicchia letto in `models/parete.nim` (la nostra). Accanto c'è
+`models/falegnami.nim`: la stessa parete come l'hanno disegnata i falegnami (7 tavole
+SketchUp del 3 novembre 2026), divisa nei mobili da costruire; i due modelli restano
+separati (la nostra non si tocca per il loro) e il documento `modello_falegnami` li confronta.
 Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato in italiano.
 
 ## Convenzioni
@@ -54,6 +57,14 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   `docs/`, per questo gli import cominciano con `../`. Nei cicli che creano closure
   (pulsanti) serve `closureScope:` con una copia della variabile. Spiegazione in
   `docsrc/visore_nim.nim`. Un binding three.js nuovo va in `js/three.nim`.
+- Un pannello frontale diviso in pezzi (i quattro pannelli dei falegnami) si fa con
+  `pannelloForato`: le aperture tutte dentro un pezzo sono fori, quelle che passano da un
+  pezzo all'altro diventano tacche del contorno (`Part.contorno`, poligono nel piano x, z).
+  Viste 2D, 3D e sezioni del visore usano il contorno; `pieni` dà i tratti pieni lungo un
+  taglio. I pezzi del fronte si chiamano "fronte ..." (il pulsante "Pannello frontale" li
+  nasconde tutti); solo la parte chiamata esattamente "fronte" riceve come fori le sagome
+  dei frontali (`foriVisti`), perché nella nostra parete ante e cassetti stanno a filo.
+- `Part.materiale = "melaminico"`: le scatole grigie dei falegnami (grigie nel visore).
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
@@ -76,6 +87,7 @@ src/cadero/web.nim       JSON + frammento HTML three.js per nimib (vista 3D picc
 src/cadero/visore.nim    il visore 3D (solo backend JS)
 src/cadero/js/           binding three.js (three.nim) e browser (pagina.nim)
 models/parete.nim        parametri rilievo(), parete(p), quote(p), tavola(p, m)
+models/falegnami.nim     il modello dei falegnami: falegnami(), modello(f), controlli, quote, tavola
 models/parete_parametri.nim  gruppi dei parametri per le pagine (etichette, intervalli,
                          origine), misure derivate, schema delle catene, tavola proposta.
                          Un parametro nuovo di Parete va aggiunto anche qui.
@@ -86,6 +98,7 @@ docsrc/visore3d.nim      il visore 3D (-> docs/visore3d.html), template tools/vi
 docsrc/visore_nim.nim    come funziona il visore in Nim (-> docs/visore_nim.html)
 docsrc/parametri.nim     i parametri della parete (-> docs/parametri.html): banco con visore
                          e cursori (docsrc/banco_parametri.nim, solo JS)
+docsrc/modello_falegnami.nim il modello dei falegnami (-> docs/modello_falegnami.html)
 docsrc/all_docs.nim      importa tutti i documenti: un solo binario
 docsrc/tema.nim          tema nimib con lo stile degli artefatti (nbInit(theme = useTema))
 tests/test_parete.nim    controlli sulle quote della tavola di riferimento

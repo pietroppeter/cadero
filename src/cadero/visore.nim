@@ -66,6 +66,10 @@ proc w(p: Part): float = p.size.x
 proc d(p: Part): float = p.size.y
 proc h(p: Part): float = p.size.z
 
+proc isFronte(p: Part): bool =
+  ## il pannello frontale, o uno dei suoi pezzi ("fronte alto sx", "fronte fascia"...)
+  p.name == "fronte" or p.name.startsWith("fronte ")
+
 proc preparato(m: Model): Model =
   ## Il modello come lo disegna il visore: il pannello frontale riceve come
   ## fori anche le sagome dei frontali, che vanno a occuparli (vedi `foriVisti`).
@@ -84,6 +88,7 @@ var
   controls: OrbitControls
   mats: Table[Kind, Material]
   matMaterasso: seq[Material]
+  matMelaminico: Material  ## le scatole in melaminico grigio dei falegnami
   cartaMat: Material
   edgeMat: Material
   group: Group
@@ -138,6 +143,7 @@ proc materiali() =
     x.fillStyle = "#c9bfa8"; x.fillRect(0, 0, 128, 6); x.fillRect(0, 122, 128, 6))   # i cordoncini
   matMaterasso = @[fascia, fascia, trapunta, trapunta, fascia, fascia]   # ±x, ±y, ±z
   mats[kPanel] = ply
+  matMelaminico = newMeshStandardMaterial(js{color: 0xc9cdd1, roughness: 0.6})
   mats[kFront] = front
   mats[kBox] = front
   mats[kKnob] = newMeshStandardMaterial(js{color: 0x3a2e22})
@@ -191,7 +197,13 @@ proc roundRect[P: Path](path: P; x, y, w, h, r: float): P =
 
 proc extruded(p: Part): BufferGeometry =
   ## Una sagoma vista di fronte (con i suoi fori) estrusa in profondità.
-  let shape = newShape().roundRect(p.x, p.z, p.w, p.h, p.r)
+  var shape: Shape
+  if p.contorno.len > 0:      # un pezzo del fronte, con le tacche delle aperture
+    shape = newShape()
+    for i, (x, z) in p.contorno:
+      if i > 0: shape.lineTo(x, z) else: shape.moveTo(x, z)
+    shape.closePath()
+  else: shape = newShape().roundRect(p.x, p.z, p.w, p.h, p.r)
   for h in p.holes: shape.holes.add newPath().roundRect(h.x, h.z, h.w, h.h, h.r)
   result = newExtrudeGeometry(shape, js{depth: p.d, bevelEnabled: false, curveSegments: 8})
   result.translate(0, 0, -(p.y + p.d))
@@ -233,7 +245,7 @@ proc geometria(p: Part): BufferGeometry =
     result.translate(p.x, p.z, -p.y + 0.15)
   elif p.holesPiano.len > 0 or p.taccheP.len > 0:
     result = extrudedTop(p)
-  elif p.holes.len > 0 or (p.kind in {kFront, kBox} and p.r > 0):
+  elif p.holes.len > 0 or p.contorno.len > 0 or (p.kind in {kFront, kBox} and p.r > 0):
     result = extruded(p)
   else:
     result = newBoxGeometry(p.w, p.h, p.d)
@@ -259,7 +271,7 @@ proc costruisci(m: Model) =
     if chiave.len > 0 and chiave in wrapByName:
       if p.apre.len > 0: wrapByName[chiave].apribile = true
       return wrapByName[chiave].wrap
-    let pz = Pezzo(wrap: newGroup(), fisso: p.kind == kWall, fronte: p.name == "fronte",
+    let pz = Pezzo(wrap: newGroup(), fisso: p.kind == kWall, fronte: p.isFronte,
                    apribile: p.apre.len > 0)
     group.add(pz.wrap); pezzi.add pz
     if chiave.len > 0: wrapByName[chiave] = pz
@@ -270,6 +282,7 @@ proc costruisci(m: Model) =
     geometrie.add g
     let obj = newGroup()
     let mesh = if p.kind == kSoft: (uvMaterasso(g); newMesh(g, matMaterasso))
+               elif p.materiale == "melaminico": newMesh(g, matMelaminico)
                else: newMesh(g, mats[p.kind])
     obj.add(mesh)
     if p.kind notin {kKnob, kSoft, kWall}:
@@ -295,7 +308,7 @@ proc costruisci(m: Model) =
       u.inner.add(obj)
       obj.userData["unit"] = u.toJs
     else: wrapOf(p).add(obj)
-    if p.name == "fronte": frontPanel.add obj
+    if p.isFronte: frontPanel.add obj
 
   # il perno di ogni gruppo: lo spigolo della cerniera, sul piano del fronte
   for u in units:
@@ -327,7 +340,8 @@ proc costruisci(m: Model) =
   for pz in pezzi:
     let cz = newBox3().setFromObject(pz.wrap).getCenter(newVector3())
     pz.dir = if pz.fisso: newVector3() else: cz.sub(c0).multiply(newVector3(0.7, 0.5, 1.2))
-    if pz.fronte: pz.dir.set(0, 0, 70)
+    if pz.fronte:   # il fronte va avanti; i suoi pezzi, se è diviso, si allargano un poco
+      pz.dir = cz.clone().sub(c0).multiply(newVector3(0.25, 0.25, 0)).add(newVector3(0, 0, 70))
     if pz.apribile: pz.dir.z += 110
   scene.add(group)
 
@@ -494,7 +508,15 @@ proc oltre(nome: string; p: Part; c: float): bool =
   else: p.y > c
 
 proc foriTaglio(nome: string; p: Part; c: float): seq[(float, float)] =
-  ## dove il taglio attraversa un'apertura del pannello
+  ## dove il taglio attraversa un'apertura del pannello (o, per un pezzo del
+  ## fronte con le tacche, dove non è pieno)
+  if p.contorno.len > 0 and nome in ["pianta", "laterale"]:
+    let (a0, a1) = if nome == "pianta": (p.x, p.x + p.w) else: (p.z, p.z + p.h)
+    var da = a0
+    for (u0, u1) in p.pieni(if nome == "pianta": 'z' else: 'x', c):
+      if u0 > da: result.add (da, u0)
+      da = u1
+    if da < a1: result.add (da, a1)
   for h in p.holes:
     case nome
     of "pianta":
@@ -516,6 +538,12 @@ proc rr(x0, y0, x1, y1: float; r = 0.0): string =
     "V" & f(y1 - r) & "Q" & f(x1) & "," & f(y1) & " " & f(x1 - r) & "," & f(y1) & "H" & f(x0 + r) &
     "Q" & f(x0) & "," & f(y1) & " " & f(x0) & "," & f(y1 - r) & "V" & f(y0 + r) &
     "Q" & f(x0) & "," & f(y0) & " " & f(x0 + r) & "," & f(y0) & "Z"
+
+proc contornoSvg(p: Part; fv: float): string =
+  ## il contorno vero di un pezzo del fronte, come path SVG del prospetto
+  for i, (x, z) in p.contorno:
+    result.add (if i == 0: "M" else: "L") & fmt(x) & "," & fmt(fv - z)
+  result.add "Z"
 
 proc el2(tag: string; attrs: openArray[(string, string)]): Element =
   result = svg(tag.cstring)
@@ -553,7 +581,8 @@ proc disegna(nome: string) =
       continue
     if cut(nome, p, c) and p.kind notin {kSoft, kAccessory}:
       if nome == "prospetto":     # pannello tagliato di piatto: pieno meno le aperture
-        var dd = rr(a, b, c2, d, if p.kind == kFront: p.r else: 0)
+        var dd = if p.contorno.len > 0: contornoSvg(p, fv)
+                 else: rr(a, b, c2, d, if p.kind == kFront: p.r else: 0)
         for h in p.holes: dd &= rr(h.x, fv - h.z - h.h, h.x + h.w, fv - h.z, h.r)
         gC.appendChild el2("path", {"d": dd})
       else:                       # i pannelli forati si interrompono dove c'è un'apertura
@@ -569,7 +598,8 @@ proc disegna(nome: string) =
           pezzo(da, s0); da = max(da, s1)
         pezzo(da, fino)
     elif oltre(nome, p, c):
-      let pathD = rr(a, b, c2, d, if nome == "prospetto": p.r else: 0)
+      let pathD = if nome == "prospetto" and p.contorno.len > 0: contornoSvg(p, fv)
+                  else: rr(a, b, c2, d, if nome == "prospetto": p.r else: 0)
       if p.kind == kSoft: gO.appendChild el2("path", {"d": pathD, "stroke-dasharray": "1.5 1"})
       else: gO.appendChild el2("path", {"d": pathD})
       if nome == "prospetto":
@@ -755,21 +785,28 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let tRisega = el("m-risega")
   let tAntina = el("m-antina")
   let tPrese = el("m-prese")
+  let tPannello = el("m-pannello")
+  let falegnami = "falegnami" in modelli   # il modello dei falegnami, se la pagina lo ha
+  el("m-falegnami").nascosto(not falegnami)
   proc cambiaModello() =
+    let fal = variante == "falegnami"
     tAntina.nascosto(variante != "tavolino")
-    modello = modelli[variante & (if premuto(tRisega): "Scoperta" else: "") &
+    tPannello.nascosto(not fal)
+    for b in [tRisega, tPrese]: b.nascosto(fal)
+    modello = if fal: modelli["falegnami" & (if premuto(tPannello): "" else: "SenzaPannello")]
+              else: modelli[variante & (if premuto(tRisega): "Scoperta" else: "") &
                     (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &
                     (if premuto(tPrese): "Comodino" else: "")]
-    for n in ["base", "tavolino"]: el("m-" & n).premi(n == variante)
+    for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
     costruisci(modello); applyToggles(); applyEsploso(); pianiTaglio()
     if premuto(tSez): aggiornaSezioni()
     status.textContent = cstring($modello.parts.len & " parti")
-  for name in ["base", "tavolino"]:
+  for name in ["base", "tavolino", "falegnami"]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let name = name
       el("m-" & name).addEventListener("click", proc (ev: Event) =
         variante = name; cambiaModello())
-  for b in [tRisega, tAntina, tPrese]:
+  for b in [tRisega, tAntina, tPrese, tPannello]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let b = b
       b.addEventListener("click", proc (ev: Event) = b.premi(not premuto(b)); cambiaModello())

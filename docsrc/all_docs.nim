@@ -6,4 +6,4 @@
 ##   nim r docsrc/all_docs.nim
 ##
 ## Ogni documento nuovo in docsrc/ va aggiunto qui (e all'indice).
-import index, parete_nicchia, come_funziona, visore3d, visore_nim, parametri
+import index, parete_nicchia, come_funziona, visore3d, visore_nim, parametri, modello_falegnami

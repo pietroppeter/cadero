@@ -279,3 +279,36 @@ suite "parete di riferimento":
     let h = com.holesPiano[0]
     check h.x + h.w <= sc2.pos.x - 1.9 and h.w < wBase   # il gavone si stringe
     check pc.controlli.len == 1
+
+import ../models/falegnami
+
+suite "modello dei falegnami":
+  let f = falegnami()
+  let mf = modello(f)
+  test "le larghezze del fronte tornano con margini uguali":
+    check near(f.larghezza, 236.8) and near(f.altezza, 319.6)
+    check near(f.margine, 6.05) and near(f.margineAlto, 6.05)
+    check near(f.spazioCassetti, 4)
+    let c = f.colonne
+    check near(c[3] + f.antaD + f.margine, f.spalla + 2 * f.pannelloL)
+  test "i gradini arrivano in cima alle ante, con e senza pannellino":
+    for g in [f, f.senzaPannello]:
+      let z = g.zGradini
+      check near(z[0], g.zBassi)
+      check near(z[^1] + g.gradini[^1], g.zBassi + g.altezzaAnte)
+  test "il fronte è in quattro pezzi e la nicchia ne attraversa tutti":
+    var pezzi = 0
+    for q in mf.parts:
+      if q.name.startsWith("fronte ") and q.name notin ["fronte fascia", "fronte spalla sx", "fronte spalla dx"]:
+        inc pezzi
+        check q.contorno.len > 4          # la tacca della nicchia
+        for h in q.holes:                 # i fori stanno tutti dentro il pezzo
+          check h.x > q.pos.x and h.x + h.w < q.x1 and h.z > q.pos.z and h.z + h.h < q.z1
+    check pezzi == 4
+  test "la nicchia nei pezzi: pieno solo fuori dall'apertura":
+    let a = mf.find("fronte basso sx")
+    let tratti = a.pieni('z', 150)       # sopra il piano letto, dentro l'apertura
+    check tratti.len == 1 and near(tratti[0][0], a.pos.x) and near(tratti[0][1], f.colonne[0])
+  test "i controlli segnalano altezza, profondità e testata":
+    let c = controlli(f, mf).join("\n")
+    check "alto 319.6" in c and "81.1" in c and "testata" in c
