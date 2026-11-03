@@ -30,7 +30,9 @@ h1 { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 5vw, 
   border: 1px solid var(--line); border-radius: 6px; overflow: hidden; touch-action: none; }
 .stage canvas { display: block; width: 100%; height: 100%; }
 .status { position: absolute; left: 12px; bottom: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); pointer-events: none; }
-.bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; justify-content: flex-start; }
+button.modo { border-style: dashed; margin-left: 6px; }
+button.modo[aria-pressed="true"] { border-style: solid; background: var(--accent); color: var(--panel); }
 .group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .label { font-family: var(--display); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
 button { font: 500 14px var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
@@ -68,25 +70,31 @@ __BACK__
       <span class="label">Vista</span>
       <button id="v-fronte" type="button">Fronte</button>
       <button id="v-nicchia" type="button">Nicchia</button>
-      <button id="v-lato" type="button">Lato</button>
-      <button id="v-alto" type="button">Dall'alto</button>
-      <button id="v-dentro" type="button">Dentro: verso la libreria</button>
-      <button id="v-testata" type="button">Dentro: dalla testata</button>
-      <button id="v-gavone" type="button">Dentro: il gavone</button>
-      <button id="v-tavolino" type="button">Gradini e tavolino</button>
-      <button id="v-gambe" type="button">Sotto il tavolino</button>
+      <button id="v-dentro" type="button">Dentro</button>
+      <button id="v-gavone" type="button">Gavone</button>
+      <button id="v-tavolino" type="button">Gradini</button>
+      <button id="v-gambe" type="button" hidden>Sotto il tavolino</button>
+      <button id="v-cammina" class="modo" type="button" aria-pressed="false" title="Rotella o pizzico per andare avanti e indietro invece dello zoom">Cammina</button>
     </div>
-    <div class="group" role="group" aria-label="Variante">
+    <div class="group" role="group" aria-label="Mobile">
       <span class="label">Mobile</span>
       <button id="m-base" type="button" aria-pressed="true">Base</button>
       <button id="m-tavolino" type="button" aria-pressed="false">Con tavolino</button>
     </div>
-    <div class="group">
+    <div class="group" role="group" aria-label="Apertura">
+      <span class="label">Apertura</span>
+      <button id="t-apri" type="button">Apri tutto</button>
       <button id="t-chiudi" type="button">Chiudi tutto</button>
+    </div>
+    <div class="group" role="group" aria-label="Nascondi">
+      <span class="label">Nascondi</span>
+      <button id="t-carta" type="button" aria-pressed="false" hidden>Carta da parati</button>
+      <button id="t-fronte" type="button" aria-pressed="false">Pannello frontale</button>
+    </div>
+    <div class="group" role="group" aria-label="Speciale">
+      <span class="label">Speciale</span>
       <button id="t-esploso" type="button" aria-pressed="false">Esploso</button>
       <button id="t-sezioni" type="button" aria-pressed="false">Sezioni</button>
-      <button id="t-carta" type="button" aria-pressed="true" hidden>Carta da parati</button>
-      <button id="t-fronte" type="button" aria-pressed="false">Nascondi il fronte</button>
     </div>
   </div>
   <div class="sezioni" id="sezioni" hidden>
@@ -110,7 +118,7 @@ __BACK__
       <div class="misure">guardando verso il muro, a una profondità y dal fronte</div>
     </div>
   </div>
-  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Nelle viste "Dentro" sei seduto sul materasso: trascinando ti guardi intorno. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Con <strong>Cammina</strong> la rotella o il pizzico ti portano avanti e indietro invece di zoomare, e trascinando ti guardi intorno: così arrivi in qualsiasi punto. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
 </div>
 
 <script type="importmap">
@@ -304,31 +312,68 @@ controls.maxDistance = size * 4;
 
 // punti di vista (in cm, coordinate three)
 const views = {
-  fronte:  { pos: [c.x, c.y, c.z + size * 1.25], target: [c.x, c.y, c.z] },
+  // il mobile intero, alla distanza giusta per lo schermo (anche in verticale)
+  fronte:  () => {
+    const t = Math.tan(THREE.MathUtils.degToRad(35) / 2), m = box.getSize(new THREE.Vector3());
+    const d = Math.max(m.y / 2 / t, m.x / 2 / (t * camera.aspect)) * 1.12 + m.z / 2;
+    return { pos: [c.x, c.y, c.z + d], target: [c.x, c.y, c.z] };
+  },
   nicchia: { pos: [-30, 215, 230], target: [175, 180, -40] },
-  lato:    { pos: [c.x + size * 1.1, c.y + size * 0.15, c.z + size * 0.35], target: [c.x, c.y, c.z] },
-  alto:    { pos: [c.x - size * 0.3, c.y + size * 1.1, c.z + size * 0.6], target: [c.x, c.y - 40, c.z] },
-  // dentro la nicchia, seduti sul materasso (occhi a circa 175 cm da terra)
-  dentro:  { pos: [20, 178, -50], target: [50, 176, -45], fov: 72 },
-  testata: { pos: [180, 180, -60], target: [150, 172, -52], fov: 72 },
-  // in ginocchio sul materasso, guardando giù verso il comodino e il gavone
-  gavone:  { pos: [150, 205, -30], target: [216, 152, -38], fov: 60 },
+  // dentro la nicchia, al centro e un po' in alto: si vedono libreria, comodino e gavone
+  dentro:  { pos: [40, 200, -45], target: [200, 160, -40], fov: 72 },
+  // sopra il comodino, abbastanza lontano da vedere il gavone intero
+  gavone:  { pos: [110, 228, -24], target: [216, 152, -38], fov: 60 },
   // davanti alla scaletta, un po' da sinistra e dall'alto
   tavolino: { pos: [-40, 150, 230], target: [110, 40, 10] },
   // di fianco al tavolino estratto, per vedere lo spazio per le gambe
   gambe:    { pos: [-110, 75, 125], target: [95, 35, 30] },
 };
+// modalità "cammina": la rotella (o il pizzico) porta avanti e indietro
+// invece dello zoom, e trascinando ci si guarda intorno
+const tCammina = document.getElementById('v-cammina');
+let cammina = false;
+function vicino() {          // il punto di rotazione appena davanti agli occhi
+  const dir = controls.target.clone().sub(camera.position).normalize();
+  controls.target.copy(camera.position).addScaledVector(dir, 20);
+}
+function avanza(cm) {
+  const dir = controls.target.clone().sub(camera.position).normalize();
+  camera.position.addScaledVector(dir, cm); controls.target.addScaledVector(dir, cm);
+}
+tCammina.addEventListener('click', () => {
+  cammina = !cammina;
+  tCammina.setAttribute('aria-pressed', String(cammina));
+  controls.enableZoom = !cammina;
+  if (cammina) vicino();
+});
+renderer.domElement.addEventListener('wheel', ev => {
+  if (!cammina) return;
+  ev.preventDefault();
+  avanza(Math.max(-40, Math.min(40, -ev.deltaY * 0.12)));
+}, { passive: false });
+let pizzico = null;
+renderer.domElement.addEventListener('touchmove', ev => {
+  if (!cammina || ev.touches.length !== 2) { pizzico = null; return; }
+  const [a, b] = ev.touches, d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  if (pizzico !== null) avanza((d - pizzico) * 0.6);
+  pizzico = d;
+}, { passive: true });
+renderer.domElement.addEventListener('touchend', () => { pizzico = null; });
+
 let anim = null;
 function goTo(name, instant) {
-  const v = views[name];
+  const v = typeof views[name] === 'function' ? views[name]() : views[name];
   const to = { pos: new THREE.Vector3(...v.pos), target: new THREE.Vector3(...v.target) };
   camera.fov = v.fov || 35; camera.updateProjectionMatrix();
   if (instant || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    camera.position.copy(to.pos); controls.target.copy(to.target); controls.update(); return;
+    camera.position.copy(to.pos); controls.target.copy(to.target); if (cammina) vicino(); controls.update(); return;
   }
   anim = { from: { pos: camera.position.clone(), target: controls.target.clone() }, to, t0: performance.now() };
 }
-camera.position.set(c.x - size * 0.6, c.y + size * 0.2, c.z + size * 1.45);
+{ // all'inizio: di tre quarti, alla stessa distanza della vista "Fronte"
+  const d = views.fronte().pos[2] - c.z;
+  camera.position.set(c.x - d * 0.42, c.y + d * 0.12, c.z + d * 0.92);
+}
 controls.target.copy(c);
 controls.update();
 
@@ -413,12 +458,13 @@ const tCarta = document.getElementById('t-carta');
 tCarta.hidden = !carta;
 function applyToggles() {
   for (const f of frontPanel) f.visible = !pressed(tFront);
-  const on = carta && pressed(tCarta);
+  const on = carta && !pressed(tCarta);
   for (const w of walls) w.material = on ? cartaMat : mats.muro;
 }
 for (const btn of [tFront, tCarta])
   btn.addEventListener('click', () => { btn.setAttribute('aria-pressed', String(!pressed(btn))); applyToggles(); });
 document.getElementById('t-chiudi').addEventListener('click', () => { for (const u of units) setOpen(u, false); });
+document.getElementById('t-apri').addEventListener('click', () => { for (const u of units) setOpen(u, true); });
 const tEsploso = document.getElementById('t-esploso');
 tEsploso.addEventListener('click', () => {
   const on = !pressed(tEsploso);
@@ -434,6 +480,7 @@ for (const name of Object.keys(models)) {
     for (const n of Object.keys(models)) document.getElementById('m-' + n).setAttribute('aria-pressed', String(n === name));
     build(model); applyToggles(); applyEsploso(); pianiTaglio();
     if (pressed(tSez)) aggiornaSezioni();
+    document.getElementById('v-gambe').hidden = name !== 'tavolino';
     if (name === 'tavolino') goTo('tavolino');
     status.textContent = model.parts.length + ' parti';
   });
@@ -591,7 +638,7 @@ function loop(now) {
     const k = Math.min(1, (now - anim.t0) / 700), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     camera.position.lerpVectors(anim.from.pos, anim.to.pos, e);
     controls.target.lerpVectors(anim.from.target, anim.to.target, e);
-    if (k >= 1) anim = null;
+    if (k >= 1) { anim = null; if (cammina) vicino(); }
   }
   if (esploso !== esplosoTarget) {
     esploso += (esplosoTarget - esploso) * 0.08;
