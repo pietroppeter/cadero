@@ -159,12 +159,13 @@ rilevate in scala dal disegno o inventate; sono tutte parametri in
 - **Materasso** 78 × 190, spesso 17 (su misura: 80 non entra nei 78.2 cm tra fronte e
   muro), appoggiato direttamente sul piano a 104.
 - **Testata e libreria** (decisioni dopo il confronto con i nonni): piano della testata
-  55 sopra il piano letto (17 di materasso + 38 di schienale), profondo 37.9 a filo della
+  58 sopra il piano letto (17 di materasso + 41 di schienale; era 55, alzata di 3 cm), profondo 37.9 a filo della
   risega, fa da comodino. Sopra, fino al soffitto della nicchia (265), tre vani alti
-  circa 33.5 con scaffali profondi 26 appoggiati al fianco destro. Il divisorio è aperto
-  tra il comodino (159) e il soffitto; sotto fa da testata.
+  con la stessa altezza libera (32.5, un passo di 34.3 tra i piani, quotato nella
+  laterale) e scaffali profondi 26.5 (quotati in pianta) appoggiati al fianco destro. Il divisorio è aperto
+  tra il comodino (162) e il soffitto; sotto fa da testata.
 - **Gavone**: il vano chiuso dentro la colonna, tra il piano letto (104), che gli fa da
-  fondo, e il comodino (159). Si apre dall'alto: il piano del comodino ha un'apertura
+  fondo, e il comodino (162). Si apre dall'alto: il piano del comodino ha un'apertura
   stondata (28 × 57.4, a 4 cm dai fianchi e 6 da fronte e schiena) in cui appoggiano due
   coperchi leggeri da 1 cm, ognuno metà apertura, che si alzano.
 - **Scatola dei gradini**: una sola, profonda 30 (da definire), che non sta sospesa: due
