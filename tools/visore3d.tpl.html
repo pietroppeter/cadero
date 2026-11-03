@@ -52,6 +52,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .taglio .riga { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .taglio .misure { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 .taglio button { padding: 3px 10px; font-size: 13px; }
+.taglio h2 { cursor: pointer; } .taglio h2::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: #2b8fd6; margin-right: 8px; vertical-align: 2px; }
+.taglio.scelta { border-color: #e04a2f; } .taglio.scelta h2::before { background: #e04a2f; }
 </style>
 
 <div class="wrap">
@@ -88,6 +90,7 @@ __BACK__
     </div>
   </div>
   <div class="sezioni" id="sezioni" hidden>
+    <p class="note" style="grid-column: 1 / -1">Tocca un piano di taglio nel 3D (o il titolo di una sezione) per selezionarlo: diventa rosso e lo puoi trascinare lungo il suo asse. Toccalo di nuovo per deselezionarlo.</p>
     <div class="taglio" data-vista="pianta">
       <div class="riga"><h2>Pianta</h2><button type="button" class="scarica">Scarica SVG</button></div>
       <label>Taglio a <input type="range" step="1"> <output></output></label>
@@ -350,19 +353,57 @@ function unitAt(ev) {
   }
   return null;
 }
-let down = null;
-renderer.domElement.addEventListener('pointerdown', ev => { down = { x: ev.clientX, y: ev.clientY, t: performance.now() }; });
+// il piano di taglio sotto il puntatore, se è più vicino del mobile
+function pianoAt(ev) {
+  if (!pressed(tSez)) return null;
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hp = ray.intersectObjects(Object.values(piani), false)[0];
+  if (!hp) return null;
+  const hm = ray.intersectObject(group, true).find(h => visible(h.object) && !h.object.isLineSegments);
+  return (!hm || hp.distance < hm.distance) ? hp.object.userData.nome : null;
+}
+// trascinando il piano selezionato si sposta lungo il suo asse: si misura
+// quanti pixel sullo schermo vale un cm lungo l'asse
+let down = null, trascina = null;
+renderer.domElement.addEventListener('pointerdown', ev => {
+  down = { x: ev.clientX, y: ev.clientY, t: performance.now() };
+  const nome = pianoAt(ev);
+  if (nome && nome === selezionato) {
+    const o = piani[nome].getWorldPosition(new THREE.Vector3());
+    const a = o.clone().project(camera), b = o.clone().add(assi[nome]).project(camera);
+    const r = renderer.domElement.getBoundingClientRect();
+    const vx = (b.x - a.x) * r.width / 2, vy = -(b.y - a.y) * r.height / 2;
+    const n2 = vx * vx + vy * vy;
+    if (n2 > 1e-4) {
+      trascina = { nome, vx, vy, n2, da: tagli[nome] };
+      controls.enabled = false;
+      renderer.domElement.setPointerCapture(ev.pointerId);
+    }
+  }
+});
 renderer.domElement.addEventListener('pointerup', ev => {
+  if (trascina) { trascina = null; controls.enabled = true; }
   if (!down) return;
   const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y), dt = performance.now() - down.t;
   down = null;
   if (moved > 6 || dt > 600) return;
+  const nome = pianoAt(ev);
+  if (nome) { seleziona(selezionato === nome ? null : nome); return; }
   const u = unitAt(ev);
   if (u) setOpen(u, u.target < 0.5);
 });
 renderer.domElement.addEventListener('pointermove', ev => {
+  if (trascina && down) {
+    const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
+    const cm = (dx * trascina.vx + dy * trascina.vy) / trascina.n2;
+    spostaTaglio(trascina.nome, trascina.da + cm);
+    return;
+  }
   if (ev.pointerType !== 'mouse' || ev.buttons) return;
-  renderer.domElement.style.cursor = unitAt(ev) ? 'pointer' : '';
+  const nome = pianoAt(ev);
+  renderer.domElement.style.cursor = nome ? (nome === selezionato ? 'grab' : 'pointer') : unitAt(ev) ? 'pointer' : '';
 });
 
 const pressed = b => b.getAttribute('aria-pressed') === 'true';
@@ -475,15 +516,43 @@ function disegna(nome) {
   card.querySelector('output').textContent = c + ' cm';
 }
 const piani = {};
+// i piani di taglio: azzurri; quello selezionato diventa rosso e si trascina
+const assi = { pianta: new THREE.Vector3(0, 1, 0), laterale: new THREE.Vector3(1, 0, 0), prospetto: new THREE.Vector3(0, 0, -1) };
+const colPiano = 0x2b8fd6, colSel = 0xe04a2f;
+let selezionato = null;
 function pianiTaglio() {
   for (const k in piani) scene.remove(piani[k]);
-  const e = ext(), mat = new THREE.MeshBasicMaterial({ color: 0xa8682a, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false });
-  const m = 15;
-  piani.pianta = new THREE.Mesh(new THREE.PlaneGeometry(e.L + 2 * m, e.P + 2 * m).rotateX(-Math.PI / 2).translate(e.L / 2, 0, -e.P / 2), mat);
-  piani.laterale = new THREE.Mesh(new THREE.PlaneGeometry(e.P + 2 * m, e.H + 2 * m).rotateY(Math.PI / 2).translate(0, e.H / 2, -e.P / 2), mat);
-  piani.prospetto = new THREE.Mesh(new THREE.PlaneGeometry(e.L + 2 * m, e.H + 2 * m).translate(e.L / 2, e.H / 2, 0), mat);
-  for (const k in piani) { piani[k].visible = pressed(tSez); piani[k].raycast = () => {}; scene.add(piani[k]); }
+  const e = ext(), m = 15;
+  const mat = () => new THREE.MeshBasicMaterial({ color: colPiano, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
+  piani.pianta = new THREE.Mesh(new THREE.PlaneGeometry(e.L + 2 * m, e.P + 2 * m).rotateX(-Math.PI / 2).translate(e.L / 2, 0, -e.P / 2), mat());
+  piani.laterale = new THREE.Mesh(new THREE.PlaneGeometry(e.P + 2 * m, e.H + 2 * m).rotateY(Math.PI / 2).translate(0, e.H / 2, -e.P / 2), mat());
+  piani.prospetto = new THREE.Mesh(new THREE.PlaneGeometry(e.L + 2 * m, e.H + 2 * m).translate(e.L / 2, e.H / 2, 0), mat());
+  for (const k in piani) {
+    piani[k].visible = pressed(tSez); piani[k].userData.nome = k; piani[k].renderOrder = 10;
+    // il bordo del piano, per vederlo anche di taglio
+    piani[k].add(new THREE.LineSegments(new THREE.EdgesGeometry(piani[k].geometry),
+      new THREE.LineBasicMaterial({ color: colPiano })));
+    scene.add(piani[k]);
+  }
+  seleziona(selezionato);
   posizionaPiani();
+}
+function seleziona(nome) {
+  selezionato = nome;
+  for (const k in piani) {
+    const sel = k === nome, col = sel ? colSel : colPiano;
+    piani[k].material.color.setHex(col); piani[k].material.opacity = sel ? 0.4 : 0.28;
+    piani[k].children[0].material.color.setHex(col);
+  }
+  for (const card of boxSez.querySelectorAll('.taglio'))
+    card.classList.toggle('scelta', card.dataset.vista === nome);
+}
+function spostaTaglio(nome, val) {
+  const card = boxSez.querySelector(`[data-vista=${nome}]`), inp = card.querySelector('input');
+  val = Math.round(Math.min(+inp.max, Math.max(0, val)));
+  if (val === tagli[nome]) return;
+  tagli[nome] = val; inp.value = val;
+  disegna(nome); posizionaPiani();
 }
 function posizionaPiani() {
   piani.pianta.position.y = tagli.pianta; piani.laterale.position.x = tagli.laterale; piani.prospetto.position.z = -tagli.prospetto;
@@ -493,6 +562,7 @@ for (const [nome, v] of Object.entries(viste)) {
   const card = boxSez.querySelector(`[data-vista=${nome}]`), inp = card.querySelector('input');
   inp.min = 0; inp.max = Math.round(v.max(ext())); inp.value = tagli[nome] = v.def;
   inp.addEventListener('input', () => { tagli[nome] = +inp.value; disegna(nome); posizionaPiani(); });
+  card.querySelector('h2').addEventListener('click', () => seleziona(selezionato === nome ? null : nome));
   card.querySelector('.scarica').addEventListener('click', () => {
     const svg = card.querySelector('svg').cloneNode(true);
     svg.setAttribute('xmlns', NS);
