@@ -51,16 +51,17 @@ nbText: """
 ## Cambiare le misure
 
 Una variante: nicchia più bassa di 10 cm, quattro gradini invece di cinque e
-cassetti in basso tutti chiusi. L'altezza totale si ricalcola da sola.
+cassetti in basso tutti chiusi. L'altezza è quella della stanza e resta 316: le
+ribalte stanno dove sono, si allunga lo stacco tra la nicchia e le ribalte.
 """
 
 nbCode:
   var p2 = rilievo()
-  p2.nicchia = 112
-  p2.nGradini = 4
-  p2.cassettoAperto = -1
+  p2.altezze.nicchia = 149.2
+  p2.bassa.nGradini = 4
+  p2.disegno.cassettoAperto = -1
   let m2 = parete(p2)
-  echo "altezza totale: ", fmtNum(p2.altezza)
+  echo "altezza totale: ", fmtNum(p2.altezza), ", apertura della nicchia: ", fmtNum(p2.nicchiaH)
 
   var foglio = initSheet()
   let fronte = View(kind: vFront)
@@ -103,14 +104,14 @@ nbText: """
 ## Cosa non torna
 
 `controlli(p)` confronta le misure con le decisioni prese e segnala i conflitti.
-Con i parametri attuali non trova niente; con il materasso da 80 delle prime note
-invece sì:
+Con i parametri attuali segnala solo il bordo davanti al materasso (vincolo soft:
+almeno 16 cm); con il materasso da 80 delle prime note anche quello:
 """
 
 nbCode:
   echo "controlli: ", p.controlli.len
   var p80 = rilievo()
-  p80.materasso[1] = 80
+  p80.materasso.larghezza = 80
   for c in p80.controlli: echo "- ", c
 
 nbText: """

@@ -33,6 +33,15 @@ button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent);
 .riassunto b { color: var(--accent); font-weight: 400; } .riassunto .allarme b { color: #c0392b; }
 .pannello { display: grid; gap: 10px; align-content: start; min-width: 0; }
 .pannello .testa { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); }
+.pannello .testa { flex-wrap: wrap; }
+.cambiati { font-size: 13.5px; display: grid; gap: 8px; } .incolla[hidden], .pannello .testa a[hidden] { display: none; }
+.cambiati .testa { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); }
+.cambiati .testa .azioni, .pannello .testa .azioni { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cambiati table { border-collapse: collapse; width: 100%; margin-top: 4px; }
+.cambiati td { padding: 2px 6px 2px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.cambiati td.num { font-family: var(--mono, monospace); white-space: nowrap; text-align: right; }
+.cambiati code { font-size: 12px; color: var(--muted); }
+.incolla { display: grid; gap: 6px; } .incolla textarea { width: 100%; box-sizing: border-box; font-family: var(--mono, monospace); font-size: 12.5px; }
 .avvisi { background: #fbeee9; border: 1px solid #e8b9a8; border-radius: 6px; padding: 8px 12px; font-size: 13.5px; color: #7a2d17; }
 .avvisi ul { margin: 0; padding-left: 18px; } .avvisi p { margin: 0; }
 .avvisi.vuoto { background: var(--paper); border-color: var(--line); color: var(--muted); }
@@ -76,21 +85,22 @@ button.prova::before { content: "▶ "; color: var(--accent); }
 nbText: """
 # I parametri della parete
 
-Con il visore in Nim il modello si calcola nel browser: si possono muovere i
-parametri e vedere subito il mobile cambiare. Muovendoli si vede anche che **non
-sono impostati nel modo giusto**: alcuni numeri che dovrebbero seguirsi sono
-indipendenti, altri sono scritti a mano due volte, e l'altezza totale è un
-risultato quando invece la decide il muro.
+I parametri della parete sono ora divisi in **gruppi**, un oggetto Nim per gruppo,
+come li ha descritti Pietro nella revisione del 3 novembre. Si parte dai **vincoli
+del muro**, le misure della stanza, e tutte le altre misure si prendono da un
+riferimento: il muro, la risega, la base del letto, il soffitto della nicchia.
+Quello che ne viene fuori (l'altezza del mobile, la fascia, lo schienale, il bordo
+davanti al materasso, lo spazio tra le ribalte...) si calcola e non si scrive più
+due volte.
 
-Questa pagina è una **bozza per la revisione**. Spiega tutti i parametri di oggi,
-da dove vengono e come dipendono l'uno dall'altro; poi elenca i problemi trovati e
-propone come riorganizzarli, insieme alle quote da mettere in tavola. Il modello
-qui sotto è ancora quello di oggi: nulla è stato cambiato.
+Nel banco qui sotto ogni gruppo ha i suoi cursori; i valori cambiati diventano
+arancio e sopra i cursori compaiono gli avvisi, compresi i vincoli soft (schienale
+almeno 40, bordo almeno 16, spazio tra le ribalte almeno 4). Più sotto: cosa è
+cambiato nel mobile, cosa resta da decidere (con i pulsanti ▶ **Prova**) e le
+quote.
 
-Nel banco ogni gruppo di parametri ha i suoi cursori; i valori cambiati rispetto al
-rilievo diventano arancio. Sopra i cursori compaiono gli avvisi (`controlli` del
-modello). Nei problemi più sotto i pulsanti ▶ **Prova** impostano i valori che
-mostrano il difetto e riportano al banco.
+In fondo alla pagina, in **Parametri cambiati**, c'è l'elenco dei parametri diversi
+dal rilievo, con Copia e Incolla per chiedere di cambiare i valori di default.
 """
 
 nbRawHtml: """<section class="banco" id="banco">
@@ -132,7 +142,7 @@ nbRawHtml: """<section class="banco" id="banco">
     </div>
   </div>
   <div class="pannello">
-    <div class="testa"><span id="n-cambiati">valori del rilievo</span><button type="button" id="ripristina">Torna al rilievo</button></div>
+    <div class="testa"><span id="n-cambiati">valori del rilievo</span><span class="azioni"><a href="#parametri-cambiati" id="vai-cambiati" hidden>quali?</a><button type="button" id="ripristina">Torna al rilievo</button></span></div>
     <div class="avvisi" id="avvisi"></div>
     <div id="controlli"></div>
   </div>
@@ -150,25 +160,24 @@ nbRawHtml: """<section class="banco" id="banco">
 nbText: """
 ## Le misure che ne vengono fuori
 
-Le misure derivate si calcolano dai parametri: qui con la formula, aggiornate dal
-banco. In rosso quelle che segnalano qualcosa che non va (la soglia è scritta nel
-problema corrispondente). Accanto, le **due catene verticali**: a sinistra quella
-del fronte, che decide dove stanno i frontali; a destra quella di dentro (piano
-letto, materasso, schienale, vani della libreria). Oggi le due catene si toccano
-solo per caso: in arancio i punti dove dovrebbero essere legate.
+Le misure derivate, con la formula, aggiornate dal banco. In rosso quelle fuori
+soglia. Accanto, le **due catene verticali**: a sinistra quella del fronte (dove
+stanno i frontali), a destra quella di dentro (piano letto, materasso, schienale,
+vani). In arancio le fasce del fronte che ora si calcolano (fascia e stacco) e i
+tre punti dove le catene si incontrano: le ante sotto il piano letto, il bordo
+sopra il materasso, le ribalte sopra il soffitto della nicchia.
 """
 
 nbRawHtml: """<div id="derivate"></div><div class="catene-box" id="catene"></div>"""
 
 nbText: """
-## I parametri di oggi
+## I gruppi di parametri
 
-Sono i campi dell'oggetto `Parete` in `models/parete.nim`, con i valori di
-`rilievo()`. La colonna *origine* dice da dove viene il numero:
-**disegno** (scritto sulla tavola di riferimento), **rilevato** (misurato in scala
-1:25, dove un millimetro di carta sono 2.5 cm), **deciso** (da Pietro),
-**ipotesi** (inventato, da verificare), **variante** (sì/no) e **doppione**
-(scritto a mano ma si potrebbe calcolare).
+`Parete` in `models/parete.nim` ha un campo per gruppo (`p.muro`, `p.altezze`,
+`p.libreria`...), con i valori di `rilievo()`. La colonna *origine* dice da dove
+viene il numero: **stanza** (misurato nella stanza), **disegno** (scritto sulla
+tavola di riferimento), **rilevato** (misurato in scala 1:25), **deciso** (da
+Pietro), **ipotesi** (da verificare), **variante** (sì/no).
 """
 
 proc tabella(g: Gruppo): string =
@@ -185,16 +194,31 @@ var tabelle = ""
 for g in gruppi(): tabelle.add tabella(g)
 nbRawHtml: tabelle
 
-var stato = "<h3>Non sono parametri del mobile</h3><p>Tre campi di <code>Parete</code> dicono solo come " &
-  "disegnare la tavola; nel visore non servono (lì si apre toccando).</p><table class=\"parametri\"><tbody>"
+var stato = "<h3>Disegno</h3><p>Un gruppo a parte che non descrive il mobile: dice solo cosa " &
+  "la tavola disegna aperto; nel visore non serve (lì si apre toccando).</p><table class=\"parametri\"><tbody>"
 for (campo, cosa) in statoDisegno(): stato.add "<tr><td><code>" & campo & "</code></td><td>" & cosa & "</td></tr>"
 stato.add "</tbody></table>"
 nbRawHtml: stato
 
 nbText: """
-## Problemi
+## Cosa è cambiato nel mobile
 
-Ordinati per importanza. Ogni problema ha uno o più pulsanti per vederlo nel banco.
+Confrontato pezzo per pezzo con il modello di prima, il mobile è quasi uguale.
+Cambia questo:
+
+- **i gradini si spostano di 1 cm a sinistra**: lo spazio ai loro lati è uno solo,
+  6.5 (prima 7.5 a sinistra e 5.5 a destra). Cassetti e anta stretta restano dove
+  erano, e lo spazio tra loro, calcolato, è ancora 8.5;
+- **le ribalte sono larghe 68** (prima 68.17, calcolate) e lo spazio tra loro è 4
+  (prima 3.75, sotto la soglia di 4);
+- **la risega è larga 38.8** come la colonna (prima 38) e il **divisorio è a filo
+  della risega**: va da 196.4 a 198.2 (prima era centrato su 198.2). Comodino e
+  coperchi del gavone sono larghi 38.8, la campata della nicchia scende a 194.6;
+- **il materasso è centrato** anche in profondità: 2.3 cm di gioco per lato in
+  lunghezza, 0.1 in larghezza.
+
+L'altezza resta 316, la catena del fronte resta 6 / 95 / 30 / 122 / 12 / 43 / 8 e i
+vani della libreria restano 32.5.
 """
 
 proc problema(titolo, testo: string; prove: openArray[(string, string)] = []) =
@@ -205,175 +229,126 @@ proc problema(titolo, testo: string; prove: openArray[(string, string)] = []) =
   h.add "</div>"
   nbRawHtml: h
 
-let c = p.catenaFronte
+nbText: """
+## Da decidere
 
-problema("1. Il piano letto non segue il fronte", """
-`pianoLetto` (104) è un parametro libero, mentre la base della nicchia (131) è la
-somma di zoccolo, zona bassa e fascia. Le due cose devono stare insieme: sotto il
-piano letto finiscono i frontali della zona bassa (oggi c'è 1.2 cm di aria tra i
-frontali e il piano), sopra il piano c'è il materasso e il bordo della fascia.
-Se alzi la zona bassa i frontali entrano nel piano letto; se alzi il piano letto
-il materasso esce sopra il bordo.
-""", [("Prova: zona bassa 110", "zonaBassa=110"), ("Prova: piano letto 115", "pianoLetto=115")])
+Con i gruppi nuovi i problemi della prima bozza sono quasi tutti risolti per
+costruzione (la tabella alla fine). Restano queste cose, in ordine di importanza.
+"""
 
-problema("2. Il bordo sopra il materasso è di soli " & fmtNum(c[3] - p.sopraMaterasso) & " cm", """
-La fascia arriva a 131; il materasso (17) sul piano letto (104) arriva a 121.
-Restano 10 cm di bordo davanti a chi dorme, a 1.3 m da terra. Per i letti a
-castello la norma europea (EN 747) chiede una sponda di almeno 16 cm sopra il
-materasso: non è un letto a castello, ma è un buon riferimento. Con il materasso
-di prima, più spesso, il bordo era ancora più basso. Oggi il bordo non è un
-parametro: è il risultato di quattro numeri indipendenti.
-""", [("Prova: materasso 22", "materasso.2=22"), ("Prova: fascia 36 (bordo 16)", "fascia=36")])
+problema("1. Il bordo davanti al materasso è di 10 cm", """
+È la cornice bassa (27) meno il materasso (17). Il controllo soft chiede almeno 16:
+servirebbe la cornice bassa a 33, con l'apertura della nicchia che scende a 116, o
+un materasso più basso. Oggi è l'unico avviso che scatta.
+""", [("Prova: cornice bassa 33", "cornice.bassa=33"), ("Prova: materasso 11", "materasso.altezza=11")])
 
-problema("3. L'altezza è un risultato, ma la decide il muro", """
-Il mobile va da muro a muro e da pavimento a soffitto, quindi altezza, larghezza e
-profondità sono il **rilievo del vano**: si misurano, non si scelgono. Oggi
-l'altezza è la somma delle sette fasce del fronte: se allunghi la fascia per avere
-un bordo più alto, il mobile diventa più alto del soffitto. Una catena chiusa ha
-bisogno di una fascia che prende il resto (per esempio il margine in alto o le
-ribalte alte).
-""", [("Prova: fascia 36 → altezza 322", "fascia=36")])
+problema("2. In alto due catene si incontrano", """
+Le ribalte si misurano dal soffitto della stanza (margine alto 8, ribalte 43), il
+soffitto della nicchia da terra (base letto 104 + nicchia 159.2 + spessore). Oggi
+tutti e due fanno 265, ma se cambia uno dei due la ribalta scende sul soffitto
+della nicchia, o resta una striscia di fronte tra i due. C'è un controllo. Si
+può anche decidere che una delle due misure si calcoli: per esempio le ribalte
+partono dalla cima del soffitto della nicchia e il margine alto prende il resto.
+""", [("Prova: nicchia 165", "altezze.nicchia=165"), ("Prova: margine alto 4", "alta.margineAlto=4")])
 
-problema("4. La larghezza muove solo la colonna destra", """
-Le ribalte alte si dividono la larghezza, ma le quattro colonne basse e la nicchia
-hanno larghezze proprie: la loro somma (con margini e spazi) fa 237 per come sono
-stati rilevati i numeri, non perché sia scritto da qualche parte. Cambiando la
-larghezza, l'ultima colonna bassa non arriva più al margine e la nicchia non resta
-centrata nella sua campata. Servirebbe una colonna che prende il resto (per esempio
-l'anta sinistra) e la nicchia centrata con un margine.
-""", [("Prova: larghezza 250", "larghezza=250"), ("Prova: colonna destra 45", "colonnaDx=45")])
+problema("3. Con il gioco di montaggio il materasso da 78 non entra", """
+Mezzo centimetro di gioco per lato basta: tra il frontale e il muro restano 77.7.
+Le ribalte scendono di 0.5 sul soffitto della nicchia, perché sono misurate dal
+soffitto della stanza, e tra di loro restano 3.5 cm. Il gioco di montaggio va
+deciso, perché tocca tre misure.
+""", [("Prova: gioco 0.5", "costruzione.gioco=0.5")])
 
-problema("5. Testata 58: la decisione era 41 sopra il materasso", """
-Si è deciso che lo schienale sporga 41 cm sopra il materasso. Nel codice però c'è
-`testata = 58`, cioè 17 + 41 fatto a mano, e un controllo che avvisa se lo
-schienale esce da 40–42. Cambiando il materasso lo schienale cambia. Il parametro
-giusto è lo schienale; la testata (e quindi comodino e libreria) si calcola.
-""", [("Prova: materasso 20", "materasso.2=20")])
-
-problema("6. Comodino a filo della risega per coincidenza", """
-La profondità del comodino è `colonnaDx − s/2` = 37.9, la risega è larga 38: sono
-a filo perché i due numeri vengono da fonti diverse (il disegno e le note) e per
-caso quasi coincidono. Cambiando lo spessore o la colonna non lo sono più, e
-c'è solo un avviso. Una delle due misure dovrebbe comandare l'altra: per esempio
-la colonna larga quanto la risega più mezzo spessore.
-""", [("Prova: risega larga 45", "risegaLarga=45"), ("Prova: spessore 2.5", "spessore=2.5")])
-
-problema("7. Numeri scritti due volte, e numeri nascosti nel codice", """
-- `corsaTavolino` (78.6) è `profTavolino + spessore`, scritto a mano; `profTavolino`
-  (76.8) è la profondità meno lo spessore e 1.4 di gioco, anche lui a mano.
-- `corsa` dei cassetti (60) non segue `profCassetti` (75); e `profCassetti` vale
-  anche per la scatola dell'anta sinistra, che non è un cassetto.
-- Dentro `parete(p)` ci sono una ventina di numeri senza nome: i margini
-  dell'apertura del gavone (4, 6, 12), i ripiani dell'anta a un terzo e due terzi,
-  il bastone 7 cm sotto il piano, i fori maniglia a 10 e 12 dal bordo, i giochi
-  delle casse (1 e 3), dell'antina (0.5 e 1), le tre ribalte, la corsa dei coperchi (14)
-  e del materasso. Muovendo i parametri questi restano fermi.
-- `hGradino`, `hC` (altezza dei cassetti) e `wAlto` (ribalte) sono calcolati dentro
-  `parete(p)`: per mostrarli qui ho dovuto riscrivere le formule.
-""", [("Prova: profondità 70", "profondita=70")])
-
-problema("8. Dall'ultimo gradino al bordo ci sono " & fmtNum(c[3] - (c[1] + float(p.nGradini - 1) * (p.hGradino + p.passoGradini))) & " cm", """
-Il passo tra i gradini è 20.1 cm (14.6 di foro più 5.5), comodo. Ma l'ultimo
-gradino ha il piede a 86.4 e il bordo della nicchia è a 131: l'ultimo salto è più
-del doppio degli altri, e sopra c'è anche il bordo da scavalcare. Il passo vero non
-è un parametro (lo è lo spazio tra i fori): con un parametro "passo" si potrebbe
-chiedere che i gradini arrivino fino alla fascia, o vedere subito quanto manca.
-""", [("Prova: 6 gradini", "nGradini=6")])
-
-problema("9. L'anta stretta non sta sotto la colonna", """
-La colonna destra comincia a 198.2, l'anta stretta sotto va da 186 a 224.5: le
-colonne basse sono disegnate sul fronte, la colonna sopra sulla struttura. Sotto il
-piano letto non c'è il divisorio, quindi si costruisce lo stesso, ma vanno decise:
-è voluto (proporzioni del fronte) o l'anta va allineata alla colonna?
+problema("4. Il condizionatore non c'è ancora", """
+Sul muro di sinistra, sopra la porta: limita l'apertura della ribalta in alto a
+sinistra. Aspetto la soluzione e le sue misure: altezza da terra, sporgenza dal
+muro e distanza dalla parete del mobile.
 """)
 
-problema("10. Valori che rompono il modello", """
-Con un solo vano in libreria `parete(p)` si ferma (cerca il primo ripiano che non
-c'è); con i gradini del tavolino pari ai gradini, o zero cassetti, i conti escono
-sbagliati. Qui i cursori hanno limiti e `sicuro(p)` tiene i valori dentro, ma il
-modello dovrebbe controllarli da solo e dirlo negli avvisi.
+problema("5. Numeri ancora nascosti nel codice", """
+Dentro `parete(p)` restano una ventina di misure senza nome: margini
+dell'apertura del gavone (4, 6, 12), ripiani dell'anta a un terzo e due terzi,
+bastone 7 cm sotto il piano, fori maniglia a 10 e 12 dal bordo, giochi delle casse
+dei cassetti (1 e 3) e dell'antina (0.5 e 1), le tre ribalte. Potrebbero andare nei
+vincoli di costruzione.
 """)
 
-problema("11. Stato del disegno mescolato ai parametri", """
-`cassettoAperto`, `tavolinoAperto` e `antinaAperta` stanno in `Parete` ma
-descrivono la tavola, non il mobile. Starebbero meglio come opzioni della tavola.
-""")
+problema("6. L'ultimo gradino", """
+Il passo tra i gradini è 20.1; dall'ultimo gradino (86.4) al bordo della nicchia
+(131) ci sono 44.6 cm. Non è cambiato: da tenere presente quando si decide il bordo
+(con la cornice bassa a 33 diventa 50.6).
+""", [("Prova: 6 gradini", "bassa.nGradini=6")])
 
 nbText: """
-## Proposte
+### Ipotesi che ho fatto
 
-### Cinque famiglie di parametri
+- **Spazio ai lati dei gradini 6.5**: la media di 7.5 e 5.5, così cassetti e anta
+  stretta restano dove erano.
+- **Ribalte larghe 68**: lo spazio tra loro è esattamente la soglia di 4.
+- **Il divisorio a filo della risega** (lato nicchia): così il rivestimento della
+  risega e il divisorio stanno sullo stesso piano e il comodino è lungo quanto la
+  risega. Prima il divisorio era centrato sulla divisione del disegno.
+- **Gioco di montaggio 0** per ora (vedi il punto 3).
+- **Lo spazio minimo di 4** vale per le ribalte e anche tra cassetti e anta stretta.
+- **Cornice destra misurata dalla risega**: 16.7, quasi come la sinistra (16).
+- Tolto lo spazio sotto il materasso (`rete`, era 0): il materasso poggia sulla base.
+- I vani si misurano dal comodino al sotto del soffitto della nicchia: 32.5 ciascuno.
 
-1. **Rilievo del vano**: larghezza, altezza, profondità, risega (sporgenza e
-   larghezza). Si misurano nella stanza; tutto il resto si adatta.
-2. **Scelte di progetto**: le misure che contano per chi usa il mobile, scritte
-   come le si dice: piano letto da terra, materasso, **bordo sopra il materasso**,
-   **schienale sopra il materasso**, apertura della nicchia, ribalte alte, numero
-   di vani, gradini e cassetti, spessore.
-3. **Derivate**: quello che si calcola. Ogni catena ha una fascia "resto" che la
-   chiude: per esempio `zonaBassa = pianoLetto − s − zoccolo − gioco`,
-   `fascia = pianoLetto + rete + materasso + bordo − (zoccolo + zonaBassa)`,
-   `margineAlto = altezza − tutto il resto`, `testata = rete + materasso + schienale`,
-   `corsaTavolino = profTavolino + s`, l'anta sinistra = la larghezza che avanza.
-   Diventano procedure con nome (`hGradino`, `wRibalta`...), usate sia dal modello
-   sia dalle tavole.
-4. **Giochi e dettagli costruttivi**: i numeri oggi nascosti in `parete(p)`, con
-   nome e valore di default, in un oggetto a parte (si toccano di rado).
-5. **Opzioni**: tavolino, antina, risega scoperta, prese sul comodino. Più, fuori
-   dai parametri, lo stato del disegno (cosa è aperto nella tavola).
+### I problemi della prima bozza
 
-### Altre cose
-
-- `controlli(p)` diventa anche la validazione: segnala i valori che non si possono
-  costruire invece di far cadere il modello.
-- Per i numeri rilevati in scala (12.5, 3.75, 165.5, 7.5/5.5/8.5...) decidere
-  quali sono intenzioni (spazi uguali? nicchia centrata?) e scriverli così.
-- Nel banco: ricordare i valori nel link, per mandare una variante a qualcuno.
-
-### Da decidere insieme
-
-- Chi comanda in basso: **l'altezza del piano letto** (e la zona bassa si adatta) o
-  la zona bassa (e il letto si adatta)? Io proporrei il piano letto.
-- Il **bordo sopra il materasso**: 16 cm (norma dei letti a castello) o altro?
-- Quale fascia prende il resto in alto: margine alto o ribalte?
-- L'altezza 316 del disegno è misurata nella stanza?
-- L'anta stretta: allineata alla colonna o no?
+| | Problema | Ora |
+| --- | --- | --- |
+| 1 | il piano letto non segue il fronte | la fascia si calcola dalla base letto e dalla cornice; le ante si misurano da terra, con un controllo |
+| 2 | bordo di 10 cm | controllo soft ≥ 16, scatta: punto 1 qui sopra |
+| 3 | l'altezza è un risultato | risolto: è quella della stanza |
+| 4 | la larghezza muove solo la colonna | ribalte e spazio cassetti–anta stretta prendono il resto; la nicchia è misurata dai muri |
+| 5 | testata scritta a mano | risolto: testata dalla base letto, schienale calcolato (≥ 40) |
+| 6 | comodino a filo della risega per caso | risolto: per costruzione |
+| 7 | doppioni | risolti (corsa del tavolino, colonna = risega); restano i numeri nascosti, punto 5 |
+| 8 | ultimo gradino | invariato, punto 6 |
+| 9 | anta stretta non sotto la colonna | invariato, come deciso |
+| 10 | valori che rompono il modello | nuovi controlli; nel banco i valori impossibili sono tenuti nei limiti |
+| 11 | stato del disegno nei parametri | risolto: gruppo `disegno` |
 """
 
 nbText: """
 ## Le quote
 
-La tavola di oggi ripete quelle del disegno di riferimento, più le nuove della
-libreria. Funzionano per controllare il disegno, ma mancano alcune misure che
-servono davvero:
-
-- nel prospetto c'è solo la catena verticale e la larghezza totale: mancano le
-  **catene orizzontali** dei frontali (colonne basse, nicchia e colonna, ribalte);
-- la vista laterale è tagliata nella colonna, quindi le misure di chi dorme
-  (**bordo sopra il materasso**, **altezza libera**) non si vedono; la quota 131 è
-  presa dal fronte e messa nella sezione;
-- lo **schienale di 41**, la decisione, non è quotato: c'è 162 da terra;
-- la **risega** (7 × 38) e la profondità della colonna (73) non sono quotate.
-
-Proposta: tre gruppi di quote. *Ingombro* (L, H, P, risega) per confrontarle con la
-stanza; *uso* (piano letto, materasso, bordo, altezza libera, schienale, vani,
-gradini) per chi decide; *costruzione* (catene dei frontali, profondità delle
-scatole) per chi taglia i pannelli, magari in una tavola a parte con la distinta.
-Le due tavole qui sotto seguono il banco.
+La tavola di oggi è quella di prima, con le stesse quote. La tavola proposta quota
+proprio i parametri nuovi: in alto la cornice della nicchia (16 dal muro, 16.7 dalla
+risega) e la risega (38.8); nella sezione della nicchia base letto (104), altezza
+della nicchia (159.2) e la cornice bassa divisa in materasso e bordo (17 + 10); nella
+sezione della colonna la testata (58) con lo schienale (41) e i vani. Le due tavole
+seguono il banco.
 """
 
 nbRawHtml: """<h3>La tavola di oggi</h3>
 <section class="tavola tavola-box"><button type="button" id="scarica-tavola" hidden></button><div id="tavola-attuale"></div></section>
 <h3>La tavola proposta</h3>
-<p>Prospetto con le catene orizzontali (colonne basse sotto; nicchia, colonna e
-ribalte sopra); una sezione <b>nella nicchia</b> con piano letto, materasso, bordo,
-altezza libera e soffitto; una sezione <b>nella colonna</b> con materasso,
-schienale 41 e vani; in pianta anche risega, larghezza del materasso e scaffali.</p>
+<p>Prospetto con le catene orizzontali (colonne basse sotto; cornice della nicchia,
+risega e ribalte sopra); una sezione <b>nella nicchia</b> con base letto, materasso,
+bordo, apertura e altezza della nicchia; una sezione <b>nella colonna</b> con testata,
+schienale e vani; in pianta risega, materasso con il suo gioco e scaffali.</p>
 <div class="tavola-box" id="tavola-proposta"></div>"""
 
 # la carta da parati del visore (vedi visore3d.nim)
 let cartaFile = currentSourcePath().parentDir.parentDir / "tools" / "carta-da-parati.jpg"
 let cartaSrc = if fileExists(cartaFile): "data:image/jpeg;base64," & encode(readFile(cartaFile)) else: ""
+
+nbText: """
+## Parametri cambiati
+
+I parametri del banco diversi dal rilievo. **Copia** mette negli appunti una riga per
+parametro (`- gruppo.campo (etichetta): prima → dopo`): incollata in una richiesta
+basta a fare la PR che cambia i valori di default (`rilievo()`). **Incolla** fa il
+contrario: riparte dal rilievo e applica le righe incollate (vanno bene anche righe
+`campo = valore`).
+"""
+
+nbRawHtml: """<section class="cambiati" id="parametri-cambiati">
+  <div class="testa"><span id="n-cambiati-fondo">valori del rilievo</span><span class="azioni"><button type="button" id="copia">Copia</button><button type="button" id="incolla">Incolla</button><a href="#banco">↑ al banco</a></span></div>
+  <div id="elenco-cambiati"></div>
+  <div class="incolla" id="box-incolla" hidden><textarea id="testo-incolla" rows="5" placeholder="Incolla qui l'elenco copiato (righe campo: prima → dopo, oppure campo = valore)"></textarea><div><button type="button" id="applica">Applica</button> <button type="button" id="annulla-incolla">Annulla</button> <small id="esito-incolla"></small></div></div>
+</section>"""
 
 nbRawHtml: """<script type="importmap">
 {"imports": {"three": "./three/build/three.module.min.js",

@@ -11,19 +11,19 @@ import parete
 
 type
   Origine* = enum
+    oStanza = "stanza"          ## misurato nella stanza
     oDisegno = "disegno"        ## scritto sulla tavola di riferimento
     oRilevato = "rilevato"      ## misurato in scala sul disegno
     oPietro = "deciso"          ## deciso da Pietro
     oIpotesi = "ipotesi"        ## inventato, da verificare
     oVariante = "variante"      ## un'opzione sì/no
-    oDoppione = "doppione"      ## scritto a mano ma si potrebbe calcolare
 
   Param* = object
-    campo*: string      ## nome del campo in `Parete` ("materasso.1" per gli array)
+    campo*: string      ## "gruppo.campo" in `Parete` ("libreria.vani.0" per le liste)
     etichetta*: string
     min*, max*, passo*: float
     origine*: Origine
-    nota*: string       ## da cosa dipende, cosa muove
+    nota*: string       ## da cosa si misura, cosa muove
 
   Gruppo* = object
     nome*, spiega*: string
@@ -37,178 +37,185 @@ type
 proc pr(campo, etichetta: string; mn, mx, ps: float; o: Origine; nota = ""): Param =
   Param(campo: campo, etichetta: etichetta, min: mn, max: mx, passo: ps, origine: o, nota: nota)
 
+const maxVani* = 5   ## quanti cursori di vano mostra il banco (fino a 4 scaffali)
+
 proc gruppi*(): seq[Gruppo] =
-  ## I parametri raggruppati come li pensa chi disegna il mobile.
+  ## I gruppi di parametri, come li ha descritti Pietro (revisione del 3 novembre).
+  var vani: seq[Param]
+  for i in 0 ..< maxVani:
+    vani.add pr("libreria.vani." & $i, "Vano " & $(i + 1) & " (0 = libero)", 0, 70, 0.5, oPietro)
   @[
-    Gruppo(nome: "Ingombro", spiega: "Le tre misure del vano tra i muri. Oggi l'altezza non c'è: è la somma della catena del fronte.",
+    Gruppo(nome: "Vincoli muro", spiega: "Le misure della stanza: fisse, si cambiano solo se rimisurando si trova altro. Sono massime: il mobile non ne esce.",
       params: @[
-        pr("larghezza", "Larghezza", 200, 280, 0.5, oDisegno, "muove solo il fianco destro e la colonna: le colonne basse e la nicchia restano dove sono"),
-        pr("profondita", "Profondità", 60, 90, 0.5, oDisegno, "fianchi e pannelli lunghi; le scatole basse hanno profondità proprie"),
-        pr("spessore", "Spessore pannelli", 1.2, 2.5, 0.1, oIpotesi, "entra in quasi tutte le formule")]),
-    Gruppo(nome: "Catena del fronte", spiega: "Sette fasce dal basso: la loro somma è l'altezza. Decidono dove stanno i frontali, non i pannelli interni.",
+        pr("muro.altezza", "Altezza della stanza", 280, 340, 0.5, oStanza),
+        pr("muro.larghezza", "Larghezza della parete", 200, 280, 0.5, oStanza),
+        pr("muro.profondita", "Profondità massima", 60, 90, 0.5, oStanza, "a 80 c'è la cornice della porta"),
+        pr("muro.risegaProf", "Profondità della risega", 0, 20, 0.5, oStanza),
+        pr("muro.risegaLarga", "Larghezza della risega", 20, 60, 0.1, oStanza, "è anche la larghezza dentro la colonna destra")]),
+    Gruppo(nome: "Vincoli di costruzione", spiega: "Come si costruisce: pannelli, giochi e spazi minimi.",
       params: @[
-        pr("margineBasso", "Zoccolo", 0, 20, 0.5, oDisegno),
-        pr("zonaBassa", "Zona bassa (ante, gradini, cassetti)", 60, 130, 0.5, oDisegno, "non sposta il piano letto"),
-        pr("fascia", "Fascia davanti al materasso", 10, 50, 0.5, oDisegno, "decide il bordo della nicchia, non il piano letto"),
-        pr("nicchia", "Apertura della nicchia", 80, 150, 0.5, oDisegno),
-        pr("stacco", "Stacco sopra la nicchia", 0, 30, 0.5, oDisegno, "il soffitto della nicchia sta in cima allo stacco"),
-        pr("cassettiAlti", "Ribalte alte", 20, 70, 0.5, oDisegno),
-        pr("margineAlto", "Margine in alto", 0, 20, 0.5, oDisegno)]),
-    Gruppo(nome: "Letto", spiega: "Il piano letto è un numero a sé: non segue la catena del fronte.",
+        pr("costruzione.spessore", "Spessore dei pannelli", 1.2, 2.5, 0.1, oIpotesi),
+        pr("costruzione.gioco", "Gioco di montaggio (per lato)", 0, 2, 0.1, oIpotesi, "verso i muri e il soffitto"),
+        pr("costruzione.spazioMinimo", "Spazio minimo tra frontali", 0, 10, 0.5, oPietro, "controllo: tra le ribalte e tra cassetti e anta stretta")]),
+    Gruppo(nome: "Altezze chiave", spiega: "Le tre altezze che decidono il letto.",
       params: @[
-        pr("pianoLetto", "Quota del piano letto", 80, 140, 0.5, oDisegno, "sposta piano letto, fianchi, scatole basse, divisorio, comodino e libreria"),
-        pr("materasso.0", "Materasso: lunghezza", 160, 200, 1, oPietro),
-        pr("materasso.1", "Materasso: larghezza", 60, 90, 1, oPietro, "deve stare nei 78.2 tra fronte e muro"),
-        pr("materasso.2", "Materasso: spessore", 8, 30, 0.5, oPietro, "la testata non lo segue: lo schienale cambia"),
-        pr("rete", "Spazio sotto il materasso", 0, 15, 0.5, oIpotesi)]),
-    Gruppo(nome: "Colonna destra e risega", spiega: "La colonna in testa al letto, con la risega del muro dietro.",
+        pr("altezze.baseLetto", "Base del letto", 80, 140, 0.5, oDisegno, "da terra alla cima del pannello sotto il materasso"),
+        pr("altezze.nicchia", "Altezza della nicchia", 120, 190, 0.1, oDisegno, "dalla base letto al sotto del soffitto della nicchia"),
+        pr("altezze.testata", "Testata", 30, 90, 0.5, oPietro, "dalla base letto alla cima del comodino; lo schienale si calcola")]),
+    Gruppo(nome: "Materasso", spiega: "Centrato nella nicchia su tutti e due gli assi: il gioco si calcola.",
       params: @[
-        pr("colonnaDx", "Larghezza della colonna", 30, 60, 0.1, oDisegno, "il comodino è profondo colonnaDx − s/2: a filo della risega solo se ≈ risegaLarga"),
-        pr("risegaSporge", "Risega: sporgenza", 0, 20, 0.5, oPietro, "profondità della colonna = profondità − sporgenza"),
-        pr("risegaLarga", "Risega: larghezza", 0, 60, 0.5, oPietro, "non muove la colonna: c'è solo un controllo"),
-        pr("risegaScoperta", "Risega scoperta (tappezzata)", 0, 1, 1, oVariante)]),
-    Gruppo(nome: "Testata e libreria", spiega: "Il comodino sta a pianoLetto + testata; i vani dividono in parti uguali lo spazio fino al soffitto della nicchia.",
+        pr("materasso.altezza", "Altezza", 8, 30, 0.5, oPietro),
+        pr("materasso.lunghezza", "Lunghezza", 160, 200, 1, oPietro, "quello che ci sta"),
+        pr("materasso.larghezza", "Larghezza", 60, 90, 0.5, oPietro, "non più della profondità meno lo spessore")]),
+    Gruppo(nome: "Libreria", spiega: "Sopra il comodino. Con n scaffali ci sono n + 1 vani: se ne fissano al massimo n, i liberi si dividono il resto.",
       params: @[
-        pr("testata", "Testata sopra il piano letto", 30, 80, 0.5, oPietro, "la decisione vera era 41 sopra il materasso: qui è 58 = 17 + 41 a mano"),
-        pr("nVani", "Vani della libreria", 2, 6, 1, oPietro),
-        pr("profScaffali", "Profondità scaffali", 15, 37, 0.5, oPietro),
-        pr("altezzaLibri", "Altezza minima di un vano", 15, 40, 0.5, oIpotesi, "serve solo al controllo"),
-        pr("preseSulComodino", "Prese sul comodino", 0, 1, 1, oVariante),
-        pr("scatolaPrese.0", "Scatola prese: sporgenza", 3, 12, 0.5, oIpotesi),
-        pr("scatolaPrese.1", "Scatola prese: lunghezza", 8, 30, 0.5, oIpotesi),
-        pr("scatolaPrese.2", "Scatola prese: altezza", 5, 15, 0.5, oIpotesi)]),
-    Gruppo(nome: "Frontali: margini e raggi", spiega: "Dove stanno le aperture nel pannello frontale. Numeri rilevati in scala, indipendenti tra loro.",
+        pr("libreria.scaffali", "Scaffali", 1, 4, 1, oPietro, "di solito 2, al massimo 3")] & vani & @[
+        pr("libreria.profScaffali", "Profondità degli scaffali", 15, 38, 0.5, oPietro),
+        pr("libreria.vanoMinimo", "Vano minimo (controllo)", 15, 40, 0.5, oIpotesi),
+        pr("libreria.risegaRivestita", "Risega rivestita (faccia e bordo)", 0, 1, 1, oVariante)]),
+    Gruppo(nome: "Cornice della nicchia", spiega: "L'apertura nel pannello frontale, misurata da quattro riferimenti.",
       params: @[
-        pr("margineLato", "Margine ai lati", 0, 30, 0.5, oRilevato, "primo e ultimo frontale; le ribalte alte si dividono il resto"),
-        pr("gapAlti", "Spazio tra le ribalte", 0, 10, 0.25, oRilevato),
-        pr("nicchiaX", "Nicchia: inizio da sinistra", 0, 40, 0.5, oRilevato, "non è legata a margineLato né alla colonna"),
-        pr("nicchiaL", "Nicchia: larghezza", 100, 198, 0.5, oRilevato),
-        pr("raggioNicchia", "Nicchia: raggio", 0, 40, 0.5, oRilevato),
-        pr("raggio", "Raggio degli altri frontali", 0, 8, 0.5, oRilevato),
-        pr("diamForo", "Fori maniglia: diametro", 2, 6, 0.5, oIpotesi)]),
-    Gruppo(nome: "Zona bassa: colonne", spiega: "Quattro larghezze e tre spazi, da sinistra dopo il margine. Nessuno si adatta: la somma deve tornare da sola.",
+        pr("cornice.sinistra", "Sinistra, dal muro", 1, 40, 0.1, oRilevato),
+        pr("cornice.destra", "Destra", 0, 80, 0.1, oRilevato, "dalla risega, o dal muro se scelto sotto"),
+        pr("cornice.destraDalMuro", "Destra misurata dal muro", 0, 1, 1, oVariante),
+        pr("cornice.bassa", "Bassa, dalla base letto", 10, 60, 0.5, oDisegno, "meno il materasso fa il bordo (almeno 16)"),
+        pr("cornice.alta", "Alta, dal soffitto della nicchia", 0, 40, 0.1, oDisegno),
+        pr("cornice.raggio", "Raggio", 0, 40, 0.5, oRilevato)]),
+    Gruppo(nome: "Zona bassa", spiega: "Ante, gradini e cassetti. Il margine ai lati vale anche per la zona alta; lo spazio tra cassetti e anta stretta si calcola.",
       params: @[
-        pr("colonneBasse.0", "Anta sinistra", 30, 100, 0.5, oRilevato),
-        pr("spaziBassi.0", "Spazio", 0, 20, 0.5, oRilevato),
-        pr("colonneBasse.1", "Gradini", 20, 50, 0.5, oRilevato),
-        pr("spaziBassi.1", "Spazio", 0, 20, 0.5, oRilevato),
-        pr("colonneBasse.2", "Cassetti", 30, 80, 0.5, oRilevato),
-        pr("spaziBassi.2", "Spazio", 0, 20, 0.5, oRilevato),
-        pr("colonneBasse.3", "Anta stretta", 20, 60, 0.5, oRilevato, "non è allineata alla colonna destra di sopra")]),
-    Gruppo(nome: "Gradini, cassetti, ante", spiega: "Le altezze dei gradini e dei cassetti si calcolano dalla zona bassa.",
+        pr("bassa.zoccolo", "Zoccolo", 0, 20, 0.5, oDisegno),
+        pr("bassa.altezzaAnte", "Altezza delle ante", 60, 120, 0.5, oDisegno),
+        pr("bassa.margineLato", "Margine ai lati", 2, 30, 0.5, oRilevato),
+        pr("bassa.antaGrande", "Anta grande", 30, 100, 0.5, oRilevato),
+        pr("bassa.gradini", "Gradini", 20, 50, 0.5, oRilevato),
+        pr("bassa.cassetti", "Cassetti", 30, 80, 0.5, oRilevato),
+        pr("bassa.antaStretta", "Anta stretta", 20, 60, 0.5, oRilevato),
+        pr("bassa.spazioGradini", "Spazio ai lati dei gradini", 2, 15, 0.5, oIpotesi, "uno solo, a sinistra e a destra")]),
+    Gruppo(nome: "Gradini, cassetti, ante", spiega: "Come erano.",
       params: @[
-        pr("nGradini", "Gradini", 3, 8, 1, oDisegno),
-        pr("passoGradini", "Spazio tra i gradini", 2, 15, 0.5, oRilevato, "il passo vero (da un piede all'altro) è derivato"),
-        pr("profGradini", "Profondità dei gradini", 15, 60, 0.5, oPietro),
-        pr("nCassettiBassi", "Cassetti", 1, 5, 1, oDisegno),
-        pr("gapCassetti", "Spazio tra i cassetti", 0, 10, 0.5, oRilevato),
-        pr("profCassetti", "Profondità cassetti (e anta sinistra)", 30, 78, 0.5, oRilevato, "lo stesso numero vale anche per la scatola dell'anta"),
-        pr("corsa", "Corsa dei cassetti", 20, 75, 0.5, oIpotesi, "non segue la profondità")]),
-    Gruppo(nome: "Tavolino", spiega: "La variante con il tavolino che si estrae al posto dei primi gradini.",
+        pr("bassa.nGradini", "Gradini", 3, 8, 1, oDisegno),
+        pr("bassa.passoGradini", "Spazio tra i gradini", 2, 15, 0.5, oRilevato),
+        pr("bassa.profGradini", "Profondità dei gradini", 15, 60, 0.5, oPietro),
+        pr("bassa.nCassetti", "Cassetti", 1, 5, 1, oDisegno),
+        pr("bassa.gapCassetti", "Spazio tra i cassetti", 0, 10, 0.5, oRilevato),
+        pr("bassa.profCassetti", "Profondità cassetti (e anta grande)", 30, 78, 0.5, oRilevato),
+        pr("bassa.corsa", "Corsa dei cassetti", 20, 75, 0.5, oIpotesi)]),
+    Gruppo(nome: "Zona alta", spiega: "Le tre ribalte, uguali. Lo spazio tra loro si calcola e deve restare sopra lo spazio minimo.",
       params: @[
-        pr("tavolino", "Con tavolino", 0, 1, 1, oVariante),
-        pr("gradiniTavolino", "Gradini nel tavolino", 1, 4, 1, oPietro),
-        pr("profTavolino", "Profondità del piano", 40, 78, 0.1, oIpotesi, "= profondità − spessore − 1.4 di gioco, ma scritto a mano"),
-        pr("corsaTavolino", "Corsa del tavolino", 30, 80, 0.1, oDoppione, "dovrebbe essere profTavolino + spessore"),
-        pr("profCassettiTavolino", "Profondità cassetti-gradino", 10, 40, 0.5, oIpotesi),
-        pr("gambaTavolino", "Larghezza delle gambe", 4, 15, 0.5, oIpotesi),
-        pr("antinaTavolino", "Antina che si ribalta", 0, 1, 1, oVariante)]),
+        pr("alta.margineAlto", "Margine in alto", 0, 20, 0.5, oDisegno, "dal soffitto della stanza"),
+        pr("alta.altezzaRibalta", "Altezza delle ribalte", 20, 70, 0.5, oDisegno),
+        pr("alta.larghezzaRibalta", "Larghezza delle ribalte", 40, 80, 0.5, oIpotesi)]),
+    Gruppo(nome: "Frontali e fori", spiega: "Come erano.",
+      params: @[
+        pr("frontali.raggio", "Raggio dei frontali", 0, 8, 0.5, oRilevato),
+        pr("frontali.diamForo", "Diametro dei fori maniglia", 2, 6, 0.5, oIpotesi)]),
+    Gruppo(nome: "Prese", spiega: "La scatola con presa, USB-C e interruttore.",
+      params: @[
+        pr("prese.sulComodino", "Sul comodino", 0, 1, 1, oVariante),
+        pr("prese.sporgenza", "Sporgenza", 3, 12, 0.5, oIpotesi),
+        pr("prese.lunghezza", "Lunghezza", 8, 30, 0.5, oIpotesi),
+        pr("prese.altezza", "Altezza", 5, 15, 0.5, oIpotesi)]),
+    Gruppo(nome: "Tavolino", spiega: "Come era; la corsa ora si calcola (si estrae del tutto).",
+      params: @[
+        pr("tavolino.attivo", "Con tavolino", 0, 1, 1, oVariante),
+        pr("tavolino.gradini", "Gradini nel tavolino", 1, 4, 1, oPietro),
+        pr("tavolino.prof", "Profondità del piano", 40, 78, 0.1, oIpotesi),
+        pr("tavolino.profCassetti", "Profondità cassetti-gradino", 10, 40, 0.5, oIpotesi),
+        pr("tavolino.gamba", "Larghezza delle gambe", 4, 15, 0.5, oIpotesi),
+        pr("tavolino.antina", "Antina che si ribalta", 0, 1, 1, oVariante)]),
   ]
 
 proc statoDisegno*(): seq[(string, string)] =
-  ## Campi di `Parete` che non descrivono il mobile ma come disegnarlo.
-  @[("cassettoAperto", "quale cassetto la tavola disegna aperto"),
-    ("tavolinoAperto", "disegnare il tavolino estratto"),
-    ("antinaAperta", "disegnare l'antina aperta")]
+  ## Il gruppo `disegno`: non descrive il mobile ma cosa la tavola disegna aperto.
+  @[("disegno.cassettoAperto", "quale cassetto la tavola disegna aperto"),
+    ("disegno.tavolinoAperto", "disegnare il tavolino estratto"),
+    ("disegno.antinaAperta", "disegnare l'antina aperta")]
 
-# --- leggere e scrivere un campo per nome --------------------------------------
+# --- leggere e scrivere un campo per nome ("gruppo.campo") --------------------------
 proc valore*(p: Parete; campo: string): float =
-  for nome, v in p.fieldPairs:
-    when v is float:
-      if nome == campo: return v
-    elif v is int:
-      if nome == campo: return float(v)
-    elif v is bool:
-      if nome == campo: return (if v: 1.0 else: 0.0)
-    elif v is array:
-      for i in 0 ..< v.len:
-        if nome & "." & $i == campo: return v[i]
+  for gn, g in p.fieldPairs:
+    for n, v in g.fieldPairs:
+      let k = gn & "." & n
+      when v is float:
+        if k == campo: return v
+      elif v is int:
+        if k == campo: return float(v)
+      elif v is bool:
+        if k == campo: return (if v: 1.0 else: 0.0)
+      elif v is seq[float]:
+        for i in 0 ..< maxVani:
+          if k & "." & $i == campo: return (if i < v.len: v[i] else: 0.0)
   NaN
 
 proc imposta*(p: var Parete; campo: string; x: float) =
-  for nome, v in p.fieldPairs:
-    when v is float:
-      if nome == campo: v = x
-    elif v is int:
-      if nome == campo: v = int(round(x))
-    elif v is bool:
-      if nome == campo: v = x > 0.5
-    elif v is array:
-      for i in 0 ..< v.len:
-        if nome & "." & $i == campo: v[i] = x
+  for gn, g in p.fieldPairs:
+    for n, v in g.fieldPairs:
+      let k = gn & "." & n
+      when v is float:
+        if k == campo: v = x
+      elif v is int:
+        if k == campo: v = int(round(x))
+      elif v is bool:
+        if k == campo: v = x > 0.5
+      elif v is seq[float]:
+        for i in 0 ..< maxVani:
+          if k & "." & $i == campo:
+            if v.len <= i: v.setLen(i + 1)
+            v[i] = x
 
 proc sicuro*(p: Parete): Parete =
-  ## I valori che farebbero cadere `parete(p)` (oggi non controllati), tenuti
-  ## dentro i limiti: almeno 2 vani, gradini del tavolino meno dei gradini.
+  ## I valori che farebbero cadere `parete(p)` tenuti dentro i limiti.
   result = p
-  result.nVani = max(result.nVani, 2)
-  result.gradiniTavolino = clamp(result.gradiniTavolino, 1, result.nGradini - 1)
+  result.libreria.scaffali = max(result.libreria.scaffali, 1)
+  result.bassa.nGradini = max(result.bassa.nGradini, 2)
+  result.bassa.nCassetti = max(result.bassa.nCassetti, 1)
+  result.tavolino.gradini = clamp(result.tavolino.gradini, 1, result.bassa.nGradini - 1)
 
 # --- misure derivate ------------------------------------------------------------
-proc hGradino*(p: Parete): float =
-  (p.zonaBassa - p.passoGradini * float(p.nGradini - 1)) / float(p.nGradini)
-
-proc hCassetto*(p: Parete): float =
-  (p.zonaBassa - p.gapCassetti * float(p.nCassettiBassi - 1)) / float(p.nCassettiBassi)
-
-proc wRibalta*(p: Parete): float = (p.larghezza - 2 * p.margineLato - 2 * p.gapAlti) / 3
-
-proc fineColonneBasse*(p: Parete): float = p.colonneX[3] + p.colonneBasse[3]
-
-proc sopraMaterasso*(p: Parete): float = p.pianoLetto + p.rete + p.materasso[2]
-
 proc derivate*(p: Parete): seq[Derivata] =
   let s = p.spessore
   let c = p.catenaFronte
   let d = proc (nome, formula: string; v: float; allarme = false): Derivata =
     Derivata(nome: nome, formula: formula, valore: v, allarme: allarme)
-  let fineBassa = c[2]
-  let bordo = c[3] - p.sopraMaterasso
-  let ultimo = c[1] + float(p.nGradini - 1) * (p.hGradino + p.passoGradini)
-  let campata = p.xColonna - s / 2 - s
+  let ultimo = c[1] + float(p.bassa.nGradini - 1) * (p.hGradino + p.bassa.passoGradini)
+  let (gL, gP) = p.giocoMaterasso
+  let altraDestra = if p.cornice.destraDalMuro: p.xRisega - p.nicchiaFine
+                    else: p.larghezza + p.costruzione.gioco - p.nicchiaFine
+  let sm = p.costruzione.spazioMinimo
   result = @[
-    d("Altezza totale", "somma della catena del fronte", p.altezza),
-    d("Base della nicchia (bordo)", "zoccolo + zona bassa + fascia", c[3]),
-    d("Spazio tra zona bassa e piano letto", "(pianoLetto − s) − (zoccolo + zona bassa)",
-      p.pianoLetto - s - fineBassa, p.pianoLetto - s - fineBassa < 0),
-    d("Bordo sopra il materasso", "base nicchia − (pianoLetto + rete + materasso)",
-      bordo, bordo < 16),
-    d("Schienale della testata", "testata − rete − materasso (deciso: 41)",
-      p.testata - p.rete - p.materasso[2], abs(p.testata - p.rete - p.materasso[2] - 41) > 1),
-    d("Altezza libera sopra il materasso", "(soffitto − s) − sopra materasso",
-      p.soffittoNicchia - s - p.sopraMaterasso),
-    d("Soffitto della nicchia", "catena fino allo stacco", p.soffittoNicchia),
-    d("Comodino (base libreria)", "pianoLetto + testata", p.baseLibreria),
-    d("Passo dei ripiani", "(soffitto − comodino) / nVani", (p.cimaLibreria - p.baseLibreria) / float(p.nVani)),
-    d("Vano utile della libreria", "passo − s", p.vanoUtile, p.vanoUtile < p.altezzaLibri),
-    d("Inizio della colonna", "larghezza − colonnaDx", p.xColonna),
-    d("Campata della nicchia (interno)", "inizio colonna − s/2 − s", campata, campata < p.materasso[0]),
-    d("Profondità della colonna", "profondità − risegaSporge", p.profColonna),
-    d("Profondità del comodino", "colonnaDx − s/2 (a filo risega se = risegaLarga)",
-      p.profComodino, abs(p.profComodino - p.risegaLarga) > 1),
-    d("Tra fronte e muro", "profondità − s", p.profondita - s, p.profondita - s < p.materasso[1]),
-    d("Fine delle colonne basse", "margine + colonne + spazi (deve fare larghezza − margine)",
-      p.fineColonneBasse, abs(p.fineColonneBasse - (p.larghezza - p.margineLato)) > 0.05),
-    d("Fine della nicchia", "nicchiaX + nicchiaL (prima della colonna)", p.nicchiaX + p.nicchiaL,
-      p.nicchiaX + p.nicchiaL > p.xColonna - s / 2),
-    d("Larghezza di una ribalta alta", "(larghezza − 2 margini − 2 spazi) / 3", p.wRibalta),
-    d("Altezza di un gradino (foro)", "(zona bassa − spazi) / nGradini", p.hGradino),
-    d("Passo dei gradini (piede → piede)", "foro + spazio", p.hGradino + p.passoGradini,
-      p.hGradino + p.passoGradini > 30),
-    d("Dall'ultimo gradino al bordo", "base nicchia − ultimo gradino", c[3] - ultimo,
-      c[3] - ultimo > 30),
-    d("Altezza di un cassetto", "(zona bassa − spazi) / nCassetti", p.hCassetto),
+    d("Altezza del mobile", "stanza − gioco", p.altezza),
+    d("Larghezza del mobile", "parete − 2 giochi", p.larghezza),
+    d("Profondità del mobile", "massima − gioco", p.profondita),
+    d("Bordo davanti al materasso", "cornice bassa − materasso (almeno 16)", p.bordo, p.bordo < 16),
+    d("Schienale sopra il materasso", "testata − materasso (almeno 40)", p.schienale, p.schienale < 40),
+    d("Apertura della nicchia: altezza", "altezza nicchia − cornice bassa − cornice alta", p.nicchiaH, p.nicchiaH <= 0),
+    d("Apertura della nicchia: larghezza", "fine − cornice sinistra", p.nicchiaL),
+    d((if p.cornice.destraDalMuro: "Cornice destra dalla risega" else: "Cornice destra dal muro"),
+      "l'altra misura della cornice destra", altraDestra),
+    d("Sotto del soffitto della nicchia", "base letto + altezza nicchia", p.sottoSoffitto),
+    d("Comodino (base della libreria)", "base letto + testata", p.baseLibreria),
+    d("Vano più basso della libreria", "i liberi si dividono il resto", p.vanoUtile, p.vanoUtile < p.libreria.vanoMinimo),
+    d("Fascia sul fronte", "base letto + cornice bassa − zoccolo − ante", p.nicchiaZ - p.fineBassa),
+    d("Aria tra ante e piano letto", "base letto − s − zoccolo − ante", p.sottoLetto, p.sottoLetto < 0),
+    d("Fondo delle ribalte", "stanza − margine alto − ribalta", p.ribaltaZ),
+    d("Ribalte sopra il soffitto della nicchia", "fondo ribalte − (sotto soffitto + s)", p.ribaltaZ - p.soffittoNicchia,
+      p.ribaltaZ < p.soffittoNicchia - 0.05),
+    d("Stacco tra nicchia e ribalte", "fondo ribalte − cima dell'apertura", p.ribaltaZ - p.nicchiaZ - p.nicchiaH),
+    d("Vani alti (dentro)", "altezza − cima del soffitto della nicchia", p.altezza - p.soffittoNicchia),
+    d("Spazio tra le ribalte", "(larghezza − 2 margini − 3 ribalte) / 2", p.gapAlti, p.gapAlti < sm),
+    d("Spazio tra cassetti e anta stretta", "quello che resta", p.spazioCassetti, p.spazioCassetti < sm),
+    d("Inizio della risega", "parete − gioco − risega", p.xRisega),
+    d("Campata della nicchia (dentro)", "divisorio − fianco", p.campata),
+    d("Gioco del materasso in lunghezza", "(campata − lunghezza) / 2, per lato", gL, gL < 0),
+    d("Gioco del materasso in larghezza", "(profondità − s − larghezza) / 2, per lato", gP, gP < 0),
+    d("Profondità della colonna", "profondità − risega", p.profColonna),
+    d("Altezza di un gradino (foro)", "(ante − spazi) / gradini", p.hGradino),
+    d("Passo dei gradini (piede → piede)", "foro + spazio", p.hGradino + p.bassa.passoGradini),
+    d("Dall'ultimo gradino al bordo", "bordo della nicchia − ultimo gradino", c[3] - ultimo, c[3] - ultimo > 30),
+    d("Altezza di un cassetto", "(ante − spazi) / cassetti", p.hCassetto),
+    d("Corsa del tavolino", "profondità del piano + s", p.corsaTavolino),
   ]
+  discard s
 
 proc tabellaDerivate*(p: Parete): string =
   result = """<table class="derivate"><thead><tr><th>Misura</th><th>Formula</th><th class="num">cm</th></tr></thead><tbody>"""
@@ -222,8 +229,8 @@ proc tabellaDerivate*(p: Parete): string =
 proc schemaCatene*(p: Parete): string =
   ## Due righelli verticali affiancati, in scala: a sinistra la catena del
   ## fronte (dove stanno i frontali), a destra la catena di dentro (pannelli,
-  ## materasso, comodino, ripiani). In arancio le misure che non dipendono
-  ## l'una dall'altra ma dovrebbero.
+  ## materasso, comodino, ripiani). In arancio le fasce del fronte che si
+  ## calcolano (fascia, stacco) e i punti dove le due catene si incontrano.
   let s = p.spessore
   let c = p.catenaFronte
   let H = p.altezza
@@ -241,32 +248,32 @@ proc schemaCatene*(p: Parete): string =
       if (z1 - z0) * k >= 11:
         o.add "<text x=\"" & $(x + w / 2) & "\" y=\"" & fmtNum((Y(z0) + Y(z1)) / 2 + 4) &
           "\" text-anchor=\"middle\">" & nome & " " & fmtNum(z1 - z0) & "</text>"
-  let fn = @["zoccolo", "zona bassa", "fascia", "nicchia", "stacco", "ribalte", "margine"]
+  let fn = @["zoccolo", "ante", "fascia", "apertura", "stacco", "ribalte", "margine"]
   var fronte: seq[(float, float, string, bool)]
-  for i in 0 ..< 7: fronte.add (c[i], c[i + 1], fn[i], i == 2)
+  for i in 0 ..< 7: fronte.add (c[i], c[i + 1], fn[i], i in [2, 4])
   fasce(10, 140, fronte)
   let mat = p.sopraMaterasso
   var dentro: seq[(float, float, string, bool)] = @[
     (0.0, p.pianoLetto - s, "sotto il letto", false),
     (p.pianoLetto - s, p.pianoLetto, "", false),
     (p.pianoLetto, mat, "materasso", false),
-    (mat, p.baseLibreria, "schienale", true)]
+    (mat, p.baseLibreria, "schienale", false)]
   var z = p.baseLibreria
   for h in p.ripiani:
     dentro.add (z, p.baseLibreria + h - s, "vano", false)
     dentro.add (p.baseLibreria + h - s, p.baseLibreria + h, "", false)
     z = p.baseLibreria + h
-  dentro.add (z, p.soffittoNicchia - s, "vano", false)
-  dentro.add (p.soffittoNicchia - s, p.soffittoNicchia, "", false)
+  dentro.add (z, p.sottoSoffitto, "vano", false)
+  dentro.add (p.sottoSoffitto, p.soffittoNicchia, "", false)
   dentro.add (p.soffittoNicchia, H, "vani alti", false)
   fasce(290, 140, dentro)
   # le linee che dovrebbero coincidere o stare a una distanza decisa
   proc linea(z: float; testo: string; cls = "l") =
     o.add "<line class=\"" & cls & "\" x1=\"150\" x2=\"290\" y1=\"" & fmtNum(Y(z)) & "\" y2=\"" & fmtNum(Y(z)) & "\"/>"
     o.add "<text class=\"t\" x=\"220\" y=\"" & fmtNum(Y(z) - 3) & "\" text-anchor=\"middle\">" & testo & "</text>"
-  linea(c[2], "zona bassa " & fmtNum(c[2]) & " · piano " & fmtNum(p.pianoLetto - s), "l caldo")
+  linea(c[2], "ante " & fmtNum(c[2]) & " · piano " & fmtNum(p.pianoLetto - s), "l caldo")
   linea(c[3], "bordo " & fmtNum(c[3]) & " · mat. " & fmtNum(mat), "l caldo")
-  linea(c[5], "soffitto " & fmtNum(c[5]))
+  linea(c[5], "ribalte " & fmtNum(c[5]) & " · soffitto " & fmtNum(p.soffittoNicchia), "l caldo")
   o.add "<text class=\"h\" x=\"80\" y=\"10\" text-anchor=\"middle\">fronte</text>"
   o.add "<text class=\"h\" x=\"360\" y=\"10\" text-anchor=\"middle\">dentro</text>"
   o.add "</svg>"
@@ -288,22 +295,23 @@ proc tavolaProposta*(p: Parete; m: Model): string =
   let pianta = View(kind: vPlan, cut: 200, ox: 0, oy: 60 + P)
   # prospetto: la catena dei frontali in verticale, quella delle colonne basse
   # in orizzontale sotto, nicchia/colonna e ribalte sopra
-  var basse = @[0.0, p.margineLato]
+  var basse = @[0.0, p.bassa.margineLato]
   let cx = p.colonneX
+  let lb = p.larghezzeBasse
   for i in 0..3:
     if i > 0: basse.add cx[i]
-    basse.add cx[i] + p.colonneBasse[i]
+    basse.add cx[i] + lb[i]
   basse.add L
   var ribalte = @[0.0]
-  let wR = p.wRibalta
+  let wR = p.alta.larghezzaRibalta
   for i in 0..2:
-    let x = p.margineLato + float(i) * (wR + p.gapAlti)
+    let x = p.bassa.margineLato + float(i) * (wR + p.gapAlti)
     ribalte.add x
     ribalte.add x + wR
   ribalte.add L
   var libreria = @[0.0, p.pianoLetto, mat, p.baseLibreria]
   for h in p.ripiani: libreria.add p.baseLibreria + h
-  libreria.add p.cimaLibreria
+  libreria.add p.soffittoNicchia
   libreria.add H
   let viste = @[
     (fronte, @[
@@ -312,28 +320,30 @@ proc tavolaProposta*(p: Parete; m: Model): string =
       DimChain(view: vFront, vertical: false, at: -12, ext: 0, stops: basse),
       DimChain(view: vFront, vertical: false, at: -28, ext: -12, stops: @[0.0, L]),
       DimChain(view: vFront, vertical: false, at: H + 12, ext: H,
-               stops: @[0.0, p.nicchiaX, p.nicchiaX + p.nicchiaL, p.xColonna, L]),
+               stops: @[0.0, p.nicchiaX, p.nicchiaFine, p.xRisega, L]),
       DimChain(view: vFront, vertical: false, at: H + 28, ext: H + 12, stops: ribalte)]),
-    # dentro la nicchia: piano letto, materasso, bordo, altezza libera, soffitto
+    # dentro la nicchia: le altezze chiave (base letto, nicchia) e la cornice
+    # (bassa = materasso + bordo, alta)
     (latN, @[
       DimChain(view: vSide, vertical: true, at: -26, ext: 0,
-               stops: @[0.0, p.pianoLetto, mat, c[3], p.soffittoNicchia - s, H]),
+               stops: @[0.0, p.pianoLetto, mat, c[3], c[4], p.sottoSoffitto, H]),
+      DimChain(view: vSide, vertical: true, at: -46, ext: -26,
+               stops: @[p.pianoLetto, p.sottoSoffitto]),
       DimChain(view: vSide, vertical: false, at: -18, ext: 0, stops: @[0.0, P])]),
     # nella colonna: schienale della testata, vani della libreria, risega
     (latC, @[
       DimChain(view: vSide, vertical: true, at: -26, ext: 0, stops: libreria),
+      DimChain(view: vSide, vertical: true, at: -46, ext: -26, stops: @[p.pianoLetto, p.baseLibreria]),
       DimChain(view: vSide, vertical: false, at: -18, ext: 0, stops: @[0.0, p.profColonna, P])]),
     (pianta, @[
-      DimChain(view: vPlan, vertical: false, at: P + 18, ext: P, stops: @[0.0, p.xColonna, L]),
-      DimChain(view: vPlan, vertical: false, at: P + 32, ext: P + 18,
-               stops: @[L - p.risegaLarga, L]),
+      DimChain(view: vPlan, vertical: false, at: P + 18, ext: P, stops: @[0.0, p.xRisega, L]),
       DimChain(view: vPlan, vertical: false, at: P / 2 - 14, ext: P / 2 - 14,
-               stops: @[(p.xColonna - p.materasso[0]) / 2, (p.xColonna + p.materasso[0]) / 2]),
+               stops: @[s + p.giocoMaterasso[0], s + p.giocoMaterasso[0] + p.materasso.lunghezza]),
       DimChain(view: vPlan, vertical: true, at: -14, ext: 0, stops: @[0.0, P]),
-      DimChain(view: vPlan, vertical: true, at: 40, ext: 40, stops: @[s, s + p.materasso[1]]),
+      DimChain(view: vPlan, vertical: true, at: 40, ext: 40, stops: @[s + p.giocoMaterasso[1], s + p.giocoMaterasso[1] + p.materasso.larghezza]),
       DimChain(view: vPlan, vertical: true, at: L + 14, ext: L, stops: @[0.0, p.profColonna, P]),
       DimChain(view: vPlan, vertical: false, at: -10, ext: 0,
-               stops: @[L - s - p.profScaffali, L - s])])]
+               stops: @[L - s - p.libreria.profScaffali, L - s])])]
   var sh = initSheet()
   for (v, qs) in viste:
     sh.draw(v, m)
