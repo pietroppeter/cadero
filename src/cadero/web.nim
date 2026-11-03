@@ -35,13 +35,16 @@ proc toJson*(m: Model): JsonNode =
     var notchTop = newJArray()
     for h in p.taccheP:
       notchTop.add %*{"x": h.x, "y": h.z, "w": h.w, "d": h.h}
+    var contorno = newJArray()
+    for (x, z) in p.contorno: contorno.add %*[x, z]
     parts.add %*{
       "name": p.name, "kind": $p.kind,
       "x": p.pos.x, "y": p.pos.y, "z": p.pos.z,
       "w": p.size.x, "d": p.size.y, "h": p.size.z,
       "r": p.r, "holes": holes, "gruppo": p.gruppo, "blocco": p.blocco,
       "apre": p.apre, "corsa": p.corsa, "alzata": p.alzata, "dentro": p.dentro,
-      "holesTop": holesTop, "notchTop": notchTop}
+      "holesTop": holesTop, "notchTop": notchTop, "contorno": contorno,
+      "materiale": p.materiale}
   %*{"name": m.name, "parts": parts}
 
 proc viewer3d*(m: Model; id = "cadero3d"; height = 520; three = threeLocale): string =
@@ -79,6 +82,7 @@ const mats = {{
   "materasso": new THREE.MeshStandardMaterial({{color: 0xffffff, roughness: 1}}),
   "foro": new THREE.MeshStandardMaterial({{color: 0x3a2e22}}),
   "accessorio": new THREE.MeshStandardMaterial({{color: 0xf5f5f5, roughness: 0.4}}),
+  "melaminico": new THREE.MeshStandardMaterial({{color: 0xc9cdd1, roughness: 0.6}}),
   "muro": new THREE.MeshStandardMaterial({{color: 0xb8bcc0, roughness: 1, transparent: true, opacity: 0.45}}),
 }};
 const edgeMat = new THREE.LineBasicMaterial({{color: 0x6b5a45}});
@@ -94,7 +98,12 @@ function roundRect(path, x, y, w, h, r) {{
 }}
 // Assi: x CAD -> x three, z CAD (altezza) -> y three, y CAD (profondità) -> -z three
 function extruded(p) {{
-  const shape = roundRect(new THREE.Shape(), p.x, p.z, p.w, p.h, p.r || 0);
+  let shape;
+  if (p.contorno.length > 0) {{   // un pezzo del fronte con le tacche delle aperture
+    shape = new THREE.Shape();
+    p.contorno.forEach(([x, z], i) => i ? shape.lineTo(x, z) : shape.moveTo(x, z));
+    shape.closePath();
+  }} else shape = roundRect(new THREE.Shape(), p.x, p.z, p.w, p.h, p.r || 0);
   for (const h of p.holes) shape.holes.push(roundRect(new THREE.Path(), h.x, h.z, h.w, h.h, h.r));
   const g = new THREE.ExtrudeGeometry(shape, {{depth: p.d, bevelEnabled: false, curveSegments: 6}});
   g.translate(0, 0, -(p.y + p.d));
@@ -107,13 +116,13 @@ for (const p of model.parts) {{
     g = new THREE.CylinderGeometry(p.w / 2, p.w / 2, 0.4, 20);
     g.rotateX(Math.PI / 2);
     g.translate(p.x, p.z, -p.y + 0.15);
-  }} else if (p.holes.length > 0 || ((p.kind === "frontale" || p.kind === "cassetto") && p.r > 0)) {{
+  }} else if (p.holes.length > 0 || p.contorno.length > 0 || ((p.kind === "frontale" || p.kind === "cassetto") && p.r > 0)) {{
     g = extruded(p);
   }} else {{
     g = new THREE.BoxGeometry(p.w, p.h, p.d);
     g.translate(p.x + p.w / 2, p.z + p.h / 2, -(p.y + p.d / 2));
   }}
-  const mesh = new THREE.Mesh(g, mats[p.kind]);
+  const mesh = new THREE.Mesh(g, mats[p.materiale || p.kind]);
   group.add(mesh);
   if (p.kind !== "foro" && p.kind !== "materasso")
     group.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), edgeMat));

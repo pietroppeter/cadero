@@ -5,7 +5,7 @@
 ## - y: profondità, da 0 sul fronte fino al muro
 ## - z: altezza, da 0 sul pavimento
 
-import std/strutils
+import std/[algorithm, math, strutils]
 
 type
   Vec3* = object
@@ -52,6 +52,11 @@ type
     alzata*: float      ## per "esce": di quanto sale prima di uscire
     dentro*: string     ## il gruppo apribile che porta con sé questo (es. l'antina dentro
                         ## il tavolino): si apre solo quando quello è aperto
+    contorno*: seq[(float, float)]
+                        ## il contorno vero visto di fronte (x, z), se non è un rettangolo:
+                        ## un pannello frontale diviso in più pezzi, dove un'apertura passa
+                        ## da un pezzo all'altro (vedi `pannelloForato`). Vuoto: il rettangolo
+    materiale*: string  ## "" multistrato; "melaminico": le scatole grigie dei falegnami
 
   Model* = object
     name*: string
@@ -82,13 +87,118 @@ proc foriVisti*(m: Model; p: Part): seq[RRect] =
   ## Le aperture di una parte come le disegna il 3D. Il pannello frontale
   ## (un pannello con aperture) riceve come fori anche le sagome dei frontali
   ## e dei cassetti, che vanno a occuparle; le altre parti tengono le loro.
-  if p.kind == kPanel and p.holes.len > 0:
+  if p.kind == kPanel and p.holes.len > 0 and p.name == "fronte":
     result = p.holes
     for q in m.parts:
       if q.kind in {kFront, kBox}: result.add q.frontRect
   else: result = p.holes
 
 proc add*(m: var Model; p: Part) = m.parts.add p
+
+# --- pannelli frontali divisi in pezzi ---------------------------------------------
+# Un'apertura che passa da un pezzo all'altro del fronte (la nicchia sul giunto dei
+# quattro pannelli) non è un foro di nessuno dei due: in ognuno è una tacca sul
+# bordo. Il contorno del pezzo si calcola: il rettangolo del pannello meno
+# l'apertura, con gli angoli stondati approssimati da segmenti.
+
+proc poligono*(h: RRect; passi = 6): seq[(float, float)] =
+  ## Il rettangolo stondato come poligono, in senso antiorario (x, z).
+  let r = min(h.r, min(h.w / 2, h.h / 2))
+  let centri = [(h.x + h.w - r, h.z + r, -PI / 2), (h.x + h.w - r, h.z + h.h - r, 0.0),
+                (h.x + r, h.z + h.h - r, PI / 2), (h.x + r, h.z + r, PI)]
+  for (cx, cz, a0) in centri:
+    if r <= 0:
+      result.add (cx, cz)
+      continue
+    for i in 0 .. passi:
+      let a = a0 + PI / 2 * float(i) / float(passi)
+      result.add (cx + r * cos(a), cz + r * sin(a))
+
+proc pannelloForato*(name: string; x, y, z, w, d, h: float; fori: seq[RRect]): Part =
+  ## Un pezzo del pannello frontale: le aperture tutte dentro diventano fori,
+  ## quelle che escono dal bordo diventano tacche nel contorno (`contorno`),
+  ## quelle tutte fuori non contano.
+  result = part(name, kPanel, x, y, z, w, d, h)
+  let (x0, z0, x1, z1) = (x, z, x + w, z + h)
+  proc dentro(q: (float, float)): bool =
+    q[0] > x0 + 1e-6 and q[0] < x1 - 1e-6 and q[1] > z0 + 1e-6 and q[1] < z1 - 1e-6
+  proc lungo(q: (float, float)): float =
+    ## la posizione lungo il bordo, in senso antiorario dall'angolo in basso a sinistra
+    if abs(q[1] - z0) < 1e-6: q[0] - x0
+    elif abs(q[0] - x1) < 1e-6: w + q[1] - z0
+    elif abs(q[1] - z1) < 1e-6: w + h + x1 - q[0]
+    else: 2 * w + h + z1 - q[1]
+  proc bordo(a, b: (float, float)): (float, float) =
+    ## dove il segmento da a (dentro) a b (fuori) esce dal rettangolo
+    var t = 1.0
+    let (dx, dz) = (b[0] - a[0], b[1] - a[1])
+    if dx > 0: t = min(t, (x1 - a[0]) / dx)
+    if dx < 0: t = min(t, (x0 - a[0]) / dx)
+    if dz > 0: t = min(t, (z1 - a[1]) / dz)
+    if dz < 0: t = min(t, (z0 - a[1]) / dz)
+    (a[0] + t * dx, a[1] + t * dz)
+  type Tacca = tuple[da, a: float; catena: seq[(float, float)]]
+  var tacche: seq[Tacca]
+  for f in fori:
+    if f.x >= x1 or f.x + f.w <= x0 or f.z >= z1 or f.z + f.h <= z0: continue   # fuori
+    if f.x > x0 and f.x + f.w < x1 and f.z > z0 and f.z + f.h < z1:
+      result.holes.add f; continue
+    # il tratto del contorno dell'apertura che sta dentro il pannello: entra in e1,
+    # esce in e2; nel pannello forato si percorre al contrario, da e2 a e1
+    let pg = poligono(f)
+    let n = pg.len
+    var k0 = -1
+    for i in 0 ..< n:
+      if not dentro(pg[i]) and dentro(pg[(i + 1) mod n]): k0 = i; break
+    if k0 < 0: continue   # l'apertura copre tutto il pannello: non succede
+    let e1 = bordo(pg[(k0 + 1) mod n], pg[k0])
+    var catena = @[e1]
+    var i = (k0 + 1) mod n
+    while dentro(pg[i]):
+      catena.add pg[i]
+      i = (i + 1) mod n
+    let e2 = bordo(pg[(i + n - 1) mod n], pg[i])
+    catena.add e2
+    tacche.add (lungo(e2), lungo(e1), catena)
+  if tacche.len == 0: return
+  let angoli = [(x0, z0), (x1, z0), (x1, z1), (x0, z1)]
+  proc tolto(t: float): bool =
+    for tc in tacche:
+      if tc.da <= tc.a:
+        if t > tc.da and t < tc.a: return true
+      elif t > tc.da or t < tc.a: return true   # la tacca passa sull'angolo di partenza
+  # gli eventi lungo il bordo: gli angoli tenuti e, dove comincia una tacca, la
+  # sua catena al contrario
+  var eventi: seq[(float, seq[(float, float)])]
+  for k, q in angoli:
+    let t = [0.0, w, w + h, 2 * w + h][k]
+    if not tolto(t): eventi.add (t, @[q])
+  for tc in tacche:
+    var c: seq[(float, float)]
+    for j in countdown(tc.catena.high, 0): c.add tc.catena[j]
+    eventi.add (tc.da, c)
+  eventi.sort(proc (a, b: (float, seq[(float, float)])): int = cmp(a[0], b[0]))
+  for (_, pts) in eventi:
+    for q in pts: result.contorno.add q
+
+proc pieni*(p: Part; asse: char; c: float): seq[(float, float)] =
+  ## Dove un pannello con contorno è pieno lungo una linea: per `asse` 'z' la
+  ## linea z = c (tratti in x), per 'x' la linea x = c (tratti in z). Senza
+  ## contorno: tutto il pannello. I fori non contano qui.
+  if p.contorno.len == 0:
+    return (if asse == 'z': @[(p.pos.x, p.x1)] else: @[(p.pos.z, p.z1)])
+  var tagli: seq[float]
+  let n = p.contorno.len
+  for i in 0 ..< n:
+    let (a, b) = (p.contorno[i], p.contorno[(i + 1) mod n])
+    let (ua, va, ub, vb) = if asse == 'z': (a[0], a[1], b[0], b[1]) else: (a[1], a[0], b[1], b[0])
+    if (va <= c and vb > c) or (vb <= c and va > c):
+      tagli.add ua + (c - va) / (vb - va) * (ub - ua)
+  tagli.sort()
+  var i = 0
+  while i + 1 < tagli.len:
+    result.add (tagli[i], tagli[i + 1])
+    i += 2
 
 proc find*(m: Model; name: string): Part =
   for p in m.parts:

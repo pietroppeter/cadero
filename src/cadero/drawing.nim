@@ -70,6 +70,15 @@ proc line(s: var Sheet; v: View; u0, w0, u1, w1: float; width = thin; dash = "")
   s.body.add &"""<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x1:.2f}" y2="{y1:.2f}" stroke="{ink}" stroke-width="{width}"{dashAttr(dash)}/>"""
   s.grow(x0, y0); s.grow(x1, y1)
 
+proc poly(s: var Sheet; v: View; pts: seq[(float, float)]; width = thin) =
+  ## un poligono chiuso, in coordinate di vista
+  var d = ""
+  for i, (u, w) in pts:
+    let (x, y) = v.toSvg(u, w)
+    d.add (if i == 0: "M" else: "L") & &"{x:.2f},{y:.2f}"
+    s.grow(x, y)
+  s.body.add &"""<path d="{d}Z" fill="none" stroke="{ink}" stroke-width="{width}"/>"""
+
 proc circle(s: var Sheet; v: View; u, w, r: float) =
   let (x, y) = v.toSvg(u, w)
   s.body.add &"""<circle cx="{x:.2f}" cy="{y:.2f}" r="{r:.2f}" fill="none" stroke="{ink}" stroke-width="{thin}"/>"""
@@ -96,7 +105,11 @@ proc drawFront(s: var Sheet; v: View; m: Model) =
     let (u0, w0, u1, w1) = p.viewBox(vFront)
     case p.kind
     of kPanel:
-      if p.holes.len > 0:               # il pannello frontale e le sue aperture
+      if p.contorno.len > 0:            # un pezzo del fronte con le tacche delle aperture
+        s.poly(v, p.contorno, width = thick)
+        for h in p.holes:
+          s.rect(v, h.x, h.z, h.x + h.w, h.z + h.h, h.r)
+      elif p.holes.len > 0:             # il pannello frontale e le sue aperture
         s.rect(v, u0, w0, u1, w1, width = thick)
         for h in p.holes:
           s.rect(v, h.x, h.z, h.x + h.w, h.z + h.h, h.r)
@@ -137,6 +150,15 @@ proc drawPlan(s: var Sheet; v: View; m: Model) =
       continue
     if not (p.pos.z <= v.cut and v.cut <= p.z1): continue
     if p.kind notin {kPanel, kBox}: continue
+    if p.contorno.len > 0:               # un pezzo del fronte: i tratti pieni del contorno
+      for (a, b) in p.pieni('z', v.cut):
+        var t = a
+        for h in p.holes:
+          if h.z <= v.cut and v.cut <= h.z + h.h and h.x >= a and h.x + h.w <= b:
+            s.rect(v, t, w0, h.x, w1, width = thick)
+            t = h.x + h.w
+        s.rect(v, t, w0, b, w1, width = thick)
+      continue
     if p.holes.len == 0:
       s.rect(v, u0, w0, u1, w1, width = thick)
       continue

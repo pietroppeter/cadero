@@ -116,6 +116,7 @@ nbRawHtml: """<section class="banco" id="banco">
       <div class="group" hidden>
         <button id="m-base" type="button" aria-pressed="true"></button><button id="m-tavolino" type="button"></button>
         <button id="m-antina" type="button"></button><button id="m-prese" type="button"></button><button id="m-risega" type="button"></button>
+        <button id="m-falegnami" type="button"></button><button id="m-pannello" type="button"></button>
       </div>
       <div class="group" role="group" aria-label="Apertura">
         <span class="label">Apri</span>

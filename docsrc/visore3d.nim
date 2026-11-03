@@ -41,7 +41,7 @@ let cartaSrc = if fileExists(cartaFile): "data:image/jpeg;base64," & encode(read
 # JSON (è una variabile "catturata"). Il file da compilare nimib lo scrive nella
 # cartella dei documenti (docs/), per questo gli import partono da `../`.
 nbJsFromCode(cartaSrc):
-  import ../src/cadero/visore, ../models/parete
+  import ../src/cadero/visore, ../models/[parete, falegnami]
 
   # nel visore tutto parte chiuso: cassetti, ante, ribalte e tavolino si aprono
   # toccandoli. Tutte le combinazioni delle opzioni, con la chiave che usa il
@@ -67,6 +67,9 @@ nbJsFromCode(cartaSrc):
           if antina: chiave.add "Antina"
           if comodino: chiave.add "Comodino"
           varianti[chiave] = parete(p)
+  # il modello dei falegnami, con e senza il pannellino estraibile
+  varianti["falegnami"] = modello(falegnami())
+  varianti["falegnamiSenzaPannello"] = modello(falegnami().senzaPannello)
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
   quandoThreePronto(proc () = avviaVisore(varianti, carta))
 
