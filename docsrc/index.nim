@@ -25,6 +25,11 @@ nbRawHtml: """
     <span>La parete a tutto schermo da ruotare e zoomare, con viste predefinite
     (anche da dentro la nicchia), cassetto aperto e fronte nascosto.</span>
   </a>
+  <a class="scheda" href="visore_nim.html">
+    <b>Come è fatto il visore 3D</b>
+    <span>Come funziona il visore e come è passato da JavaScript a Nim compilato
+    in JavaScript: binding di three.js, il blocco nbJsFromCode, la verifica.</span>
+  </a>
   <a class="scheda" href="come_funziona.html">
     <b>Come funziona Caderò</b>
     <span>Il codice spiegato passo passo con un comodino d'esempio: parti,

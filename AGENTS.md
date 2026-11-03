@@ -32,34 +32,47 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   sullo spigolo del gruppo. Una parte disegnata aperta (y < 0) parte aperta.
 - Nel visore "Esploso" allontana i pezzi dal centro; le parti con lo stesso `gruppo`
   restano unite. "Sezioni" disegna in SVG, nel browser, pianta, sezione laterale e
-  sezione frontale ai tagli scelti con i cursori (codice in `tools/visore3d.tpl.html`).
+  sezione frontale ai tagli scelti con i cursori (codice in `src/cadero/visore.nim`).
+- Il visore 3D è Nim compilato in JavaScript: `src/cadero/visore.nim` (logica),
+  `src/cadero/js/three.nim` (binding minimi di three.js, solo quello che serve, con i
+  nomi di three.js), `src/cadero/js/pagina.nim` (browser). La pagina è il documento
+  nimib `docsrc/visore3d.nim`: un blocco `nbJsFromCode` calcola i modelli nel browser
+  con `parete(...)` e chiama `avviaVisore`. Il file del blocco nimib lo compila in
+  `docs/`, per questo gli import cominciano con `../`. Nei cicli che creano closure
+  (pulsanti) serve `closureScope:` con una copia della variabile. Spiegazione in
+  `docsrc/visore_nim.nim`. Un binding three.js nuovo va in `js/three.nim`.
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
   106 × 52.6 cm, Vårklockor di Josef Frank); se manca il pulsante non compare.
 - Le varianti sono funzioni sui parametri (es. `rilievo().conTavolino`); il visore 3D
-  riceve un modello per variante (`__MODEL__`, `__MODEL_TAVOLINO__`).
+  riceve un modello per variante, calcolato nel browser nel blocco `nbJsFromCode` di
+  `docsrc/visore3d.nim` (tabella `varianti`).
 - Le cose che non tornano (misure che non ci stanno, decisioni in conflitto) vanno in
   `controlli(p)` di `models/parete.nim`, mostrati nel documento: non si correggono
   i numeri di nascosto.
-  Un nuovo tipo va gestito in `drawFront`/`drawSide`/`drawPlan`, in `web.nim`
-  (materiale three.js) e, se serve, nella distinta.
+  Un nuovo tipo va gestito in `drawFront`/`drawSide`/`drawPlan`, in `web.nim` e in
+  `visore.nim` (materiale three.js) e, se serve, nella distinta.
 
 ## Struttura
 
 ```
 src/cadero/model.nim     parti, mobile, distinta
 src/cadero/drawing.nim   proiezioni, catene di quote, foglio SVG (in cm)
-src/cadero/web.nim       JSON + frammento HTML three.js per nimib
+src/cadero/web.nim       JSON + frammento HTML three.js per nimib (vista 3D piccola)
+src/cadero/visore.nim    il visore 3D (solo backend JS)
+src/cadero/js/           binding three.js (three.nim) e browser (pagina.nim)
 models/parete.nim        parametri rilievo(), parete(p), quote(p), tavola(p, m)
 docsrc/index.nim         indice dei documenti, home di Pages (-> docs/index.html)
 docsrc/parete_nicchia.nim documento della parete (-> docs/parete_nicchia.html)
 docsrc/come_funziona.nim spiegazione del codice (-> docs/come_funziona.html)
-docsrc/all_docs.nim      importa tutti i documenti e scrive il visore: un solo binario
+docsrc/visore3d.nim      il visore 3D (-> docs/visore3d.html), template tools/visore3d.tpl.html
+docsrc/visore_nim.nim    come funziona il visore in Nim (-> docs/visore_nim.html)
+docsrc/all_docs.nim      importa tutti i documenti: un solo binario
 docsrc/tema.nim          tema nimib con lo stile degli artefatti (nbInit(theme = useTema))
 tests/test_parete.nim    controlli sulle quote della tavola di riferimento
 tests/tavola.nim         prova veloce senza nimib: scrive tavola.svg e parete3d.html
-tools/visore3d.nim       pagina del visore 3D: artefatto claude.ai o docs/visore3d.html
+tools/visore3d.nim       da docs/visore3d.html all'artefatto claude.ai (tools/parete-3d.html)
 ```
 
 ## Comandi
@@ -68,8 +81,8 @@ tools/visore3d.nim       pagina del visore 3D: artefatto claude.ai o docs/visore
 nimble install -y nimib
 nimble test                      # nim c -r tests/test_parete.nim
 nimble docs                      # nim r docsrc/all_docs.nim: tutto docs/ con una compilazione
-nim r tools/visore3d.nim         # tools/parete-3d.html per l'artefatto (senza doctype)
-nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
+nim r docsrc/visore3d.nim        # solo il visore: docs/visore3d.html (compila anche con nim js)
+nim r tools/visore3d.nim         # dopo: tools/parete-3d.html per l'artefatto (senza doctype)
 ```
 
 `config.nims` aggiunge `src` e `models` al path; `nimib.toml` manda l'output in `docs/`
@@ -90,9 +103,14 @@ nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
 - La pagina HTML di nimib non va pubblicata così com'è come artefatto: i CSS da CDN
   sono bloccati. Si prende il contenuto di `<main>`, si aggiunge un `<style>` proprio
   con i token chiaro/scuro (il codice è già colorato da nimib con classi `hljs-*`).
-- Il visore 3D carica three.js 0.160.0 da `cdn.jsdelivr.net/npm` con un importmap:
-  è consentito negli artefatti. Template in `tools/visore3d.tpl.html`, viste
-  predefinite (anche "dentro la nicchia") nell'oggetto `views`.
+- three.js 0.160.0 è nel repository (`vendor/three/`, stessa struttura del pacchetto
+  npm, solo `three.module.min.js` e `OrbitControls.js`): `copiaThree` lo copia in
+  `docs/three/` e le pagine lo caricano da `./three/` con un importmap, senza CDN.
+  Un piccolo modulo lo mette in `window.THREE` e manda l'evento "three-pronto" per
+  il codice Nim. Pubblicando il visore come artefatto vanno passati anche i due file
+  (`files` con `three/build/three.module.min.js` e
+  `three/examples/jsm/controls/OrbitControls.js`). Template in `tools/visore3d.tpl.html`,
+  viste predefinite in `vista(nome)` di `src/cadero/visore.nim`.
 - Documenti e artefatti condividono lo stesso stile: token chiaro/scuro, Barlow
   Condensed / IBM Plex Sans / IBM Plex Mono. Se si cambia un colore, va cambiato in
   `docsrc/tema.nim` e in `tools/visore3d.tpl.html`. Il tema non carica CSS da CDN e
@@ -108,5 +126,5 @@ nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
 
 Se `nimble`/nim-lang.org sono bloccati: Nim da apt, e nimib con le dipendenze
 (fusion, nim-markdown, parsetoml, jsony) clonate da GitHub e passate con `--path`.
-Per provare il 3D in Chromium headless senza CDN: `npm pack three@0.160.0` e
-instradare le richieste jsdelivr ai file locali (Playwright `page.route`).
+Per provare il 3D in Chromium headless: servire `docs/` con `python3 -m http.server`
+(i moduli ES non si caricano da `file://`).

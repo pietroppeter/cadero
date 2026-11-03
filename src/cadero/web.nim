@@ -3,23 +3,29 @@
 ## Le scatole diventano parallelepipedi; il pannello frontale e i frontali
 ## sono profili arrotondati estrusi, con le aperture ritagliate.
 
-import std/[json, strformat]
+import std/[json, os, strformat]
 import model
 
 const threeVersion* = "0.160.0"
+const threeLocale* = "./three/"
+  ## dove le pagine trovano three.js: la copia in `vendor/three/`, messa
+  ## accanto ai documenti da `copiaThree` (stessa struttura del pacchetto npm)
+const threeCdn* = "https://cdn.jsdelivr.net/npm/three@" & threeVersion & "/"
+  ## lo stesso dal CDN, per le pagine di prova lontane da docs/
+
+when not defined(js):   # web.nim compila anche nel visore (JS), dove non ci sono file
+  proc copiaThree*(dest: string) =
+    ## Copia three.js (vendor/three/) in `dest/three/`, accanto alle pagine.
+    let sorgente = currentSourcePath().parentDir.parentDir.parentDir / "vendor" / "three"
+    copyDir(sorgente, dest / "three")
 
 proc toJson*(m: Model): JsonNode =
   ## Il pannello frontale riceve come fori sia le aperture vuote (nicchia,
-  ## gradini) sia le sagome dei frontali, che vanno ad occuparle.
-  var fronts: seq[RRect]
-  for p in m.parts:
-    if p.kind in {kFront, kBox}:
-      fronts.add p.frontRect
+  ## gradini) sia le sagome dei frontali, che vanno ad occuparle (`foriVisti`).
   var parts = newJArray()
   for p in m.parts:
     var holes = newJArray()
-    # solo il pannello frontale riceve le sagome dei frontali come fori
-    let fori = if p.kind == kPanel and p.holes.len > 0: p.holes & fronts else: p.holes
+    let fori = foriVisti(m, p)
     if fori.len > 0:
       for h in fori:
         holes.add %*{"x": h.x, "z": h.z, "w": h.w, "h": h.h, "r": h.r}
@@ -38,15 +44,15 @@ proc toJson*(m: Model): JsonNode =
       "holesTop": holesTop, "notchTop": notchTop}
   %*{"name": m.name, "parts": parts}
 
-proc viewer3d*(m: Model; id = "cadero3d"; height = 520): string =
+proc viewer3d*(m: Model; id = "cadero3d"; height = 520; three = threeLocale): string =
   ## Un frammento HTML autosufficiente (da inserire con nbRawHtml).
   let data = $toJson(m)
   result = &"""
 <div id="{id}" style="width:100%;height:{height}px;border:1px solid var(--line, #ddd);border-radius:6px;position:relative;touch-action:none"></div>
 <p style="font-size:0.85em;color:var(--muted, #666)">Trascina per ruotare, pizzica o usa la rotella per lo zoom.</p>
 <script type="importmap">
-{{"imports": {{"three": "https://cdn.jsdelivr.net/npm/three@{threeVersion}/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@{threeVersion}/examples/jsm/"}}}}
+{{"imports": {{"three": "{three}build/three.module.min.js",
+  "three/addons/": "{three}examples/jsm/"}}}}
 </script>
 <script type="module">
 import * as THREE from 'three';

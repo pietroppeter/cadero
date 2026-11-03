@@ -24,8 +24,12 @@ dall'[indice](https://pietroppeter.github.io/cadero/) (sorgente:
   tutto schermo, da ruotare e zoomare, con viste predefinite anche da dentro la
   nicchia; cassetti, ante, ribalte e tavolino si aprono toccandoli; esploso e
   sezioni (pianta, laterale, frontale) con i piani di taglio scelti a mano
-  (sorgente: [`tools/visore3d.tpl.html`](tools/visore3d.tpl.html) e
-  [`tools/visore3d.nim`](tools/visore3d.nim))
+  (sorgente: [`docsrc/visore3d.nim`](docsrc/visore3d.nim), il visore in Nim
+  compilato in JavaScript [`src/cadero/visore.nim`](src/cadero/visore.nim) e la
+  pagina [`tools/visore3d.tpl.html`](tools/visore3d.tpl.html))
+- [Come è fatto il visore 3D](https://pietroppeter.github.io/cadero/visore_nim.html):
+  come funziona il visore e come è passato da JavaScript a Nim (binding di three.js,
+  blocco `nbJsFromCode`) (sorgente: [`docsrc/visore_nim.nim`](docsrc/visore_nim.nim))
 
 I documenti hanno lo stesso tema (colori, caratteri, modo chiaro/scuro) degli
 artefatti: lo stile è in [`docsrc/tema.nim`](docsrc/tema.nim).
@@ -36,14 +40,19 @@ artefatti: lo stile è in [`docsrc/tema.nim`](docsrc/tema.nim).
 src/cadero.nim            la libreria (esporta i tre moduli sotto)
 src/cadero/model.nim      parti (scatole), mobile, distinta
 src/cadero/drawing.nim    viste 2D e catene di quote in SVG
-src/cadero/web.nim        vista 3D con three.js
+src/cadero/web.nim        vista 3D piccola per i documenti (JSON + three.js)
+src/cadero/visore.nim     il visore 3D, in Nim compilato in JavaScript
+src/cadero/js/            binding di three.js e del browser per il visore
 models/parete.nim         il mobile: parametri + funzione che crea le parti + quote
 docsrc/index.nim          l'indice dei documenti
 docsrc/parete_nicchia.nim il documento della parete
 docsrc/come_funziona.nim  la spiegazione del codice
+docsrc/visore3d.nim       la pagina del visore 3D (blocco nbJsFromCode)
+docsrc/visore_nim.nim     come funziona il visore in Nim
 docsrc/all_docs.nim       tutti i documenti in un solo binario (va aggiornato con i nuovi)
 docsrc/tema.nim           il tema dei documenti (stesso stile degli artefatti)
-tools/visore3d.nim        genera la pagina del visore 3D
+tools/visore3d.tpl.html   stile e pulsanti del visore
+tools/visore3d.nim        dalla pagina del visore all'artefatto claude.ai
 tests/test_parete.nim     controlli sulle misure
 ```
 

@@ -1,69 +1,21 @@
-## Genera la pagina del visore 3D dal modello attuale.
-##   nim r tools/visore3d.nim                     ->  tools/parete-3d.html (per l'artefatto claude.ai)
-##   nim r tools/visore3d.nim docs/visore3d.html  ->  pagina completa per GitHub Pages
+## La pagina del visore 3D come artefatto claude.ai.
 ##
-## L'artefatto vuole solo il contenuto (niente doctype); per Pages la pagina
-## viene completata con doctype, charset e viewport, più un link ai documenti.
-import std/[base64, json, os, strutils]
-import ../src/cadero, ../models/parete
+## Il visore è il documento nimib `docsrc/visore3d.nim` (-> docs/visore3d.html):
+## qui si prende quella pagina e la si adatta all'artefatto, che vuole solo il
+## contenuto (niente doctype, niente <html>/<meta>) e non ha l'indice.
+##
+##   nim r docsrc/visore3d.nim     # prima: genera docs/visore3d.html
+##   nim r tools/visore3d.nim      # poi:  tools/parete-3d.html per l'artefatto
+import std/[os, strutils]
 
 let dir = currentSourcePath().parentDir
-
-# nel visore tutto parte chiuso: cassetti, ante, ribalte e tavolino si aprono toccandoli
-# Tutte le combinazioni delle opzioni, con la chiave che usa il visore:
-# "base" o "tavolino", poi "Scoperta" (risega), "Antina" (solo con il
-# tavolino), "Comodino" (prese sul comodino); es. "tavolinoScopertaComodino".
-proc modelli(): JsonNode =
-  result = newJObject()
-  for tav in [false, true]:
-    for scoperta in [false, true]:
-      for antina in (if tav: @[false, true] else: @[false]):
-        for comodino in [false, true]:
-          var p = rilievo()
-          p.cassettoAperto = -1
-          if tav: p = p.conTavolino(aperto = false)
-          p.risegaScoperta = scoperta
-          p.antinaTavolino = antina
-          p.preseSulComodino = comodino
-          let chiave = (if tav: "tavolino" else: "base") & (if scoperta: "Scoperta" else: "") &
-                       (if antina: "Antina" else: "") & (if comodino: "Comodino" else: "")
-          result[chiave] = toJson(parete(p))
-
-# la carta da parati (facoltativa): una piastrella del motivo, che si ripete
-# sul muro; se il file manca il pulsante non compare.
-# Misure assunte: due teli da 53 cm affiancati (motivo a mezza caduta), rapporto 52.6.
-let cartaFile = dir / "carta-da-parati.jpg"
-let carta = if fileExists(cartaFile):
-    "{\"src\": \"data:image/jpeg;base64," & encode(readFile(cartaFile)) & "\", \"w\": 106, \"h\": 52.6}"
-  else: "null"
-
-proc paginaVisore(): string =
-  readFile(dir / "visore3d.tpl.html")
-    .replace("__MODELS__", $modelli())
-    .replace("__CARTA__", carta)
-    .replace("__TAVOLA__", (let p = rilievo(); tavola(p, parete(p))))
-
-proc scriviArtefatto*() =
-  ## tools/parete-3d.html: solo il contenuto, per l'artefatto claude.ai.
-  let dest = dir / "parete-3d.html"
-  writeFile(dest, paginaVisore().replace("__BACK__\n", ""))
-  echo "scritto ", dest
-
-proc scriviPagina*(dest: string) =
-  ## La pagina completa per Pages, con doctype, charset, viewport e il link all'indice.
-  createDir(dest.parentDir)
-  let back = """<nav class="back"><a href="index.html">← Indice</a></nav>"""
-  writeFile(dest, """<!doctype html>
-<html lang="it">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-""" & paginaVisore().replace("__BACK__", back) & "</html>\n")
-  echo "scritto ", dest
-
-proc paginaDocs*(): string =
-  ## Dove va la pagina del visore su Pages: docs/visore3d.html.
-  dir.parentDir / "docs" / "visore3d.html"
-
-when isMainModule:
-  if paramCount() == 0: scriviArtefatto()
-  else: scriviPagina(paramStr(1))
+let sorgente = dir.parentDir / "docs" / "visore3d.html"
+if not fileExists(sorgente):
+  quit "manca " & sorgente & ": prima `nim r docsrc/visore3d.nim`"
+var pagina = readFile(sorgente)
+pagina = pagina.replace("""<nav class="back"><a href="index.html">← Indice</a></nav>""" & "\n", "")
+let inizio = pagina.find("<title>")
+pagina = pagina[inizio .. ^1].replace("</html>\n", "")
+let dest = dir / "parete-3d.html"
+writeFile(dest, pagina)
+echo "scritto ", dest
