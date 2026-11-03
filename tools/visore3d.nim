@@ -25,24 +25,35 @@ let carta = if fileExists(cartaFile):
     "{\"src\": \"data:image/jpeg;base64," & encode(readFile(cartaFile)) & "\", \"w\": 106, \"h\": 52.6}"
   else: "null"
 
-let tpl = readFile(dir / "visore3d.tpl.html")
-  .replace("__MODEL_TAVOLINO_SCOPERTA__", $toJson(parete(tavolinoScoperta)))
-  .replace("__MODEL_TAVOLINO__", $toJson(parete(tavolino)))
-  .replace("__MODEL_SCOPERTA__", $toJson(parete(scoperta)))
-  .replace("__MODEL__", $toJson(parete(base)))
-  .replace("__CARTA__", carta)
+proc paginaVisore(): string =
+  readFile(dir / "visore3d.tpl.html")
+    .replace("__MODEL_TAVOLINO_SCOPERTA__", $toJson(parete(tavolinoScoperta)))
+    .replace("__MODEL_TAVOLINO__", $toJson(parete(tavolino)))
+    .replace("__MODEL_SCOPERTA__", $toJson(parete(scoperta)))
+    .replace("__MODEL__", $toJson(parete(base)))
+    .replace("__CARTA__", carta)
 
-if paramCount() == 0:
+proc scriviArtefatto*() =
+  ## tools/parete-3d.html: solo il contenuto, per l'artefatto claude.ai.
   let dest = dir / "parete-3d.html"
-  writeFile(dest, tpl.replace("__BACK__\n", ""))
+  writeFile(dest, paginaVisore().replace("__BACK__\n", ""))
   echo "scritto ", dest
-else:
-  let dest = paramStr(1)
+
+proc scriviPagina*(dest: string) =
+  ## La pagina completa per Pages, con doctype, charset, viewport e il link all'indice.
   createDir(dest.parentDir)
   let back = """<nav class="back"><a href="index.html">← Indice</a></nav>"""
   writeFile(dest, """<!doctype html>
 <html lang="it">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-""" & tpl.replace("__BACK__", back) & "</html>\n")
+""" & paginaVisore().replace("__BACK__", back) & "</html>\n")
   echo "scritto ", dest
+
+proc paginaDocs*(): string =
+  ## Dove va la pagina del visore su Pages: docs/visore3d.html.
+  dir.parentDir / "docs" / "visore3d.html"
+
+when isMainModule:
+  if paramCount() == 0: scriviArtefatto()
+  else: scriviPagina(paramStr(1))

@@ -55,6 +55,7 @@ models/parete.nim        parametri rilievo(), parete(p), quote(p), tavola(p, m)
 docsrc/index.nim         indice dei documenti, home di Pages (-> docs/index.html)
 docsrc/parete_nicchia.nim documento della parete (-> docs/parete_nicchia.html)
 docsrc/come_funziona.nim spiegazione del codice (-> docs/come_funziona.html)
+docsrc/all_docs.nim      importa tutti i documenti e scrive il visore: un solo binario
 docsrc/tema.nim          tema nimib con lo stile degli artefatti (nbInit(theme = useTema))
 tests/test_parete.nim    controlli sulle quote della tavola di riferimento
 tests/tavola.nim         prova veloce senza nimib: scrive tavola.svg e parete3d.html
@@ -66,7 +67,7 @@ tools/visore3d.nim       pagina del visore 3D: artefatto claude.ai o docs/visore
 ```sh
 nimble install -y nimib
 nimble test                      # nim c -r tests/test_parete.nim
-nimble docs                      # genera docs/ (indice, parete_nicchia, come_funziona, visore3d)
+nimble docs                      # nim r docsrc/all_docs.nim: tutto docs/ con una compilazione
 nim r tools/visore3d.nim         # tools/parete-3d.html per l'artefatto (senza doctype)
 nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
 ```
@@ -77,6 +78,9 @@ nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
 ## CI e Pages
 
 - `.github/workflows/docs.yml`: test, generazione dei documenti, deploy su Pages da `main`.
+- Velocità: cache di `~/.nimble` (chiave: il `.nimble`) e di `~/.cache/nim`, `apt-get`
+  solo se manca `libpcre3`, `nimble install` solo se manca nimib, tutti i documenti
+  compilati in un solo binario (`docsrc/all_docs.nim`), niente CI per modifiche ai soli `.md`.
 - Il job gira su `ubuntu-24.04`: nimib usa `std/re`, che richiede `libpcre3`,
   non più disponibile da Ubuntu 26.04.
 - Pages va abilitato con sorgente "GitHub Actions".
@@ -95,7 +99,7 @@ nim r tools/visore3d.nim docs/visore3d.html   # pagina completa per Pages
   disattiva highlight.js: il codice lo colora già nimib.
 - Navigazione: `docs/index.html` è l'indice con una scheda per documento; il tema mette
   "← Indice" in testa a ogni documento, il visore ha lo stesso link. Un nuovo documento
-  va aggiunto all'indice, al workflow, al task `docs` e al README. Non chiamare un
+  va aggiunto all'indice, a `docsrc/all_docs.nim` e al README. Non chiamare un
   documento come un modulo che importa (es. `parete.nim`): si importerebbe da solo.
 - Pietro legge spesso da telefono: i disegni vanno mostrati come immagini o pagine,
   non come file SVG grezzi.
