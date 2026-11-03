@@ -20,8 +20,8 @@ suite "parete di riferimento":
   test "vista laterale: piano letto 104, testata 55, libreria fino al soffitto":
     check near(p.baseLibreria - p.pianoLetto, 55)     # testata (= comodino)
     check near(p.cimaLibreria, p.soffittoNicchia)     # libreria fino al soffitto
-    check abs(p.vanoUtile - 32) < 0.5                 # 3 vani da circa 32
-    check near(p.soffittoNicchia, 260)
+    check abs(p.vanoUtile - 33.5) < 0.5               # 3 vani da circa 33.5
+    check near(p.soffittoNicchia, 265)                # un pannello solo sotto i vani alti
     check near(p.margineBasso + p.zonaBassa + p.fascia - p.pianoLetto, 27)
 
   test "il pannello frontale ha la nicchia e i gradini come aperture":
@@ -31,7 +31,7 @@ suite "parete di riferimento":
     for q in m.parts:
       if q.gruppo != "" and q.pos.y < 0: continue   # aperto
       if q.kind == kSoft: continue      # il materasso lo verificano i controlli
-      if q.name == "muro (carta da parati)": continue   # il muro dietro, fuori dal mobile
+      if q.kind == kWall: continue      # il muro dietro, fuori dal mobile
       check q.pos.x >= -0.01 and q.x1 <= p.larghezza + 0.01
       check q.pos.z >= -0.01 and q.z1 <= p.altezza + 0.01
       check q.pos.y >= -0.01 and q.y1 <= p.profondita + 0.01
@@ -50,7 +50,7 @@ suite "parete di riferimento":
     var p2 = rilievo()
     p2.nicchia = 112
     check p2.altezza == 306
-    check near(p2.soffittoNicchia, 250)
+    check near(p2.soffittoNicchia, 255)
     check p2.cimaLibreria <= p2.soffittoNicchia   # la libreria ci sta ancora
 
   test "i ripiani stanno dentro la libreria":
@@ -61,30 +61,52 @@ suite "parete di riferimento":
     check fmtNum(198.2) == "198.2"
     check fmtNum(316.0) == "316"
 
-  test "risega: colonna profonda 73 e pannellino sul bordo sottile":
+  test "vincoli costruttivi: muro dietro, ai lati, sopra e sotto":
     check near(p.profColonna, 73)
-    let r = m.find("risega (muro)")
+    let r = m.find("risega (muro, carta da parati)")
     check r.kind == kWall and near(r.y1, p.profondita)
-    let pan = m.find("pannellino risega")
-    check near(pan.pos.y, p.profColonna) and near(pan.y1, p.profondita)
-    check near(pan.size.z, p.altezza - 2 * p.spessore)   # per tutta l'altezza
-    # rivestimento a L senza fessure: lo schienale della colonna parte dallo
-    # stesso piano del pannellino e del divisorio
-    let sc = m.find("schienale colonna")
-    check near(sc.pos.x, pan.pos.x) and near(sc.y1, pan.pos.y)
-    check near(m.find("divisorio").y1, sc.pos.y)
-    # niente fondo e niente schienale: dietro c'è il muro
-    check not m.has("schienale") and not m.has("fondo")
-    check near(m.find("piano letto").y1, p.profondita)
+    # niente schienali, cielo, fondo o rivestimento della risega
+    for nome in ["schienale", "fondo", "cielo", "schienale colonna", "pannellino risega",
+                 "cielo libreria", "fondo gavone", "fondo vani alti", "schiena vani alti"]:
+      check not m.has(nome)
+    # due soli pannelli lunghi orizzontali, da un muro all'altro, con la tacca per la risega
+    for nome in ["piano letto", "soffitto nicchia"]:
+      let q = m.find(nome)
+      check near(q.size.x, p.larghezza) and near(q.y1, p.profondita)
+      check q.taccheP.len == 1 and near(q.taccheP[0].z, p.profColonna)
+    check near(m.find("piano letto").z1, p.pianoLetto)
+    check near(m.find("soffitto nicchia").z1, p.catenaFronte[5])
+    # tre fianchi per lato, spezzati dai pannelli lunghi
+    for lato in ["sx", "dx"]:
+      var h = 0.0
+      for t in ["basso", "medio", "alto"]: h += m.find("fianco " & lato & " " & t).size.z
+      check near(h + 2 * p.spessore, p.altezza)
+    # il divisorio poggia sul piano letto e arriva alla risega
+    let d = m.find("divisorio")
+    check near(d.pos.z, p.pianoLetto) and near(d.y1, p.profColonna)
     for row in bom(m): check row.kind != kWall           # il muro non va in distinta
 
-  test "una scatola dietro ogni gradino, profonda 30":
+  test "il fronte da solo non sta in una lastra":
+    let f = fuoriLastra(m)
+    check f.len == 1 and f[0].startsWith("fronte")
+
+  test "dietro i gradini una scatola profonda 30, con due fianchi da terra":
+    var n, fianchi = 0
+    for q in m.parts:
+      if q.name == "ripiano gradino": inc n
+      if q.name == "fianco gradini":
+        inc fianchi
+        check near(q.pos.z, 0) and near(q.z1, p.pianoLetto - p.spessore)
+    check n == p.nGradini and fianchi == 2
+    check near(m.find("fondo gradini").pos.y, p.spessore + p.profGradini)
+
+  test "i cassetti scorrono tra due fianchi fissi":
     var n = 0
     for q in m.parts:
-      if q.name == "schiena gradino":
+      if q.name == "fianco cassetti":
         inc n
-        check near(q.pos.y, p.spessore + p.profGradini)
-    check n == p.nGradini
+        check near(q.pos.z, 0) and near(q.z1, p.pianoLetto - p.spessore)
+    check n == 2
 
   test "gavone: apertura nel comodino e due coperchi":
     let com = m.find("piano testata (comodino)")
@@ -99,7 +121,8 @@ suite "parete di riferimento":
         check q.apre == "alza" and near(q.z1, com.z1)
         check q.pos.x >= h.x and q.x1 <= h.x + h.w and q.pos.y >= h.z and q.y1 <= h.z + h.h
     check n == 2 and area > 0.95 * h.w * h.h
-    check near(m.find("fondo gavone").z1, p.pianoLetto)
+    # il fondo del gavone è il piano letto, che arriva fin sotto la testata
+    check m.find("piano letto").x1 >= com.x1
 
   test "comodino a filo della risega, scaffali meno profondi":
     check abs(m.find("piano testata (comodino)").size.x - p.risegaLarga) < 0.2
@@ -139,7 +162,7 @@ suite "parete di riferimento":
     # un ripiano sotto ogni gradino e il fondo dei cassetti a profGradini dal frontale
     var ripiani = 0
     for q in mt.parts:
-      if q.name == "ripiano gradino": inc ripiani
+      if q.name == "ripiano gradino" and q.gruppo == "tavolino": inc ripiani
     check ripiani == pt.gradiniTavolino
     check near(mt.find("fondo cassetti").pos.y, fr.y1 + pt.profCassettiTavolino)
     # frontale e apertura a spigoli dritti: tondi solo i vani
