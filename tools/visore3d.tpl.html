@@ -165,8 +165,45 @@ scene.add(sun);
 
 const ply = new THREE.MeshStandardMaterial({ color: 0xe3c9a0, roughness: 0.8 });
 const front = new THREE.MeshStandardMaterial({ color: 0xead3ad, roughness: 0.8 });
+// il materasso: tessuto avorio, sopra e sotto trapuntato a rombi con un bottoncino
+// a ogni incrocio, sui lati una fascia rigata. Le piastrelle sono di 20 cm.
+function tessuto(disegna) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+  const x = cv.getContext('2d');
+  x.fillStyle = '#f8f3e6'; x.fillRect(0, 0, 128, 128);
+  disegna(x);
+  const t = new THREE.CanvasTexture(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 });
+}
+const trapunta = tessuto(x => {
+  x.strokeStyle = '#d9cfb6'; x.lineWidth = 3;
+  x.beginPath(); x.moveTo(0, 64); x.lineTo(64, 0); x.lineTo(128, 64); x.lineTo(64, 128); x.closePath();
+  x.stroke();
+  x.fillStyle = '#cbbf9f';
+  for (const [a, b] of [[0, 64], [64, 0], [128, 64], [64, 128]]) { x.beginPath(); x.arc(a, b, 4, 0, 7); x.fill(); }
+});
+const fascia = tessuto(x => {
+  x.fillStyle = '#ece6d8';
+  for (let i = 0; i < 128; i += 32) x.fillRect(i, 0, 10, 128);
+  x.fillStyle = '#c9bfa8'; x.fillRect(0, 0, 128, 6); x.fillRect(0, 122, 128, 6);   // i cordoncini
+});
+const matMaterasso = [fascia, fascia, trapunta, trapunta, fascia, fascia];   // ±x, ±y, ±z
+function uvMaterasso(g) {   // uv in cm sulle facce, per ripetere il tessuto a 20 cm
+  const uv = g.attributes.uv, pos = g.attributes.position, nor = g.attributes.normal;
+  g.computeBoundingBox(); const b = g.boundingBox;
+  for (let i = 0; i < uv.count; i++) {
+    const [px, py, pz] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
+    if (Math.abs(nor.getY(i)) > 0.5) uv.setXY(i, px / 20, pz / 20);
+    else {   // sui lati la fascia copre tutta l'altezza, le righe vanno ripetute in lunghezza
+      const u = Math.abs(nor.getX(i)) > 0.5 ? pz : px;
+      uv.setXY(i, u / 20, (py - b.min.y) / (b.max.y - b.min.y));
+    }
+  }
+}
 const mats = { "pannello": ply, "frontale": front, "cassetto": front,
-  "materasso": new THREE.MeshStandardMaterial({ color: 0xf3df9a, roughness: 1 }),   // giallo burro
+  "materasso": null,   // vedi sotto: tessuto disegnato su un canvas
   "foro": new THREE.MeshStandardMaterial({ color: 0x3a2e22 }),
   "accessorio": new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.4 }),
   "muro": new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 1, transparent: true, opacity: 0.45 }) };
@@ -263,7 +300,8 @@ function build(m) {
       g.translate(p.x + p.w / 2, p.z + p.h / 2, -(p.y + p.d / 2));
     }
     const obj = new THREE.Group();
-    const mesh = new THREE.Mesh(g, mats[p.kind]);
+    if (p.kind === "materasso") uvMaterasso(g);
+    const mesh = new THREE.Mesh(g, p.kind === "materasso" ? matMaterasso : mats[p.kind]);
     obj.add(mesh);
     if (p.kind !== "foro" && p.kind !== "materasso" && p.kind !== "muro")
       obj.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), edgeMat));
