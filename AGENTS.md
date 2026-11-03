@@ -108,10 +108,14 @@ nim r tools/visore3d.nim         # dopo: tools/parete-3d.html per l'artefatto (s
 - La pagina HTML di nimib non va pubblicata così com'è come artefatto: i CSS da CDN
   sono bloccati. Si prende il contenuto di `<main>`, si aggiunge un `<style>` proprio
   con i token chiaro/scuro (il codice è già colorato da nimib con classi `hljs-*`).
-- Il visore 3D carica three.js 0.160.0 da `cdn.jsdelivr.net/npm` con un importmap:
-  è consentito negli artefatti; un piccolo modulo lo mette in `window.THREE` e manda
-  l'evento "three-pronto" per il codice Nim. Template in `tools/visore3d.tpl.html`,
-  viste predefinite (anche "dentro la nicchia") in `vista(nome)` di `src/cadero/visore.nim`.
+- three.js 0.160.0 è nel repository (`vendor/three/`, stessa struttura del pacchetto
+  npm, solo `three.module.min.js` e `OrbitControls.js`): `copiaThree` lo copia in
+  `docs/three/` e le pagine lo caricano da `./three/` con un importmap, senza CDN.
+  Un piccolo modulo lo mette in `window.THREE` e manda l'evento "three-pronto" per
+  il codice Nim. Pubblicando il visore come artefatto vanno passati anche i due file
+  (`files` con `three/build/three.module.min.js` e
+  `three/examples/jsm/controls/OrbitControls.js`). Template in `tools/visore3d.tpl.html`,
+  viste predefinite in `vista(nome)` di `src/cadero/visore.nim`.
 - Documenti e artefatti condividono lo stesso stile: token chiaro/scuro, Barlow
   Condensed / IBM Plex Sans / IBM Plex Mono. Se si cambia un colore, va cambiato in
   `docsrc/tema.nim` e in `tools/visore3d.tpl.html`. Il tema non carica CSS da CDN e
@@ -127,5 +131,5 @@ nim r tools/visore3d.nim         # dopo: tools/parete-3d.html per l'artefatto (s
 
 Se `nimble`/nim-lang.org sono bloccati: Nim da apt, e nimib con le dipendenze
 (fusion, nim-markdown, parsetoml, jsony) clonate da GitHub e passate con `--path`.
-Per provare il 3D in Chromium headless senza CDN: `npm pack three@0.160.0` e
-instradare le richieste jsdelivr ai file locali (Playwright `page.route`).
+Per provare il 3D in Chromium headless: servire `docs/` con `python3 -m http.server`
+(i moduli ES non si caricano da `file://`).
