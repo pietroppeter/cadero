@@ -30,6 +30,8 @@ type
     materasso*: Materasso
     sMulti*: float           ## multistrato a vista: fronte, ante, cassone, libreria, gradini (18 mm)
     sMel*: float             ## melaminico delle scatole grigie (19 mm)
+    sSchiena*: float         ## la schiena sottile dei vani alti e dei mobili bassi: 0.8 (ipotesi:
+                             ## non è sulle tavole, Pietro la vuole; grigia, color legno nei gradini)
     # --- il fronte
     spalla*: float           ## le due spalle ai lati, da cima a fondo: 5.9 (disegno: 59)
     pannelloL*, pannelloH*: float   ## i quattro pannelli: 112.5 × 156.8 (disegno)
@@ -41,7 +43,9 @@ type
     raggioAperture*, raggioFrontali*, raggioNicchia*: float   ## rilevati: 3, 2, 5
     diamForo*: float         ## fori maniglia: 3 (rilevato)
     # --- la nicchia nel fronte
-    nicchiaZ*: float         ## il bordo in basso dell'apertura, da terra: 137 (rilevato)
+    nicchiaZ*: float         ## il bordo in basso dell'apertura, da terra: 135.3, dedotto
+                             ## perché il bordo alto sia a filo del cielo del cassone
+                             ## (in scala sul prospetto si legge circa 137)
     nicchiaL*, nicchiaH*: float     ## 156.7 × 121.9 (disegno)
     # --- la zona bassa del fronte
     zBassi*: float           ## fondo di ante, cassetti e gradini, da terra: 12 (disegno: 120)
@@ -56,17 +60,22 @@ type
     fessura*: float          ## l'altezza della fessura: 3 (rilevato); sopra e sotto c'è `spazioGradini` / 2
     lungPannello*: float     ## 67 (disegno)
     # --- la zona alta del fronte
-    zRibalte*: float         ## fondo delle ribalte, da terra: 270 (rilevato)
+    zRibalte*: float         ## fondo delle ribalte, da terra: 263.3, dedotto perché la
+                             ## cima della ribalta sia a filo della cima delle scatole
+                             ## (Pietro); in scala sul prospetto si legge circa 270
     ribaltaL*, ribaltaH*: float   ## 68.3 × 36.6 (disegno)
     parteFissa*: float       ## la ribalta di sinistra è tagliata: 15 fissi a sinistra (disegno)
     # --- i mobili
     hBassi*: float           ## i quattro mobili bassi: alti 109 (disegno)
     zoccolo*: float          ## sotto il fondo dei mobili bassi: 11.8 (rilevato: 118)
     mobileA*, mobileB*, mobileC*, mobileD*: float   ## larghezze: 75.3, 28.6, 50, 50 (disegno)
+    profGradini*: float      ## il mobile B dei gradini è profondo solo 30 (disegno: 300, confermato
+                             ## da Pietro): dietro resta spazio libero sotto il cassone
     prof*: float             ## profondità dei mobili: 77.5 (disegno: 775)
     profRisega*: float       ## quelli davanti alla risega: 62.2 (disegno: 622)
     interno*: float          ## il cassone del letto dentro: 193 (disegno: 1930)
-    hNicchia*: float         ## il cassone dentro, dal piano letto al cielo: 150 (disegno)
+    hNicchia*: float         ## il cassone fuori, dal sotto del piano letto alla cima del
+                             ## cielo: 150, come la libreria accanto (Pietro: alte uguali)
     profLibreria*, hLibreria*: float   ## 63.5 × 150 (disegno)
     gavone*: float           ## il frontale del gavone, verso il letto: 32 (disegno)
     comodino*: float         ## profondità del piano sopra il gavone: 38 (disegno)
@@ -77,16 +86,19 @@ type
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
   let r = rilievo()
-  Falegnami(muro: r.muro, materasso: r.materasso, sMulti: 1.8, sMel: 1.9,
+  var mat = r.materasso
+  mat.larghezza = 77   # Pietro: nel cassone da 77.5
+  Falegnami(muro: r.muro, materasso: mat, sMulti: 1.8, sMel: 1.9, sSchiena: 0.8,
     spalla: 5.9, pannelloL: 112.5, pannelloH: 156.8, fascia: 6, spazio: 4,
     sormonto: 2, sormontoCassetti: 1, raggioAperture: 3, raggioFrontali: 2, raggioNicchia: 5,
     diamForo: 3,
-    nicchiaZ: 137, nicchiaL: 156.7, nicchiaH: 121.9,
+    nicchiaZ: 135.3, nicchiaL: 156.7, nicchiaH: 121.9,
     zBassi: 12, altezzaAnte: 95, antaA: 75.5, cassetti: 50.2, antaD: 50.2,
     hCassetto: 29, nCassetti: 3, gradini: @[15.8, 15.8, 14.3, 14.3, 15.8], spazioGradini: 4,
     pannello: true, fessura: 3, lungPannello: 67,
-    zRibalte: 270, ribaltaL: 68.3, ribaltaH: 36.6, parteFissa: 15,
+    zRibalte: 263.3, ribaltaL: 68.3, ribaltaH: 36.6, parteFissa: 15,
     hBassi: 109, zoccolo: 11.8, mobileA: 75.3, mobileB: 28.6, mobileC: 50, mobileD: 50,
+    profGradini: 30,
     prof: 77.5, profRisega: 62.2, interno: 193, hNicchia: 150,
     profLibreria: 63.5, hLibreria: 150, gavone: 32, comodino: 38, scaffali: 27, nScaffali: 3,
     vanoL: 68.1, vanoH: 40.9)
@@ -126,12 +138,12 @@ proc colonne*(f: Falegnami): array[4, float] =
   result[3] = result[2] + f.cassetti + f.spazio
 proc pianoLetto*(f: Falegnami): float = f.hBassi + f.sMulti
   ## 110.8: il cassone appoggia sui mobili bassi
-proc cieloNicchia*(f: Falegnami): float = f.pianoLetto + f.hNicchia
-  ## 260.8: il sotto del cielo del cassone
-proc fondoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.sMel
-  ## 270.1: il fondo dei vani alti, perché dentro siano a filo delle aperture
-proc rialzo*(f: Falegnami): float = f.fondoVani - f.cieloNicchia - f.sMulti
-  ## 7.5: lo spazio tra il cassone e i vani alti
+proc cieloNicchia*(f: Falegnami): float = f.hBassi + f.hNicchia - f.sMulti
+  ## 257.2: il sotto del cielo del cassone; la cima (259) è a filo della libreria
+proc fondoVani*(f: Falegnami): float = f.cieloNicchia + f.sMulti
+  ## 262.6: i vani alti sono scatole appoggiate sul cielo del cassone (Pietro)
+proc scalinoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.fondoVani - f.sMel
+  ## 7.5: di quanto il dentro dei vani alti sta sotto il bordo dell'apertura
 proc pianoComodino*(f: Falegnami): float = f.hBassi + f.gavone + f.sMulti
   ## 142.8: la cima del piano sopra il gavone
 proc bordo*(f: Falegnami): float = f.nicchiaZ - f.pianoLetto - f.materasso.altezza
@@ -166,6 +178,24 @@ proc catenaFronte*(f: Falegnami): seq[float] =
   ## le quote verticali del prospetto
   @[0.0, f.zBassi, f.zBassi + f.altezzaAnte, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, f.zRibalte,
     f.zRibalte + f.ribaltaH, 2 * f.pannelloH, f.altezza]
+
+proc zScaffali*(f: Falegnami): seq[float] =
+  ## il sotto di ogni scaffale della libreria: passo uguale tra il piano del
+  ## comodino e il cielo della libreria
+  let sm = f.sMulti
+  let top = f.hBassi + f.hLibreria - sm
+  let passo = (top - f.pianoComodino - float(f.nScaffali) * sm) / float(f.nScaffali + 1)
+  for k in 1 .. f.nScaffali:
+    result.add f.pianoComodino + float(k) * passo + float(k - 1) * sm
+
+proc xRibalte*(f: Falegnami): seq[float] =
+  ## dove comincia ogni ribalta dei vani alti, da sinistra
+  for i in 0..2:
+    result.add f.xFronte + f.margineAlto + float(i) * (f.ribaltaL + f.spazio)
+
+proc xSezione*(f: Falegnami): float =
+  ## dove taglia la sezione laterale della tavola: nella libreria, a metà degli scaffali
+  f.larghezza - f.sMulti - f.scaffali / 2
 
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =
@@ -255,35 +285,54 @@ proc modello*(f: Falegnami): Model =
   # --- i mobili bassi -------------------------------------------------------------
   # scatole senza schiena (dietro c'è il muro), centrate dietro il loro frontale;
   # i fianchi arrivano a terra, il fondo sta sopra lo zoccolo
+  # dietro, tra i fianchi, una schiena sottile dal fondo al cielo; fondo e cielo
+  # arrivano davanti alla schiena
+  let ss = f.sSchiena
   proc scatola(nome: string; x, w, h, p, s, zFondo: float; z0 = 0.0): seq[Part] =
     for xf in [x, x + w - s]:
       var fi = part("fianco " & nome, kPanel, xf, y0, z0, s, p, h)
       fi.hiddenFront = true
       result.add fi
-    result.add part("fondo " & nome, kPanel, x + s, y0, zFondo, w - 2 * s, p, s)
-    result.add part("cielo " & nome, kPanel, x + s, y0, z0 + h - s, w - 2 * s, p, s)
+    result.add part("fondo " & nome, kPanel, x + s, y0, zFondo, w - 2 * s, p - ss, s)
+    result.add part("cielo " & nome, kPanel, x + s, y0, z0 + h - s, w - 2 * s, p - ss, s)
+    var sc = part("schiena " & nome, kPanel, x + s, y0 + p - ss, zFondo, w - 2 * s, ss, z0 + h - zFondo)
+    sc.hiddenFront = true
+    result.add sc
   let xA = c[0] + (f.antaA - f.mobileA) / 2
   var a = scatola("mobile A", xA, f.mobileA, f.hBassi, f.prof, sl, f.zoccolo)
   let zIn = f.zoccolo + sl
   let passoA = (f.hBassi - sl - zIn - 2 * sl) / 3
   for k in 1..2:   # due ripiani mobili, a passo uguale
     a.add part("ripiano mobile A", kPanel, xA + sl, y0, zIn + float(k) * passoA + float(k - 1) * sl,
-               f.mobileA - 2 * sl, f.prof - 2, sl)
+               f.mobileA - 2 * sl, f.prof - ss - 2, sl)
   result.aggiungi(a, "mobile A", mel = true)
 
   # B: i gradini, in multistrato a vista. Sotto ogni apertura un piano, dove si
   # appoggia il piede; con il pannellino, la fessura ha un piano sotto
   let xB = c[1] - sm
-  var b = scatola("mobile B", xB, f.mobileB, f.hBassi, f.prof, sm, f.zBassi - sm)
-  b.del(2)   # il fondo: è il piano del primo gradino, sotto
+  var b = scatola("mobile B", xB, f.mobileB, f.hBassi, f.profGradini, sm, f.zBassi - sm)
+  b.delete(2)   # il fondo: è il piano del primo gradino, sotto
+  if f.pannello:
+    # la schiena dei gradini si apre all'altezza della fessura: il pannellino
+    # chiuso passa dietro, nello spazio libero
+    let sc = b.pop()
+    let (zs0, zs1) = (f.zFessura, f.zFessura + f.fessura)
+    var sotto = sc
+    sotto.size.z = zs0 - sc.pos.z
+    var sopra = sc
+    sopra.pos.z = zs1
+    sopra.size.z = sc.z1 - zs1
+    b.add sotto
+    b.add sopra
   let zg = f.zGradini
   for i, z in zg:
-    b.add part("piano gradino", kPanel, xB + sm, y0, z - sm, f.aperturaGradini, f.prof, sm)
+    b.add part("piano gradino", kPanel, xB + sm, y0, z - sm, f.aperturaGradini, f.profGradini - ss, sm)
   if f.pannello:
-    b.add part("piano sotto la fessura", kPanel, xB + sm, y0, f.zFessura - sm, f.aperturaGradini, f.prof, sm)
+    b.add part("piano sotto la fessura", kPanel, xB + sm, y0, f.zFessura - sm, f.aperturaGradini, f.profGradini - ss, sm)
   result.aggiungi(b, "mobile B")
   if f.pannello:
-    # il pannellino, dentro la fessura: esce verso chi guarda
+    # il pannellino, dentro la fessura: esce verso chi guarda. È più lungo del mobile
+    # B (67 contro 30): chiuso rientra nello spazio libero dietro, sotto il cassone
     var pa = part("pannellino estraibile", kFront, c[1] + 0.2, 0, f.zFessura + (f.fessura - sm) / 2,
                   f.aperturaGradini - 0.4, f.lungPannello, sm)
     pa.apribile("pannellino", "tira", f.lungPannello - 12)
@@ -321,7 +370,7 @@ proc modello*(f: Falegnami): Model =
   var cas = @[
     part("piano letto", kPanel, 0, y0, f.hBassi, wC, f.prof, sm),
     part("cielo cassone", kPanel, 0, y0, f.cieloNicchia, wC, f.prof, sm),
-    part("fianco cassone", kPanel, 0, y0, f.pianoLetto, sm, f.prof, f.hNicchia)]
+    part("fianco cassone", kPanel, 0, y0, f.pianoLetto, sm, f.prof, f.cieloNicchia - f.pianoLetto)]
   cas[2].hiddenFront = true
   result.aggiungi(cas, "cassone letto")
   var mat = part("materasso", kSoft, sm + (f.interno - f.materasso.lunghezza) / 2,
@@ -348,14 +397,17 @@ proc modello*(f: Falegnami): Model =
     part("fondo gavone", kPanel, xl + sm, y0 + sm, zl, wl - sm, pl - 2 * sm, sm),
     part("frontale gavone", kPanel, xl, y0 + sm, zl, sm, pl - 2 * sm, f.gavone),
     part("cielo libreria", kPanel, xl, y0 + sm, zl + f.hLibreria - sm, wl, pl - 2 * sm, sm)]
+  # il pannello che copre la risega, a sinistra della libreria guardandola dal
+  # letto: in piano con l'apertura della libreria, dal suo fianco dietro fino al
+  # muro (largo quanto serve: profondità del mobile meno fianco e libreria)
+  lib.add part("pannello risega", kPanel, xl - sm, y0 + pl - sm, zl,
+               sm, f.profondita - (y0 + pl - sm), f.hLibreria)
   var com = part("piano comodino", kPanel, xl, y0 + sm, zc - sm, wl, pl - 2 * sm, sm)
   let (xG, yG, wG, dG) = (xl + 4, y0 + sm + 6, wl - 8, pl - 2 * sm - 12)
   com.holesPiano.add rrect(xG, yG, wG, dG, 4)
   lib.add com
-  let passo = (zl + f.hLibreria - sm - zc - float(f.nScaffali) * sm) / float(f.nScaffali + 1)
-  for k in 1 .. f.nScaffali:
-    lib.add part("scaffale", kPanel, L - sm - f.scaffali, y0 + sm,
-                 zc + float(k) * passo + float(k - 1) * sm, f.scaffali, pl - 2 * sm, sm)
+  for z in f.zScaffali:
+    lib.add part("scaffale", kPanel, L - sm - f.scaffali, y0 + sm, z, f.scaffali, pl - 2 * sm, sm)
   for q in lib.mitems:
     if q.name.startsWith("fianco"): q.hiddenFront = true
   result.aggiungi(lib, "libreria")
@@ -367,19 +419,20 @@ proc modello*(f: Falegnami): Model =
     result.add cop
 
   # --- i tre vani alti ------------------------------------------------------------
-  # scatole aperte davanti, appoggiate su un rialzo sopra il cassone, con il
-  # dentro a filo delle aperture del fronte; quella sopra la risega è meno profonda
+  # scatole aperte davanti, appoggiate sul cielo del cassone (solo scatole, come
+  # nella tavola 6); quella sopra la risega è meno profonda
   for i in 0..2:
     let x = f.xFronte + f.margineAlto + float(i) * (f.ribaltaL + f.spazio) + (f.ribaltaL - f.vanoL) / 2
     let p = if x + f.vanoL > f.xRisega: f.profRisega else: f.prof
     var v = scatola("vano alto " & $(i + 1), x, f.vanoL, f.vanoH, p, sl, f.fondoVani, f.fondoVani)
-    for yr in [y0, y0 + p - sm]:   # due listelli sotto, davanti e dietro (ipotesi)
-      v.add part("rialzo vano alto", kPanel, x, yr, f.cieloNicchia + sm, f.vanoL, sm, f.rialzo)
     result.aggiungi(v, "vano alto " & $(i + 1), mel = true)
 
   # --- il muro ------------------------------------------------------------------------
-  result.add part("muro (carta da parati)", kWall, 0, f.muro.profondita, 0, L, 2, H)
-  result.add part("risega (muro, carta da parati)", kWall, f.xRisega, f.yRisega, 0,
+  # i mobili dei falegnami arrivano a 81.1, oltre gli 80 del muro (vedi `controlli`):
+  # il muro si disegna dietro di loro, altrimenti coprirebbe le schiene
+  let yMuro = max(f.muro.profondita, f.profondita)
+  result.add part("muro (carta da parati)", kWall, 0, yMuro, 0, L, 2, H)
+  result.add part("risega (muro, carta da parati)", kWall, f.xRisega, yMuro - f.muro.risegaProf, 0,
                   f.muro.risegaLarga, f.muro.risegaProf, H)
 
 # --- i controlli ------------------------------------------------------------------
@@ -412,26 +465,61 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
   if xD + f.mobileD < f.larghezza - 0.5:
     result.add "la libreria appoggia sul mobile D, che finisce a " & fmtNum(xD + f.mobileD) &
       ": per gli ultimi " & fmtNum(f.larghezza - xD - f.mobileD) & " cm sotto non c'è niente"
-  let avanzo = f.xLibreria - f.sMulti - f.interno
+  # tra il cassone e la libreria c'è il pannello che copre la risega
+  let avanzo = f.xLibreria - 2 * f.sMulti - f.interno
   if avanzo > 0.5:
-    result.add "tra il cassone (dentro " & fmtNum(f.interno) & ") e la libreria (comodino " &
+    result.add "tra il cassone (dentro " & fmtNum(f.interno) & "), il pannello della risega e la libreria (comodino " &
       fmtNum(f.comodino) & ") avanzano " & fmtNum(avanzo) & " cm di larghezza"
+  if f.pannello and f.lungPannello > f.profGradini:
+    result.add "il pannellino (" & fmtNum(f.lungPannello) & ") è più lungo del mobile dei gradini (" &
+      fmtNum(f.profGradini) & "): chiuso sporge dietro di " & fmtNum(f.lungPannello - f.profGradini) &
+      " cm, nello spazio libero; lì serve una guida che lo regga"
   if f.margine < 0:
     result.add "i frontali in basso non ci stanno nei pannelli"
+  if f.scalinoVani > 0.5:
+    result.add "il fondo dei vani alti sta " & fmtNum(f.scalinoVani) &
+      " cm sotto il bordo dell'apertura delle ribalte: dentro c'è uno scalino"
+  let sopra = f.zRibalte + f.ribaltaH - f.sormonto - (f.fondoVani + f.vanoH)
+  if sopra > 0.5:
+    result.add "il cielo dei vani alti sta " & fmtNum(sopra) &
+      " cm sotto il bordo alto dell'apertura delle ribalte: dall'apertura si vede sopra la scatola"
   for r in fuoriLastra(m):
     result.add r
 
 proc quote*(f: Falegnami): seq[DimChain] =
   let H = f.altezza
   let L = f.larghezza
+  let c = f.colonne
+  # in alto: le ribalte dei vani alti (con la parte fissa della prima) e la nicchia
+  var alto = @[0.0]
+  for i, x in f.xRibalte:
+    alto.add x
+    if i == 0: alto.add x + f.parteFissa
+    alto.add x + f.ribaltaL
+  alto.add L
+  # in basso: anta A, gradini, cassetti, anta D
+  var basso = @[0.0]
+  for (x, w) in [(c[0], f.antaA), (c[1], f.aperturaGradini), (c[2], f.cassetti), (c[3], f.antaD)]:
+    basso.add x
+    basso.add x + w
+  basso.add L
+  # la libreria nella sezione laterale: comodino e scaffali (il loro piano)
+  var libreria = @[f.hBassi, f.pianoComodino]
+  for z in f.zScaffali: libreria.add z + f.sMulti
+  libreria.add f.hBassi + f.hLibreria
   @[
     DimChain(view: vFront, vertical: true, at: -22, ext: 0, stops: f.catenaFronte),
     DimChain(view: vFront, vertical: true, at: -52, ext: -22, stops: @[0.0, f.pannelloH, 2 * f.pannelloH, H]),
-    DimChain(view: vFront, vertical: false, at: -12, ext: 0,
+    DimChain(view: vFront, vertical: false, at: H + 12, ext: H, stops: alto),
+    DimChain(view: vFront, vertical: false, at: H + 28, ext: H,
+             stops: @[0.0, c[0], c[0] + f.nicchiaL, L]),
+    DimChain(view: vFront, vertical: false, at: -12, ext: 0, stops: basso),
+    DimChain(view: vFront, vertical: false, at: -28, ext: -12,
              stops: @[0.0, f.spalla, f.spalla + f.pannelloL, L - f.spalla, L]),
     DimChain(view: vSide, vertical: true, at: -26, ext: 0,
              stops: @[0.0, f.hBassi, f.pianoLetto, f.cieloNicchia, f.cieloNicchia + f.sMulti,
                       f.fondoVani, f.fondoVani + f.vanoH, H]),
+    DimChain(view: vSide, vertical: true, at: f.profondita + 14, ext: f.profondita, stops: libreria),
     DimChain(view: vSide, vertical: false, at: -18, ext: 0,
              stops: @[0.0, f.yMobili, f.profondita]),
     DimChain(view: vPlan, vertical: false, at: f.profondita + 18, ext: f.profondita,
@@ -440,11 +528,12 @@ proc quote*(f: Falegnami): seq[DimChain] =
   ]
 
 proc tavola*(f: Falegnami; m: Model): string =
-  ## Prospetto, sezione laterale nella nicchia, pianta sopra il piano letto.
+  ## Prospetto, sezione laterale nella libreria (si vedono gli scaffali),
+  ## pianta sopra il piano letto.
   let views = [
     View(kind: vFront, ox: 0, oy: 0),
-    View(kind: vSide, cut: 150, ox: f.larghezza + 110, oy: 0),
-    View(kind: vPlan, cut: 130, ox: 0, oy: 40 + f.profondita),
+    View(kind: vSide, cut: f.xSezione, ox: f.larghezza + 110, oy: 0),
+    View(kind: vPlan, cut: 130, ox: 0, oy: 60 + f.profondita),
   ]
   var s = initSheet()
   for v in views:

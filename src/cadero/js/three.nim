@@ -87,6 +87,7 @@ type
     target*: Vector3
     enabled*, enableDamping*: bool
     minDistance*, maxDistance*: float
+    zoomSpeed*: float
 {.pop.}
 
 # le costanti si leggono quando servono: al caricamento del modulo three.js non c'è ancora
@@ -110,6 +111,7 @@ proc multiplyScalar*(v: Vector3; s: float): Vector3 {.importjs: "#.multiplyScala
 proc project*(v: Vector3; cam: PerspectiveCamera): Vector3 {.importjs: "#.project(@)", discardable.}
 proc lerpVectors*(v, a, b: Vector3; t: float): Vector3 {.importjs: "#.lerpVectors(@)", discardable.}
 
+proc containsPoint*(b: Box3; p: Vector3): bool {.importjs: "#.containsPoint(@)".}
 proc newBox3*(): Box3 {.importjs: "new THREE.Box3()".}
 proc setFromObject*(b: Box3; o: Object3D): Box3 {.importjs: "#.setFromObject(@)", discardable.}
 proc expandByObject*(b: Box3; o: Object3D): Box3 {.importjs: "#.expandByObject(@)", discardable.}

@@ -1,4 +1,4 @@
-<title>Parete con nicchia letto</title>
+<title>__TITOLO__</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap">
@@ -40,31 +40,17 @@ button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent);
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .back { font-size: 14px; } .back a { color: var(--accent); }
 .note { color: var(--muted); font-size: 13.5px; max-width: 70ch; margin: 0; }
-.sezioni { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
-.taglio[data-vista=pianta] { grid-column: 1 / -1; }
-.sezioni[hidden] { display: none; }
 .tavola { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 12px; display: grid; gap: 8px; }
 .tavola h2 { font-family: var(--display); font-weight: 600; font-size: 20px; margin: 0; letter-spacing: 0.01em; }
 .tavola .riga { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .tavola svg { display: block; width: 100%; height: auto; border-radius: 4px; }
-.taglio { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 12px; display: grid; gap: 8px; min-width: 0; }
-.taglio h2 { font-family: var(--display); font-weight: 600; font-size: 20px; margin: 0; letter-spacing: 0.01em; }
-.taglio label { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--muted); }
-.taglio input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; }
-.taglio output { font-family: var(--mono); font-size: 13px; color: var(--fg); min-width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
-.taglio svg { width: 100%; height: auto; max-height: 70vh; display: block; background: #fff; border: 1px solid var(--line); border-radius: 4px; }
-.taglio .riga { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.taglio .misure, .tavola .misure { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-.taglio button { padding: 3px 10px; font-size: 13px; }
-.taglio h2 { cursor: pointer; } .taglio h2::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: #2b8fd6; margin-right: 8px; vertical-align: 2px; }
-.taglio.scelta { border-color: #e04a2f; } .taglio.scelta h2::before { background: #e04a2f; }
 </style>
 
 <div class="wrap">
 __BACK__
   <header>
-    <h1>Parete con nicchia letto</h1>
-    <div class="dims">L <b>237</b> × H <b>316</b> × P <b>80</b> cm · multistrato 18 mm</div>
+    <h1>__TITOLO__</h1>
+    <div class="dims">__MISURE__</div>
   </header>
   <div class="stage" id="stage"><div class="status" id="status">Caricamento del modello…</div></div>
   <div class="bar">
@@ -77,8 +63,8 @@ __BACK__
       <span class="label">Mobile</span>
       <button id="m-base" type="button" aria-pressed="true">Base</button>
       <button id="m-tavolino" type="button" aria-pressed="false">Con tavolino</button>
-      <button id="m-falegnami" type="button" aria-pressed="false" title="Il modello mandato dai falegnami: gli stessi spazi divisi in mobili da costruire">Falegnami</button>
-      <button id="m-pannello" type="button" aria-pressed="true" hidden title="Il pannellino che esce dalla fessura tra i gradini, come nel disegno dei falegnami; senza, i gradini si ridistribuiscono">Pannello estraibile</button>
+      <button id="m-falegnami" type="button" aria-pressed="false" hidden title="Il modello mandato dai falegnami: gli stessi spazi divisi in mobili da costruire">Falegnami</button>
+      <button id="m-pannello" type="button" aria-pressed="false" hidden title="Il pannellino che esce dalla fessura tra i gradini, come nel disegno dei falegnami; senza, i gradini si ridistribuiscono">Pannello estraibile</button>
       <button id="m-antina" type="button" aria-pressed="false" hidden title="Un'antina sotto il piano del tavolino che si ribalta a destra: con il tavolino aperto, tocca il piano dietro i cassetti">Antina tavolino</button>
       <button id="m-prese" type="button" aria-pressed="false" title="La scatola con presa, USB-C e interruttore: appesa sotto il primo scaffale o, premuto, appoggiata sul comodino">Prese sul comodino</button>
       <button id="m-risega" type="button" aria-pressed="false" title="Senza i pannelli che rivestono la risega: si vede il muro con la carta da parati">Scopri risega</button>
@@ -96,36 +82,14 @@ __BACK__
     <div class="group" role="group" aria-label="Speciale">
       <span class="label">Speciale</span>
       <button id="t-esploso" type="button" aria-pressed="false">Esploso</button>
-      <button id="t-sezioni" type="button" aria-pressed="false">Sezioni</button>
-    </div>
-  </div>
-  <div class="sezioni" id="sezioni" hidden>
-    <p class="note" style="grid-column: 1 / -1">Tocca un piano di taglio nel 3D (o il titolo di una sezione) per selezionarlo: diventa rosso e lo puoi trascinare lungo il suo asse. Toccalo di nuovo per deselezionarlo.</p>
-    <div class="taglio" data-vista="pianta">
-      <div class="riga"><h2>Pianta</h2><button type="button" class="scarica">Scarica SVG</button></div>
-      <label>Taglio a <input type="range" step="1"> <output></output></label>
-      <svg aria-label="Pianta"></svg>
-      <div class="misure">vista dall'alto, sezione orizzontale; il fronte è in basso</div>
-    </div>
-    <div class="taglio" data-vista="laterale">
-      <div class="riga"><h2>Sezione laterale</h2><button type="button" class="scarica">Scarica SVG</button></div>
-      <label>Taglio a x = <input type="range" step="1"> <output></output></label>
-      <svg aria-label="Sezione laterale"></svg>
-      <div class="misure">guardando verso sinistra; il fronte è a sinistra</div>
-    </div>
-    <div class="taglio" data-vista="prospetto">
-      <div class="riga"><h2>Sezione frontale</h2><button type="button" class="scarica">Scarica SVG</button></div>
-      <label>Taglio a y = <input type="range" step="1"> <output></output></label>
-      <svg aria-label="Sezione frontale"></svg>
-      <div class="misure">guardando verso il muro, a una profondità y dal fronte</div>
     </div>
   </div>
   <section class="tavola" aria-label="La tavola">
     <div class="riga"><h2>La tavola</h2><button type="button" id="scarica-tavola">Scarica SVG</button></div>
     __TAVOLA__
-    <div class="misure">prospetto frontale, vista laterale e pianta con le quote, scala 1:25 @ A4; il cassetto centrale è disegnato aperto</div>
+    <div class="misure">__DIDASCALIA__</div>
   </section>
-  <p class="note"><strong>Tocca cassetti, ante, ribalte, coperchi del gavone, materasso e tavolino per aprirli o chiuderli.</strong> Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. Il modello è generato dal codice Nim di Caderò con i parametri rilevati dal disegno; le misure non scritte sulla tavola sono ipotesi.</p>
+  <p class="note">__NOTA__</p>
 </div>
 
 <!-- three.js è un modulo ES, copiato nel repository (vendor/three, messo in

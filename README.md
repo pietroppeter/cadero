@@ -20,10 +20,12 @@ dall'[indice](https://pietroppeter.github.io/cadero/) (sorgente:
 - [Come funziona Caderò](https://pietroppeter.github.io/cadero/come_funziona.html):
   spiegazione del codice passo passo, con esempi eseguiti
   (sorgente: [`docsrc/come_funziona.nim`](docsrc/come_funziona.nim))
-- [Visore 3D](https://pietroppeter.github.io/cadero/visore3d.html): la parete a
-  tutto schermo, da ruotare e zoomare, con viste predefinite anche da dentro la
-  nicchia; cassetti, ante, ribalte e tavolino si aprono toccandoli; esploso e
-  sezioni (pianta, laterale, frontale) con i piani di taglio scelti a mano
+- [Visore 3D](https://pietroppeter.github.io/cadero/visore3d.html): il modello
+  dei falegnami a tutto schermo; la nostra idea di partenza è in
+  [Visore 3D - Idea](https://pietroppeter.github.io/cadero/visore3d_idea.html)
+  (sorgente: [`docsrc/visore3d_idea.nim`](docsrc/visore3d_idea.nim)). La parete, da ruotare e zoomare, con viste predefinite anche da dentro la
+  nicchia; cassetti, ante, ribalte e tavolino si aprono toccandoli; esploso, pulsanti di zoom
+  e la tavola sotto il visore
   (sorgente: [`docsrc/visore3d.nim`](docsrc/visore3d.nim), il visore in Nim
   compilato in JavaScript [`src/cadero/visore.nim`](src/cadero/visore.nim) e la
   pagina [`tools/visore3d.tpl.html`](tools/visore3d.tpl.html))
@@ -59,7 +61,9 @@ models/falegnami.nim      il modello dei falegnami: gli stessi spazi divisi in m
 docsrc/index.nim          l'indice dei documenti
 docsrc/parete_nicchia.nim il documento della parete
 docsrc/come_funziona.nim  la spiegazione del codice
-docsrc/visore3d.nim       la pagina del visore 3D (blocco nbJsFromCode)
+docsrc/visore3d.nim       il visore 3D, modello dei falegnami (blocco nbJsFromCode)
+docsrc/visore3d_idea.nim  il visore della nostra idea (Visore 3D - Idea)
+docsrc/pagina_visore.nim  il template del visore riempito da nimib
 docsrc/visore_nim.nim     come funziona il visore in Nim
 docsrc/parametri.nim      i parametri della parete, con il banco (visore + cursori)
 docsrc/modello_falegnami.nim il modello dei falegnami, confrontato con il nostro

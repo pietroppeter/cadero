@@ -43,7 +43,7 @@ nbText: """
 ## Vista 3D
 
 Per vederla a tutto schermo, con viste predefinite (anche da dentro la nicchia),
-le parti che si aprono toccandole e l'esploso: [visore 3D](visore3d.html).
+le parti che si aprono toccandole e l'esploso: [Visore 3D - Idea](visore3d_idea.html).
 """
 nbRawHtml: viewer3d(m)
 
