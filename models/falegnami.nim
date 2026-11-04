@@ -197,6 +197,41 @@ proc xSezione*(f: Falegnami): float =
   ## dove taglia la sezione laterale della tavola: nella libreria, a metà degli scaffali
   f.larghezza - f.sMulti - f.scaffali / 2
 
+proc pannelloRisega*(f: Falegnami): float = f.profondita - (f.yMobili + f.profLibreria - f.sMulti)
+  ## 15.8: il pannello che copre la risega, dal fianco dietro della libreria al dietro del mobile
+proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
+  ## dove si disegna il muro: i mobili arrivano a 81.1, oltre gli 80 della stanza
+
+# --- le modifiche che vorremmo (Pietro, 4 novembre 2026) --------------------------
+const larghezzaPannelloRisega* = 10.0
+  ## il pannello che copre la risega, nel modello rivisto: 10 invece di 15.8
+const rimaVani* = 3.0
+  ## nella proposta per i vani alti: il fronte che resta sopra l'apertura, sotto la fascia
+
+proc rivisto*(f: Falegnami): Falegnami =
+  ## Il modello rivisto: senza il pannellino estraibile (non lo vogliamo), la
+  ## testata della libreria alta 58 dal piano letto (gavone 58 invece di 32) con
+  ## uno scaffale in meno, e il pannello della risega largo 10: la libreria si fa
+  ## più profonda (69.3 invece di 63.5) e arriva quasi alla risega.
+  result = f
+  result.pannello = false
+  result.gavone = 58
+  result.nScaffali = 2
+  # il pannello va dal fianco dietro della libreria (y0 + pl - sm) al dietro del
+  # mobile (profondità): perché sia largo 10, pl = profondità - 10 - y0 + sm
+  result.profLibreria = f.profondita - larghezzaPannelloRisega - f.yMobili + f.sMulti
+
+proc vaniAlti*(f: Falegnami): Falegnami =
+  ## La proposta per aprire di più i vani alti: il fronte alto quanto la stanza
+  ## (2 pannelli da 155 + la fascia da 6 = 316, invece di 2 × 156.8 + 6 = 319.6),
+  ## le scatole alte fino alla fascia (51 invece di 40.9), le ribalte che partono
+  ## da dove partono oggi e arrivano a 1 cm dalla fascia: apertura 41.7 invece di 32.6.
+  result = f
+  result.pannelloH = (f.muro.altezza - f.fascia) / 2
+  let cima = 2 * result.pannelloH                 # 310: sotto la fascia
+  result.vanoH = cima - f.fondoVani               # 51
+  result.ribaltaH = cima - rimaVani + f.sormonto - f.zRibalte   # 45.7
+
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =
   ## Tutte le aperture del pannello frontale, prima di dividerlo nei quattro pezzi.
@@ -430,7 +465,7 @@ proc modello*(f: Falegnami): Model =
   # --- il muro ------------------------------------------------------------------------
   # i mobili dei falegnami arrivano a 81.1, oltre gli 80 del muro (vedi `controlli`):
   # il muro si disegna dietro di loro, altrimenti coprirebbe le schiene
-  let yMuro = max(f.muro.profondita, f.profondita)
+  let yMuro = f.yMuro
   result.add part("muro (carta da parati)", kWall, 0, yMuro, 0, L, 2, H)
   result.add part("risega (muro, carta da parati)", kWall, f.xRisega, yMuro - f.muro.risegaProf, 0,
                   f.muro.risegaLarga, f.muro.risegaProf, H)
@@ -470,6 +505,10 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
   if avanzo > 0.5:
     result.add "tra il cassone (dentro " & fmtNum(f.interno) & "), il pannello della risega e la libreria (comodino " &
       fmtNum(f.comodino) & ") avanzano " & fmtNum(avanzo) & " cm di larghezza"
+  let dietroLib = f.yMobili + f.profLibreria
+  if dietroLib > f.yMuro - f.muro.risegaProf + 0.01:
+    result.add "la libreria (profonda " & fmtNum(f.profLibreria) & ") entra nella risega di " &
+      fmtNum(dietroLib - (f.yMuro - f.muro.risegaProf)) & " cm"
   if f.pannello and f.lungPannello > f.profGradini:
     result.add "il pannellino (" & fmtNum(f.lungPannello) & ") è più lungo del mobile dei gradini (" &
       fmtNum(f.profGradini) & "): chiuso sporge dietro di " & fmtNum(f.lungPannello - f.profGradini) &

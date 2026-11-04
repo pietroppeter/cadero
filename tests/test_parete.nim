@@ -312,3 +312,19 @@ suite "modello dei falegnami":
   test "i controlli segnalano altezza, profondità e testata":
     let c = controlli(f, mf).join("\n")
     check "alto 319.6" in c and "81.1" in c and "testata" in c
+
+suite "modello rivisto e vani alti":
+  let r = falegnami().rivisto
+  let v = r.vaniAlti
+  test "testata 58 dal piano letto, due scaffali, niente pannellino":
+    check abs(r.pianoComodino - r.pianoLetto - 58) < 1e-6
+    check r.nScaffali == 2 and not r.pannello
+    check r.zScaffali.len == 2
+  test "pannello della risega largo 10, la libreria non entra nella risega":
+    check abs(r.pannelloRisega - 10) < 1e-6
+    check r.yMobili + r.profLibreria < r.yMuro - r.muro.risegaProf
+  test "vani alti: fronte alto quanto la stanza, apertura 41.7":
+    check abs(v.altezza - v.muro.altezza) < 1e-6
+    check abs(v.ribaltaH - 2 * v.sormonto - 41.7) < 1e-6
+    check abs(v.fondoVani + v.vanoH - 2 * v.pannelloH) < 1e-6
+    for c in controlli(v, modello(v)): check not c.startsWith("il fronte è alto")
