@@ -328,9 +328,18 @@ nbText: """
   cassone: lì serve una guida che lo regga.
 - **Il triangolo** fuori dalla libreria, a 277 da uno scaffale, e il taglio per il
   passaggio dei cavi: non li ho disegnati. La scatola delle prese non c'è nelle tavole.
-- **Vani alti**: sono solo scatole appoggiate sul cielo del cassone (Pietro). Così
-  il loro fondo sta 7.5 sotto il bordo dell'apertura delle ribalte: dentro c'è uno
-  scalino (vedi i controlli).
+- **Vani alti e ribalte non allineati.** Le ribalte stanno dove le mette il fronte,
+  le scatole dove le mettono i mobili, e le due catene di misure non tornano tra loro.
+  Il fronte (tavola 3) è alto 156.8 + 156.8 + 6 = 319.6, e le ribalte stanno sotto la
+  fascia: da 270 a 306.6. Le scatole (Pietro: solo scatole, appoggiate sul cassone)
+  stanno sopra mobili bassi e cassone: 109 + 150 = 259, più 40.9, quindi da 259 a
+  299.9. Così le ribalte partono 11 cm più in alto delle scatole e le superano di
+  6.7: dall'apertura si vede sotto il fondo e sopra il cielo della scatola. Sopra le
+  scatole restano 19.7 cm fino alla cima del fronte (e 16 fino al soffitto della
+  stanza, 316). Per allinearle servirebbe un rialzo sotto le scatole (11 cm,
+  prima c'era: due listelli da 7.5), oppure scatole più alte, oppure le ribalte
+  più in basso (ma allora si avvicinano alla nicchia, che finisce a 257.2). Da
+  chiedere ai falegnami; i controlli lo segnalano.
 - **Libreria**: appoggia sui mobili bassi; a destra del mobile D restano 12 cm
   senza niente sotto.
 - **Cassone alto 150 fuori**, come la libreria (Pietro: mobili bassi tutti a 109,
