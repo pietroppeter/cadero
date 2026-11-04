@@ -12,8 +12,7 @@
 ## - `costruisci`: dal modello alla scena (geometrie, gruppi apribili, esploso)
 ## - `posa`: dove sta un gruppo apribile quando è aperto per una frazione k
 ## - `viste`: i punti di vista dei pulsanti "Vista"
-## - eventi: tocco = apri/chiudi, pulsanti, piani di taglio
-## - `disegna`: le sezioni in SVG
+## - eventi: tocco = apri/chiudi, pulsanti
 
 import std/[algorithm, math, strutils, tables]
 import model
@@ -55,10 +54,6 @@ type
     pos, target: array[3, float]
     fov: float
 
-  VistaTaglio = object
-    ## Una delle tre sezioni: su quale asse si taglia e come si proietta una parte.
-    nome, asse: string
-    def: int
 
 # --- le misure di una parte, con i nomi brevi del JSON di prima ---------------
 proc x(p: Part): float = p.pos.x
@@ -103,17 +98,8 @@ var
   c: Vector3          ## il centro del mobile
   size: float         ## la diagonale del mobile
   anim: tuple[attiva: bool, fromPos, fromTarget, toPos, toTarget: Vector3, t0: float]
-  piani: OrderedTable[string, Mesh]
-  assi: Table[string, Vector3]
-  tagli: Table[string, int]
-  selezionato = ""
-  tSez, boxSez: Element
   geometrie: seq[BufferGeometry]   ## della scena di ora: si liberano quando si ricostruisce
   aggiorna: proc (m: Model)        ## ricostruisce la scena con un altro modello (vedi `mostra`)
-
-const
-  colPiano = 0x2b8fd6   ## piano di taglio
-  colSel = 0xe04a2f     ## piano di taglio selezionato
 
 # --- materiali ------------------------------------------------------------------
 proc tessuto(disegna: proc (x: Ctx2D)): Material =
@@ -354,14 +340,22 @@ proc costruisci(m: Model) =
     newBox3().setFromObject(o).getCenter(newVector3()).sub(c0).multiply(newVector3(allarga, allarga, 0))
   for k, pz in wrapByName:
     if not pz.apribile and not pz.fronte: dirBlocco[k] = nelPiano(pz.wrap)
+  proc dirContenitore(o: Object3D): Vector3 =
+    ## lo spostamento del mobile che contiene `o` (il materasso nel cassone, un
+    ## cassetto nel suo mobile); se nessun mobile lo contiene, il suo
+    let c = newBox3().setFromObject(o).getCenter(newVector3())
+    for k, pz in wrapByName:
+      if k in dirBlocco and newBox3().setFromObject(pz.wrap).containsPoint(c):
+        return dirBlocco[k].clone()
+    nelPiano(o)
   for pz in pezzi:
     pz.dir =
       if pz.fisso: newVector3(0, 0, muro)
       elif pz.blocco.len > 0 and pz.blocco in dirBlocco:   # cassetto: con il suo mobile, in avanti
         dirBlocco[pz.blocco].clone().add(newVector3(0, 0, apribili))
       elif pz.apre == "alza": nelPiano(pz.wrap).add(newVector3(0, sollevati, 0))
-      elif pz.apre == "esce": nelPiano(pz.wrap)              # il materasso resta nel cassone
-      elif pz.apribile: nelPiano(pz.wrap).add(newVector3(0, 0, apribili))
+      elif pz.apre == "esce": dirContenitore(pz.wrap)        # il materasso resta sul piano del cassone
+      elif pz.apribile: dirContenitore(pz.wrap).add(newVector3(0, 0, apribili))   # cassetti: dritti
       elif pz.fronte: nelPiano(pz.wrap).add(newVector3(0, 0, fronte))
       else: nelPiano(pz.wrap)
   scene.add(group)
@@ -503,212 +497,6 @@ proc unitAt(ev: PointerEv): Unita =
     return u
   nil
 
-proc pianoAt(ev: PointerEv): string =
-  ## Il piano di taglio sotto il puntatore, se è più vicino del mobile.
-  if not premuto(tSez): return ""
-  mira(ev)
-  var tutti: seq[Object3D]
-  for p in piani.values: tutti.add p
-  let hp = ray.intersectObjects(tutti, false)
-  if hp.len == 0: return ""
-  for hm in ray.intersectObject(group, true):
-    if visibile(hm.`object`) and not hm.`object`.isLineSegments:
-      if hp[0].distance >= hm.distance: return ""
-      break
-  $hp[0].`object`.userData["nome"].to(cstring)
-
-# --- sezioni: tre piani di taglio, disegnati in 2D --------------------------------
-# Dal modello (tutto chiuso): le parti tagliate sono piene, quelle oltre il
-# taglio sono solo contornate, il muro è tratteggiato.
-const viste = [
-  VistaTaglio(nome: "pianta", asse: "z", def: 200),
-  VistaTaglio(nome: "laterale", asse: "x", def: 230),
-  VistaTaglio(nome: "prospetto", asse: "y", def: 40)]
-
-proc ext(): tuple[L, P, H: float] =
-  ## l'ingombro del mobile, senza il muro
-  for p in modello.parts:
-    if p.kind != kWall:
-      result.L = max(result.L, p.x + p.w); result.P = max(result.P, p.y + p.d)
-      result.H = max(result.H, p.z + p.h)
-
-proc massimo(nome: string): float =
-  let e = ext()
-  case nome
-  of "pianta": e.H
-  of "laterale": e.L
-  else: e.P
-
-proc rect(nome: string; p: Part): array[4, float] =
-  ## u0, v0, u1, v1: la parte nelle coordinate del disegno
-  case nome
-  of "pianta": [p.x, p.y, p.x + p.w, p.y + p.d]
-  of "laterale": [p.y, p.z, p.y + p.d, p.z + p.h]
-  else: [p.x, p.z, p.x + p.w, p.z + p.h]
-
-proc cut(nome: string; p: Part; c: float): bool =
-  ## la parte è tagliata dal piano
-  case nome
-  of "pianta": p.z <= c and c <= p.z + p.h
-  of "laterale": p.x <= c and c <= p.x + p.w
-  else: p.y <= c and c <= p.y + p.d
-
-proc oltre(nome: string; p: Part; c: float): bool =
-  ## la parte si vede oltre il piano
-  case nome
-  of "pianta": p.z + p.h < c
-  of "laterale": p.x + p.w < c
-  else: p.y > c
-
-proc foriTaglio(nome: string; p: Part; c: float): seq[(float, float)] =
-  ## dove il taglio attraversa un'apertura del pannello (o, per un pezzo del
-  ## fronte con le tacche, dove non è pieno)
-  if p.contorno.len > 0 and nome in ["pianta", "laterale"]:
-    let (a0, a1) = if nome == "pianta": (p.x, p.x + p.w) else: (p.z, p.z + p.h)
-    var da = a0
-    for (u0, u1) in p.pieni(if nome == "pianta": 'z' else: 'x', c):
-      if u0 > da: result.add (da, u0)
-      da = u1
-    if da < a1: result.add (da, a1)
-  for h in p.holes:
-    case nome
-    of "pianta":
-      if h.z <= c and c <= h.z + h.h: result.add (h.x, h.x + h.w)
-    of "laterale":
-      if h.x <= c and c <= h.x + h.w: result.add (h.z, h.z + h.h)
-    else: discard
-
-proc fmt(v: float): string =
-  ## i numeri nei path SVG come li scrive JavaScript (18, non 18.0)
-  proc jsStr(v: float): cstring {.importjs: "String(#)".}
-  $jsStr(v)
-
-proc rr(x0, y0, x1, y1: float; r = 0.0): string =
-  ## rettangolo stondato come path SVG, coordinate del disegno
-  let r = min(r, min((x1 - x0) / 2, (y1 - y0) / 2))
-  let f = fmt
-  "M" & f(x0 + r) & "," & f(y0) & "H" & f(x1 - r) & "Q" & f(x1) & "," & f(y0) & " " & f(x1) & "," & f(y0 + r) &
-    "V" & f(y1 - r) & "Q" & f(x1) & "," & f(y1) & " " & f(x1 - r) & "," & f(y1) & "H" & f(x0 + r) &
-    "Q" & f(x0) & "," & f(y1) & " " & f(x0) & "," & f(y1 - r) & "V" & f(y0 + r) &
-    "Q" & f(x0) & "," & f(y0) & " " & f(x0 + r) & "," & f(y0) & "Z"
-
-proc contornoSvg(p: Part; fv: float): string =
-  ## il contorno vero di un pezzo del fronte, come path SVG del prospetto
-  for i, (x, z) in p.contorno:
-    result.add (if i == 0: "M" else: "L") & fmt(x) & "," & fmt(fv - z)
-  result.add "Z"
-
-proc el2(tag: string; attrs: openArray[(string, string)]): Element =
-  result = svg(tag.cstring)
-  for (k, v) in attrs: result.setAttribute(k.cstring, v.cstring)
-
-proc scheda(nome: string): Element = boxSez.querySelector(cstring("[data-vista=" & nome & "]"))
-
-proc disegna(nome: string) =
-  ## Disegna una sezione nel suo SVG.
-  let c = tagli[nome].float
-  let e = ext()
-  let card = scheda(nome)
-  let svgEl = card.querySelector("svg")
-  svgEl.svuota()
-  # l'asse verticale del disegno va verso l'alto: v' = fv - v
-  let fv = if nome == "pianta": e.P else: e.H
-  proc R(p: Part): array[4, float] =
-    let q = rect(nome, p)
-    [q[0], fv - q[3], q[2], fv - q[1]]
-  var (minU, minV, maxU, maxV) = (Inf, Inf, -Inf, -Inf)
-  let gO = el2("g", {"fill": "none", "stroke": "#8a939a", "stroke-width": "0.25"})
-  let gC = el2("g", {"fill": "#2a3035", "stroke": "#2a3035", "stroke-width": "0.15", "fill-rule": "evenodd"})
-  let gM = el2("g", {"fill": "none", "stroke": "#9aa3a9", "stroke-width": "0.3", "stroke-dasharray": "2 1.5"})
-  for p in modello.parts:
-    if p.kind == kKnob: continue
-    let q = R(p)
-    let (a, b, c2, d) = (q[0], q[1], q[2], q[3])
-    minU = min(minU, a); minV = min(minV, b); maxU = max(maxU, c2); maxV = max(maxV, d)
-    if p.kind == kWall: gM.appendChild el2("path", {"d": rr(a, b, c2, d)}); continue
-    if nome == "pianta" and p.taccheP.len > 0 and not cut(nome, p, c) and oltre(nome, p, c):
-      # in pianta un pannello con una tacca: il suo contorno vero
-      var pts: seq[string]
-      for (x, y) in contornoTop(p): pts.add fmt(x) & " " & fmt(fv - y)
-      gO.appendChild el2("path", {"d": "M" & pts.join(" L") & " Z"})
-      continue
-    if cut(nome, p, c) and p.kind notin {kSoft, kAccessory}:
-      if nome == "prospetto":     # pannello tagliato di piatto: pieno meno le aperture
-        var dd = if p.contorno.len > 0: contornoSvg(p, fv)
-                 else: rr(a, b, c2, d, if p.kind == kFront: p.r else: 0)
-        for h in p.holes: dd &= rr(h.x, fv - h.z - h.h, h.x + h.w, fv - h.z, h.r)
-        gC.appendChild el2("path", {"d": dd})
-      else:                       # i pannelli forati si interrompono dove c'è un'apertura
-        var fori = foriTaglio(nome, p, c)
-        fori.sort()
-        let vert = nome == "laterale"
-        var da = if vert: b else: a
-        let fino = if vert: d else: c2
-        proc pezzo(s0, s1: float) =
-          if s1 > s0: gC.appendChild el2("path", {"d": (if vert: rr(a, s0, c2, s1) else: rr(s0, b, s1, d))})
-        for (h0, h1) in fori:
-          let (s0, s1) = if vert: (fv - h1, fv - h0) else: (h0, h1)
-          pezzo(da, s0); da = max(da, s1)
-        pezzo(da, fino)
-    elif oltre(nome, p, c):
-      let pathD = if nome == "prospetto" and p.contorno.len > 0: contornoSvg(p, fv)
-                  else: rr(a, b, c2, d, if nome == "prospetto": p.r else: 0)
-      if p.kind == kSoft: gO.appendChild el2("path", {"d": pathD, "stroke-dasharray": "1.5 1"})
-      else: gO.appendChild el2("path", {"d": pathD})
-      if nome == "prospetto":
-        for h in p.holes: gO.appendChild el2("path", {"d": rr(h.x, fv - h.z - h.h, h.x + h.w, fv - h.z, h.r)})
-      if nome == "pianta":
-        for h in p.holesPiano: gO.appendChild el2("path", {"d": rr(h.x, fv - h.z - h.h, h.x + h.w, fv - h.z, h.r)})
-  svgEl.appendChild gM; svgEl.appendChild gO; svgEl.appendChild gC
-  const m = 6.0
-  svgEl.setAttribute("viewBox", cstring(fmt(minU - m) & " " & fmt(minV - m) & " " &
-    fmt(maxU - minU + 2 * m) & " " & fmt(maxV - minV + 2 * m)))
-  card.querySelector("output").textContent = cstring($tagli[nome] & " cm")
-
-proc posizionaPiani() =
-  piani["pianta"].position.y = tagli["pianta"].float
-  piani["laterale"].position.x = tagli["laterale"].float
-  piani["prospetto"].position.z = -tagli["prospetto"].float
-
-proc seleziona(nome: string) =
-  selezionato = nome
-  for k, piano in piani:
-    let sel = k == nome
-    let col = if sel: colSel else: colPiano
-    piano.material.color.setHex(col); piano.material.opacity = if sel: 0.4 else: 0.28
-    cast[LineSegments](piano.children[0]).material.color.setHex(col)
-  for card in boxSez.querySelectorAll(".taglio"):
-    card.toggleClass("scelta", $card.dataVista == nome)
-
-proc pianiTaglio() =
-  ## I piani di taglio nel 3D: azzurri; quello selezionato diventa rosso e si trascina.
-  for p in piani.values: scene.remove(p)
-  let e = ext()
-  const m = 15.0
-  proc mat(): Material = newMeshBasicMaterial(js{color: colPiano, transparent: true, opacity: 0.28,
-                                                 side: DoubleSide(), depthWrite: false})
-  piani["pianta"] = newMesh(newPlaneGeometry(e.L + 2 * m, e.P + 2 * m).rotateX(-PI / 2).translate(e.L / 2, 0, -e.P / 2), mat())
-  piani["laterale"] = newMesh(newPlaneGeometry(e.P + 2 * m, e.H + 2 * m).rotateY(PI / 2).translate(0, e.H / 2, -e.P / 2), mat())
-  piani["prospetto"] = newMesh(newPlaneGeometry(e.L + 2 * m, e.H + 2 * m).translate(e.L / 2, e.H / 2, 0), mat())
-  for k, piano in piani:
-    piano.visible = premuto(tSez); piano.userData["nome"] = k.cstring; piano.renderOrder = 10
-    # il bordo del piano, per vederlo anche di taglio
-    piano.add(newLineSegments(newEdgesGeometry(piano.geometry), newLineBasicMaterial(js{color: colPiano})))
-    scene.add(piano)
-  seleziona(selezionato)
-  posizionaPiani()
-
-proc spostaTaglio(nome: string; val: float) =
-  let inp = scheda(nome).querySelector("input")
-  let v = round(min(inp.maxValore, max(0.0, val))).int
-  if v == tagli[nome]: return
-  tagli[nome] = v; inp.valore = v.float
-  disegna(nome); posizionaPiani()
-
-proc aggiornaSezioni() =
-  for v in viste: disegna(v.nome)
-  posizionaPiani()
-
 proc mostra*(m: Model) =
   ## Mostra un altro modello nel visore già avviato (la camera resta dov'è).
   if aggiorna != nil: aggiorna(m)
@@ -775,56 +563,27 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       el("v-" & nome).addEventListener("click", proc (ev: Event) =
         goTo(nome))
 
-  # toccare una parte apribile la apre o la chiude (un tocco, non un trascinamento);
-  # trascinando il piano selezionato lo si sposta lungo il suo asse: si misura
-  # quanti pixel sullo schermo vale un cm lungo l'asse
+  # toccare una parte apribile la apre o la chiude (un tocco, non un trascinamento)
   ray = newRaycaster()
   ndc = newVector2()
   ray.params["Line"]["threshold"] = 0.5
   var down: tuple[attivo: bool, x, y, t: float]
-  var trascina: tuple[attivo: bool, nome: string, vx, vy, n2: float, da: int]
   canvas.addEventListener("pointerdown", proc (e: Event) =
     let ev = cast[PointerEv](e)
-    down = (true, ev.clientX, ev.clientY, adesso())
-    let nome = pianoAt(ev)
-    if nome.len > 0 and nome == selezionato:
-      let o = piani[nome].getWorldPosition(newVector3())
-      let a = o.clone().project(camera)
-      let b = o.clone().add(assi[nome]).project(camera)
-      let r = rettangolo(canvas)
-      let vx = (b.x - a.x) * r.width / 2
-      let vy = -(b.y - a.y) * r.height / 2
-      let n2 = vx * vx + vy * vy
-      if n2 > 1e-4:
-        trascina = (true, nome, vx, vy, n2, tagli[nome])
-        controls.enabled = false
-        canvas.setPointerCapture(ev.pointerId))
+    down = (true, ev.clientX, ev.clientY, adesso()))
   canvas.addEventListener("pointerup", proc (e: Event) =
     let ev = cast[PointerEv](e)
-    if trascina.attivo: trascina.attivo = false; controls.enabled = true
     if not down.attivo: return
     let moved = hypot(ev.clientX - down.x, ev.clientY - down.y)
     let dt = adesso() - down.t
     down.attivo = false
     if moved > 6 or dt > 600: return
-    let nome = pianoAt(ev)
-    if nome.len > 0:
-      seleziona(if selezionato == nome: "" else: nome); return
     let u = unitAt(ev)
     if u != nil: setOpen(u, u.target < 0.5))
   canvas.addEventListener("pointermove", proc (e: Event) =
     let ev = cast[PointerEv](e)
-    if trascina.attivo and down.attivo:
-      let dx = ev.clientX - down.x
-      let dy = ev.clientY - down.y
-      let cm = (dx * trascina.vx + dy * trascina.vy) / trascina.n2
-      spostaTaglio(trascina.nome, trascina.da.float + cm)
-      return
     if ev.pointerType != "mouse" or ev.buttons != 0: return
-    let nome = pianoAt(ev)
-    let cursore = if nome.len > 0: (if nome == selezionato: "grab" else: "pointer")
-                  elif unitAt(ev) != nil: "pointer" else: ""
-    canvas.cursore(cursore.cstring))
+    canvas.cursore(if unitAt(ev) != nil: cstring"pointer" else: cstring""))
 
   # i pulsanti
   let tFront = el("t-fronte")
@@ -853,8 +612,6 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     if movimentoRidotto(): esploso = esplosoTarget; applyEsploso())
 
   # cambio di variante: si ricostruisce la scena con l'altro modello
-  tSez = el("t-sezioni")
-  boxSez = el("sezioni")
   let tRisega = el("m-risega")
   let tAntina = el("m-antina")
   let tPrese = el("m-prese")
@@ -878,8 +635,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     modello = modelli[chiave]
     mostraTavola(chiave)
     for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
-    costruisci(modello); applyToggles(); applyEsploso(); pianiTaglio()
-    if premuto(tSez): aggiornaSezioni()
+    costruisci(modello); applyToggles(); applyEsploso()
     status.textContent = cstring($modello.parts.len & " parti")
   for name in ["base", "tavolino", "falegnami"]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
@@ -897,41 +653,16 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     var aperti: Table[string, float]
     for u in units: aperti[u.nome] = u.target
     modello = preparato(m)
-    costruisci(modello); applyToggles(); applyEsploso(); pianiTaglio()
+    costruisci(modello); applyToggles(); applyEsploso()
     for u in units:
       if u.nome in aperti and not u.disegnataAperta:
         u.target = aperti[u.nome]; u.k = u.target; posa(u)
-    if premuto(tSez): aggiornaSezioni()
     status.textContent = cstring($modello.parts.len & " parti")
   # la tavola sotto il visore si scarica com'è
   el("scarica-tavola").addEventListener("click", proc (ev: Event) =
     let vista = document.querySelector(".tavola [data-chiave]:not([hidden]) svg")
     let svg = if vista != nil: vista else: document.querySelector(".tavola svg")
     scarica(svg.outerHTML, "tavola.svg"))
-
-  # le sezioni
-  assi = {"pianta": newVector3(0, 1, 0), "laterale": newVector3(1, 0, 0),
-          "prospetto": newVector3(0, 0, -1)}.toTable
-  for v in viste:
-    closureScope:   # ogni giro ha le sue variabili, anche nelle closure
-      let nome = v.nome
-      let card = scheda(nome)
-      let inp = card.querySelector("input")
-      inp.min = 0; inp.max = round(massimo(nome)); inp.valore = v.def.float
-      tagli[nome] = v.def
-      inp.addEventListener("input", proc (ev: Event) =
-        tagli[nome] = inp.valore.int; disegna(nome); posizionaPiani())
-      card.querySelector("h2").addEventListener("click", proc (ev: Event) =
-        seleziona(if selezionato == nome: "" else: nome))
-      card.querySelector(".scarica").addEventListener("click", proc (ev: Event) =
-        scarica(card.querySelector("svg").svgConXmlns, cstring(nome & "-" & $tagli[nome] & ".svg")))
-  pianiTaglio()
-  tSez.addEventListener("click", proc (ev: Event) =
-    let on = not premuto(tSez)
-    tSez.premi(on)
-    boxSez.nascosto(not on)
-    for p in piani.values: p.visible = on
-    if on: aggiornaSezioni())
 
   # lo sfondo segue il tema chiaro/scuro
   proc applyTheme() =

@@ -29,7 +29,7 @@ nbRawHtml: """
   <a class="scheda" href="visore3d.html">
     <b>Visore 3D</b>
     <span>La parete dei falegnami a tutto schermo da ruotare e zoomare, con le
-    parti che si aprono toccandole, esploso, sezioni e la tavola.</span>
+    parti che si aprono toccandole, esploso e la tavola.</span>
   </a>
   <a class="scheda" href="visore3d_idea.html">
     <b>Visore 3D - Idea</b>

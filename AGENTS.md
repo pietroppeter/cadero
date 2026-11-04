@@ -46,9 +46,11 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   materasso, sale per far vedere sotto). Nel
   visore tutto parte chiuso e si apre toccandolo; il perno è calcolato dal visore
   sullo spigolo del gruppo. Una parte disegnata aperta (y < 0) parte aperta.
-- Nel visore "Esploso" allontana i pezzi dal centro; le parti con lo stesso `gruppo`
-  restano unite. "Sezioni" disegna in SVG, nel browser, pianta, sezione laterale e
-  sezione frontale ai tagli scelti con i cursori (codice in `src/cadero/visore.nim`).
+- Nel visore "Esploso" separa i pezzi a strati in profondità (muro indietro, mobili
+  allargati nel piano, fronte avanti, ante e cassetti più avanti, coperchi in alto):
+  le parti con lo stesso `blocco` (un mobile) o `gruppo` restano unite; un gruppo
+  apribile esce dritto dal mobile che lo contiene. Le sezioni del visore sono state
+  tolte (Pietro: complicano); le sezioni stanno nelle tavole.
 - Il visore 3D è Nim compilato in JavaScript: `src/cadero/visore.nim` (logica),
   `src/cadero/js/three.nim` (binding minimi di three.js, solo quello che serve, con i
   nomi di three.js), `src/cadero/js/pagina.nim` (browser). La pagina è il documento

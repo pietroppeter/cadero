@@ -80,7 +80,7 @@ parete(p) ─► Model ─► avviaVisore ─► three.js
 | --- | --- |
 | `src/cadero/js/three.nim` | i binding: le classi e i metodi di three.js che servono, visti da Nim |
 | `src/cadero/js/pagina.nim` | le poche cose del browser che mancano in `std/dom` |
-| `src/cadero/visore.nim` | il visore: dalla scena alle sezioni, in Nim |
+| `src/cadero/visore.nim` | il visore: scena, tocchi, esploso, in Nim |
 | `docsrc/visore3d.nim`, `docsrc/visore3d_idea.nim` | le due pagine (falegnami e idea): modelli e testi, il blocco `nbJsFromCode` |
 | `docsrc/pagina_visore.nim` | il renderer comune: template, carta da parati |
 | `tools/visore3d.tpl.html` | stile, pulsanti, posti per la tavola e per lo script |
@@ -181,8 +181,8 @@ mostra("src/cadero/visore.nim", "proc posa(u: Unita)")
 nbText: """
 Il resto del visore segue la stessa forma del JavaScript di prima, con gli stessi
 nomi dove possibile (`build` è diventato `costruisci`, `pose` è `posa`): le viste
-(`vista(nome)`), il tocco che apre (`unitAt`), l'esploso, i piani di taglio e le
-sezioni in SVG (`disegna`).
+(`vista(nome)`), il tocco che apre (`unitAt`), l'esploso. (Le sezioni in SVG con i piani di
+taglio c'erano e sono state tolte: le sezioni stanno nelle tavole.)
 
 ## 5. Come è stata fatta la migrazione
 

@@ -17,6 +17,8 @@ type
     kind*: ViewKind
     cut*: float          ## piano di sezione (x per la laterale, z per la pianta)
     ox*, oy*: float      ## dove sta l'origine della vista sul foglio
+    contorni*: bool      ## prospetto: disegna il contorno di tutti i pannelli
+                         ## (per i mobili senza il fronte davanti)
 
   DimChain* = object
     ## Catena di quote: una linea con tante misure consecutive.
@@ -25,6 +27,9 @@ type
     at*: float           ## posizione della linea di quota (u se verticale, w se orizzontale)
     ext*: float          ## da dove partono le linee di richiamo
     stops*: seq[float]   ## coordinate lungo la quota; ogni coppia vicina è una misura
+    loro*: seq[float]    ## facoltativo, una per misura: quella scritta su un disegno
+                         ## di riferimento (cm), NaN se non c'è. Il testo è nero se
+                         ## torna, arancio se è dedotta (NaN), rosso con la loro se no
 
   Sheet* = object
     ## Un foglio SVG che tiene traccia dei propri limiti.
@@ -37,6 +42,8 @@ const
   dashed = "2 1"
   dotted = "0.5 0.7"
   ink = "#1a1a1a"
+  inkDedotta* = "#d4740f"   ## una misura che sul disegno di riferimento non c'è
+  inkDiversa* = "#d0312d"   ## una misura diversa da quella del disegno di riferimento
 
 proc fmtNum*(v: float): string =
   if abs(v - round(v)) < 0.05: $int(round(v))
@@ -84,11 +91,11 @@ proc circle(s: var Sheet; v: View; u, w, r: float) =
   s.body.add &"""<circle cx="{x:.2f}" cy="{y:.2f}" r="{r:.2f}" fill="none" stroke="{ink}" stroke-width="{thin}"/>"""
 
 proc text(s: var Sheet; v: View; u, w: float; t: string; size = 4.2;
-          vertical = false; anchor = "middle"; italic = true) =
+          vertical = false; anchor = "middle"; italic = true; col = ink) =
   let (x, y) = v.toSvg(u, w)
   let rot = if vertical: &" transform=\"rotate(-90 {x:.2f} {y:.2f})\"" else: ""
   let style = if italic: " font-style=\"italic\"" else: ""
-  s.body.add &"""<text x="{x:.2f}" y="{y:.2f}" font-size="{size}" text-anchor="{anchor}"{style} fill="{ink}"{rot}>{t}</text>"""
+  s.body.add &"""<text x="{x:.2f}" y="{y:.2f}" font-size="{size}" text-anchor="{anchor}"{style} fill="{col}"{rot}>{t}</text>"""
   s.grow(x - size, y - size); s.grow(x + size, y + size)
 
 # --- proiezioni -------------------------------------------------------------
@@ -113,6 +120,8 @@ proc drawFront(s: var Sheet; v: View; m: Model) =
         s.rect(v, u0, w0, u1, w1, width = thick)
         for h in p.holes:
           s.rect(v, h.x, h.z, h.x + h.w, h.z + h.h, h.r)
+      elif v.contorni:                  # i mobili senza il fronte: tutti i pannelli
+        s.rect(v, u0, w0, u1, w1)
       elif p.hiddenFront:               # struttura nascosta che vogliamo indicare
         s.line(v, (u0 + u1) / 2, w0, (u0 + u1) / 2, w1, dash = dotted)
     of kFront, kBox:
@@ -178,6 +187,15 @@ proc draw*(s: var Sheet; v: View; m: Model) =
 
 # --- quote ------------------------------------------------------------------
 
+proc testo(d: DimChain; i: int): (string, string) =
+  ## il testo e il colore della misura i: confrontata, se c'è, con la loro
+  let m = d.stops[i + 1] - d.stops[i]
+  if d.loro.len == 0: return (fmtNum(m), ink)
+  let l = d.loro[i]
+  if l.isNaN: (fmtNum(m), inkDedotta)
+  elif abs(l - m) < 0.05: (fmtNum(m), ink)
+  else: (fmtNum(m) & " (loro " & fmtNum(l) & ")", inkDiversa)
+
 proc draw*(s: var Sheet; v: View; d: DimChain) =
   ## Linea di quota, linee di richiamo, tratti obliqui e testo, come nei
   ## disegni di architettura.
@@ -193,7 +211,8 @@ proc draw*(s: var Sheet; v: View; d: DimChain) =
       s.line(v, d.at - tick, t - tick, d.at + tick, t + tick, width = thick)
     for i in 0 ..< d.stops.high:
       let (p, q) = (d.stops[i], d.stops[i+1])
-      s.text(v, d.at - 1.3, (p + q) / 2, fmtNum(q - p), vertical = true)
+      let (t, col) = d.testo(i)
+      s.text(v, d.at - 1.3, (p + q) / 2, t, vertical = true, col = col)
   else:
     s.line(v, a - over, d.at, b + over, d.at)
     for t in d.stops:
@@ -201,7 +220,8 @@ proc draw*(s: var Sheet; v: View; d: DimChain) =
       s.line(v, t - tick, d.at - tick, t + tick, d.at + tick, width = thick)
     for i in 0 ..< d.stops.high:
       let (p, q) = (d.stops[i], d.stops[i+1])
-      s.text(v, (p + q) / 2, d.at + 1.3, fmtNum(q - p))
+      let (t, col) = d.testo(i)
+      s.text(v, (p + q) / 2, d.at + 1.3, t, col = col)
 
 proc label*(s: var Sheet; v: View; u, w: float; t: string; size = 5.0) =
   s.text(v, u, w, t, size = size, anchor = "end", italic = false)

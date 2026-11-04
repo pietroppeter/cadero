@@ -24,8 +24,8 @@ dall'[indice](https://pietroppeter.github.io/cadero/) (sorgente:
   dei falegnami a tutto schermo; la nostra idea di partenza è in
   [Visore 3D - Idea](https://pietroppeter.github.io/cadero/visore3d_idea.html)
   (sorgente: [`docsrc/visore3d_idea.nim`](docsrc/visore3d_idea.nim)). La parete, da ruotare e zoomare, con viste predefinite anche da dentro la
-  nicchia; cassetti, ante, ribalte e tavolino si aprono toccandoli; esploso e
-  sezioni (pianta, laterale, frontale) con i piani di taglio scelti a mano
+  nicchia; cassetti, ante, ribalte e tavolino si aprono toccandoli; esploso, pulsanti di zoom
+  e la tavola sotto il visore
   (sorgente: [`docsrc/visore3d.nim`](docsrc/visore3d.nim), il visore in Nim
   compilato in JavaScript [`src/cadero/visore.nim`](src/cadero/visore.nim) e la
   pagina [`tools/visore3d.tpl.html`](tools/visore3d.tpl.html))

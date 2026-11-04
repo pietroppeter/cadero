@@ -130,16 +130,7 @@ nbRawHtml: """<section class="banco" id="banco">
       </div>
       <div class="group" role="group" aria-label="Speciale">
         <button id="t-esploso" type="button" aria-pressed="false">Esploso</button>
-        <button id="t-sezioni" type="button" aria-pressed="false">Sezioni</button>
       </div>
-    </div>
-    <div class="sezioni" id="sezioni" hidden>
-      <div class="taglio" data-vista="pianta"><div class="riga2"><h2>Pianta</h2><button type="button" class="scarica">SVG</button></div>
-        <label>Taglio a <input type="range" step="1"> <output></output></label><svg aria-label="Pianta"></svg></div>
-      <div class="taglio" data-vista="laterale"><div class="riga2"><h2>Sezione laterale</h2><button type="button" class="scarica">SVG</button></div>
-        <label>Taglio a x = <input type="range" step="1"> <output></output></label><svg aria-label="Sezione laterale"></svg></div>
-      <div class="taglio" data-vista="prospetto"><div class="riga2"><h2>Sezione frontale</h2><button type="button" class="scarica">SVG</button></div>
-        <label>Taglio a y = <input type="range" step="1"> <output></output></label><svg aria-label="Sezione frontale"></svg></div>
     </div>
   </div>
   <div class="pannello">
@@ -149,13 +140,6 @@ nbRawHtml: """<section class="banco" id="banco">
   </div>
 </section>
 <style>
-.sezioni { display: grid; gap: 10px; } .sezioni[hidden] { display: none; }
-.taglio { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; display: grid; gap: 6px; }
-.taglio h2 { margin: 0; padding: 0; border: 0; font-size: 18px; cursor: pointer; } .taglio .riga2 { display: flex; justify-content: space-between; align-items: center; }
-.taglio label { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
-.taglio input[type=range] { flex: 1; accent-color: var(--accent); }
-.taglio svg { width: 100%; height: auto; max-height: 60vh; background: #fff; margin: 0; }
-.taglio.scelta { border-color: #e04a2f; }
 </style>"""
 
 nbText: """

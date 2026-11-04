@@ -133,10 +133,10 @@ proc pianoLetto*(f: Falegnami): float = f.hBassi + f.sMulti
   ## 110.8: il cassone appoggia sui mobili bassi
 proc cieloNicchia*(f: Falegnami): float = f.pianoLetto + f.hNicchia
   ## 260.8: il sotto del cielo del cassone
-proc fondoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.sMel
-  ## 270.1: il fondo dei vani alti, perché dentro siano a filo delle aperture
-proc rialzo*(f: Falegnami): float = f.fondoVani - f.cieloNicchia - f.sMulti
-  ## 7.5: lo spazio tra il cassone e i vani alti
+proc fondoVani*(f: Falegnami): float = f.cieloNicchia + f.sMulti
+  ## 262.6: i vani alti sono scatole appoggiate sul cielo del cassone (Pietro)
+proc scalinoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.fondoVani - f.sMel
+  ## 7.5: di quanto il dentro dei vani alti sta sotto il bordo dell'apertura
 proc pianoComodino*(f: Falegnami): float = f.hBassi + f.gavone + f.sMulti
   ## 142.8: la cima del piano sopra il gavone
 proc bordo*(f: Falegnami): float = f.nicchiaZ - f.pianoLetto - f.materasso.altezza
@@ -412,14 +412,12 @@ proc modello*(f: Falegnami): Model =
     result.add cop
 
   # --- i tre vani alti ------------------------------------------------------------
-  # scatole aperte davanti, appoggiate su un rialzo sopra il cassone, con il
-  # dentro a filo delle aperture del fronte; quella sopra la risega è meno profonda
+  # scatole aperte davanti, appoggiate sul cielo del cassone (solo scatole, come
+  # nella tavola 6); quella sopra la risega è meno profonda
   for i in 0..2:
     let x = f.xFronte + f.margineAlto + float(i) * (f.ribaltaL + f.spazio) + (f.ribaltaL - f.vanoL) / 2
     let p = if x + f.vanoL > f.xRisega: f.profRisega else: f.prof
     var v = scatola("vano alto " & $(i + 1), x, f.vanoL, f.vanoH, p, sl, f.fondoVani, f.fondoVani)
-    for yr in [y0, y0 + p - sm]:   # due listelli sotto, davanti e dietro (ipotesi)
-      v.add part("rialzo vano alto", kPanel, x, yr, f.cieloNicchia + sm, f.vanoL, sm, f.rialzo)
     result.aggiungi(v, "vano alto " & $(i + 1), mel = true)
 
   # --- il muro ------------------------------------------------------------------------
@@ -471,6 +469,9 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
       " cm, nello spazio libero; lì serve una guida che lo regga"
   if f.margine < 0:
     result.add "i frontali in basso non ci stanno nei pannelli"
+  if f.scalinoVani > 0.5:
+    result.add "il fondo dei vani alti sta " & fmtNum(f.scalinoVani) &
+      " cm sotto il bordo dell'apertura delle ribalte: dentro c'è uno scalino"
   for r in fuoriLastra(m):
     result.add r
 

@@ -202,7 +202,7 @@ nbCode:
     ("bordo basso dell'apertura (rilevato)", f.nicchiaZ),
     ("bordo alto dell'apertura (+ 121.9)", f.nicchiaZ + f.nicchiaH),
     ("sotto del cielo del cassone (+ 150)", f.cieloNicchia),
-    ("fondo dei vani alti (rialzo " & fmtNum(f.rialzo) & ")", f.fondoVani),
+    ("fondo dei vani alti (sul cielo del cassone)", f.fondoVani),
     ("cima del fronte (2 × 156.8 + 6)", f.altezza)]
   for (nome, z) in righe:
     echo fmtNum(z).align(6), "  ", nome
@@ -277,8 +277,9 @@ nbText: """
   ribalta, nel visore esce dalla fessura verso chi guarda.
 - **Il triangolo** fuori dalla libreria, a 277 da uno scaffale, e il taglio per il
   passaggio dei cavi: non li ho disegnati. La scatola delle prese non c'è nelle tavole.
-- **Vani alti**: perché dentro siano a filo delle aperture del fronte devono
-  stare 7.5 sopra il cassone; ho messo due listelli di rialzo (ipotesi).
+- **Vani alti**: sono solo scatole appoggiate sul cielo del cassone (Pietro). Così
+  il loro fondo sta 7.5 sotto il bordo dell'apertura delle ribalte: dentro c'è uno
+  scalino (vedi i controlli).
 - **Libreria**: appoggia sui mobili bassi; a destra del mobile D restano 12 cm
   senza niente sotto.
 - **Rilevate in scala**: bordo basso della nicchia (137), fondo delle ribalte
