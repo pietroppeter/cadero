@@ -280,6 +280,10 @@ viene prendendo il 150 come misura esterna e il 121.9 dalle loro tavole. Se il 1
 fosse interno, l'apertura partirebbe da 137, ma il cassone finirebbe 3.6 più in
 alto della libreria. Il frontale porta ancora i fori dei vani e delle ante, per
 questo si vedono anche quelli.
+
+Nel prospetto la libreria, che sta dietro al frontale, è tratteggiata, insieme al
+pannello da 1.8 che copre la risega alla sua sinistra. La catena in alto dà la
+distanza fra il bordo destro della nicchia e la libreria.
 """
 
 nbCode:

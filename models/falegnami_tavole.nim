@@ -265,7 +265,22 @@ proc disegnoNicchia*(f: Falegnami): string =
   let mat = pl + f.materasso.altezza
   let v = View(kind: vFront)
   let vs = View(kind: vSide, cut: 100, ox: L + 70)
-  foglio([(v, m), (vs, m)], [
+  # nel prospetto la libreria sta dietro al frontale: la disegniamo tratteggiata
+  # (fianchi, schiena, cielo e il pannello che copre la risega)
+  var mf = m.filtra(proc (p: Part): bool = p.blocco != "libreria")
+  for p in m.parts:
+    if p.blocco == "libreria" and (p.name.startsWith("fianco") or p.name.startsWith("schiena") or
+        p.name.startsWith("cielo") or p.name == "pannello risega"):
+      var q = p
+      q.kind = kSoft
+      q.hiddenFront = true
+      q.r = 0
+      mf.parts.add q
+  let c0 = f.colonne[0]
+  let xl = f.xLibreria
+  foglio([(v, mf), (vs, m)], [
+    (v, catena(vFront, false, f.altezza + 12, f.altezza,
+      @[0.0, c0, c0 + f.nicchiaL, xl - sm, xl, L], @[no, 156.7, no, no, no])),
     (v, catena(vFront, true, -14, 0,
       @[0.0, f.hBassi, pl, mat, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, zc + sm, 2 * f.pannelloH],
       @[109.0, no, no, no, 121.9, no, no])),
