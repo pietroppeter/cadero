@@ -205,8 +205,8 @@ proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
 # --- le modifiche che vorremmo (Pietro, 4 novembre 2026) --------------------------
 const larghezzaPannelloRisega* = 10.0
   ## il pannello che copre la risega, nel modello rivisto: 10 invece di 15.8
-const rimaVani* = 3.0
-  ## nella proposta per i vani alti: il fronte che resta sopra l'apertura, sotto la fascia
+const aperturaVani* = 35.0
+  ## nella proposta per i vani alti: l'apertura nel fronte (oggi 32.6)
 
 proc rivisto*(f: Falegnami): Falegnami =
   ## Il modello rivisto: senza il pannellino estraibile (non lo vogliamo), la
@@ -222,15 +222,15 @@ proc rivisto*(f: Falegnami): Falegnami =
   result.profLibreria = f.profondita - larghezzaPannelloRisega - f.yMobili + f.sMulti
 
 proc vaniAlti*(f: Falegnami): Falegnami =
-  ## La proposta per aprire di più i vani alti: il fronte alto quanto la stanza
-  ## (2 pannelli da 155 + la fascia da 6 = 316, invece di 2 × 156.8 + 6 = 319.6),
-  ## le scatole alte fino alla fascia (51 invece di 40.9), le ribalte che partono
-  ## da dove partono oggi e arrivano a 1 cm dalla fascia: apertura 41.7 invece di 32.6.
+  ## La proposta per aprire di più i vani alti, con il loro fronte (319.6, Pietro:
+  ## assumiamo che sia giusto). Le ribalte partono da dove partono oggi (263.3) e
+  ## crescono verso l'alto: apertura 35 invece di 32.6 (una DRÖNA da 33 con 2 di gioco), ribalta 39 (2 cm di
+  ## sormonto sopra e sotto). Le scatole crescono con loro (la cima a filo della
+  ## ribalta, come oggi): 43.3 invece di 40.9. Sotto non cambia niente: nicchia,
+  ## cassone, libreria e mobili bassi restano dove sono.
   result = f
-  result.pannelloH = (f.muro.altezza - f.fascia) / 2
-  let cima = 2 * result.pannelloH                 # 310: sotto la fascia
-  result.vanoH = cima - f.fondoVani               # 51
-  result.ribaltaH = cima - rimaVani + f.sormonto - f.zRibalte   # 45.7
+  result.ribaltaH = aperturaVani + 2 * f.sormonto        # 39
+  result.vanoH = f.zRibalte + result.ribaltaH - f.fondoVani   # 43.3
 
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =
@@ -518,6 +518,9 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
   if f.scalinoVani > 0.5:
     result.add "il fondo dei vani alti sta " & fmtNum(f.scalinoVani) &
       " cm sotto il bordo dell'apertura delle ribalte: dentro c'è uno scalino"
+  let rima = 2 * f.pannelloH - (f.zRibalte + f.ribaltaH - f.sormonto)
+  if rima < 2:
+    result.add "sopra l'apertura dei vani alti restano solo " & fmtNum(rima) & " cm di fronte sotto la fascia"
   let sopra = f.zRibalte + f.ribaltaH - f.sormonto - (f.fondoVani + f.vanoH)
   if sopra > 0.5:
     result.add "il cielo dei vani alti sta " & fmtNum(sopra) &
