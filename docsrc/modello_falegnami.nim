@@ -3,6 +3,7 @@
 ## nicchia, i mobili uno per uno e le cose da chiedere.
 import nimib, tema
 import std/[os, strutils]
+import falegnami, falegnami_tavole
 
 nbInit(theme = useTema)
 nb.title = "Il modello dei falegnami"
@@ -82,7 +83,7 @@ nbRawHtml: """
 <script>
 // la galleria: frecce, rotella verticale che scorre di lato, trascinamento con il mouse
 // (con il dito scorre da sola); un trascinamento non apre l'immagine
-document.querySelectorAll('.galleria').forEach(g => {
+window.attivaGalleria = g => {
   const s = g.querySelector('.striscia');
   const passo = () => s.querySelector('figure').offsetWidth + 14;
   g.querySelector('.indietro').onclick = () => s.scrollBy({left: -passo(), behavior: 'smooth'});
@@ -121,7 +122,59 @@ document.querySelectorAll('.galleria').forEach(g => {
     if (e.key === 'ArrowRight') { s.scrollBy({left: passo(), behavior: 'smooth'}); e.preventDefault(); }
     if (e.key === 'ArrowLeft') { s.scrollBy({left: -passo(), behavior: 'smooth'}); e.preventDefault(); }
   });
-});
+};
+document.querySelectorAll('.galleria').forEach(attivaGalleria);
+</script>
+"""
+
+nbText: """
+## Le tavole rifatte dal nostro modello
+
+Le stesse sette tavole, disegnate dal modello qui sotto, in proiezione e con le
+stesse quote: servono a vedere se ci siamo persi dei pezzi e se le misure tornano.
+Ogni misura è confrontata con quella scritta sulla loro tavola:
+<span style="color:#1a1a1a">**nera**</span> se torna,
+<span style="color:#d0312d">**rossa**</span> se è diversa (tra parentesi la loro),
+<span style="color:#d4740f">**arancio**</span> se sulla loro tavola non c'è e l'abbiamo
+dedotta (per esempio la larghezza del pannello che copre la risega). Toccandone una si
+apre a tutta pagina.
+"""
+
+var rifatte = ""
+for i, t in tavoleRifatte(falegnami()):
+  rifatte.add "<figure><div class=\"disegno\" role=\"button\" tabindex=\"0\">" & t.svg &
+    "</div><figcaption><b>" & $(i + 1) & ". " & t.nome & "</b><span>" & t.nota & "</span></figcaption></figure>\n"
+
+nbRawHtml: """
+<style>
+.galleria .disegno { height: 420px; background: #fff; cursor: zoom-in; overflow: hidden; }
+.galleria .disegno svg { width: 100% !important; height: 100% !important; max-width: none !important; display: block; }
+@media (max-width: 600px) { .galleria .disegno { height: 300px; } }
+.ingrandita { position: fixed; inset: 0; z-index: 50; background: #fff; overflow: auto; cursor: zoom-out; }
+.ingrandita svg { width: max(100%, 1100px); height: auto !important; max-width: none !important; display: block; }
+</style>
+<div class="galleria">
+  <div class="striscia" tabindex="0" aria-label="Le sette tavole rifatte dal modello">
+""" & rifatte & """
+  </div>
+  <button class="freccia indietro" type="button" aria-label="Tavola precedente">‹</button>
+  <button class="freccia avanti" type="button" aria-label="Tavola successiva">›</button>
+</div>
+<script>
+// la seconda galleria: stesso comportamento; toccando un disegno lo si vede a tutta pagina
+(() => {
+  const g = document.querySelectorAll('.galleria');
+  const ultima = g[g.length - 1];
+  attivaGalleria(ultima);
+  ultima.querySelectorAll('.disegno').forEach(d => d.addEventListener('click', () => {
+    if (ultima.querySelector('.striscia').classList.contains('trascina')) return;
+    const o = document.createElement('div');
+    o.className = 'ingrandita';
+    o.innerHTML = d.innerHTML;
+    o.addEventListener('click', () => o.remove());
+    document.body.appendChild(o);
+  }));
+})();
 </script>
 """
 
@@ -141,7 +194,7 @@ nbText: """
 - **Tre vani alti** 68.1 × 40.9, scatole aperte davanti con la ribalta. Quella di
   sinistra è tagliata a 15 cm: il pezzo a sinistra resta fisso, si apre solo la
   parte destra, così la ribalta non sbatte contro il condizionatore.
-- **Il cassone del letto**: piano, cielo e un fianco a sinistra, dentro 193 × 150,
+- **Il cassone del letto**: piano, cielo e un fianco a sinistra, dentro 193, alto 150 fuori come la libreria (146.4 dentro),
   profondo 77.5. Piano e cielo non passano sotto e sopra la libreria (non è
   chiaro dalle tavole: l'ho assunto).
 - **La libreria** in testa al letto, un mobile a sé: 63.5 di profondità, alta 150,
@@ -199,9 +252,9 @@ nbCode:
     ("piano letto (cima del piano del cassone)", f.pianoLetto),
     ("cima del materasso (" & fmtNum(f.materasso.altezza) & ")", f.pianoLetto + f.materasso.altezza),
     ("piano del comodino (gavone 32 + 1.8)", f.pianoComodino),
-    ("bordo basso dell'apertura (rilevato)", f.nicchiaZ),
+    ("bordo basso dell'apertura (dedotto: alto a filo del cielo)", f.nicchiaZ),
     ("bordo alto dell'apertura (+ 121.9)", f.nicchiaZ + f.nicchiaH),
-    ("sotto del cielo del cassone (+ 150)", f.cieloNicchia),
+    ("sotto del cielo del cassone (cassone alto 150 fuori, come la libreria)", f.cieloNicchia),
     ("fondo dei vani alti (sul cielo del cassone)", f.fondoVani),
     ("cima del fronte (2 × 156.8 + 6)", f.altezza)]
   for (nome, z) in righe:
@@ -273,8 +326,6 @@ nbText: """
 - **300** sul mobile dei gradini è la sua profondità (Pietro): il mobile B è profondo
   30. Il pannellino lungo 67 chiuso rientra nello spazio libero dietro, sotto il
   cassone: lì serve una guida che lo regga.
-- **Pannellino**: Pietro lo chiama ribaltabile; dal disegno non capisco come si
-  ribalta, nel visore esce dalla fessura verso chi guarda.
 - **Il triangolo** fuori dalla libreria, a 277 da uno scaffale, e il taglio per il
   passaggio dei cavi: non li ho disegnati. La scatola delle prese non c'è nelle tavole.
 - **Vani alti**: sono solo scatole appoggiate sul cielo del cassone (Pietro). Così
@@ -282,7 +333,12 @@ nbText: """
   scalino (vedi i controlli).
 - **Libreria**: appoggia sui mobili bassi; a destra del mobile D restano 12 cm
   senza niente sotto.
-- **Rilevate in scala**: bordo basso della nicchia (137), fondo delle ribalte
+- **Cassone alto 150 fuori**, come la libreria (Pietro: mobili bassi tutti a 109,
+  libreria e nicchia alte uguali): dentro resta 146.4, e la cima del cielo è a filo
+  della libreria (259). Perché l'apertura da 121.9 non salga oltre il cielo, il suo
+  bordo basso è a 135.3 (dedotto; in scala sul prospetto si legge circa 137).
+  Materasso largo 77 (Pietro).
+- **Rilevate in scala**: fondo delle ribalte
   (270), spazio tra i frontali (4, torna con tutte le larghezze), zoccolo dei
   mobili (11.8), raggi (nicchia 5, aperture 3, frontali 2), fori maniglia (3) a 6
   cm dagli spigoli.

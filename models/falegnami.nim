@@ -43,7 +43,9 @@ type
     raggioAperture*, raggioFrontali*, raggioNicchia*: float   ## rilevati: 3, 2, 5
     diamForo*: float         ## fori maniglia: 3 (rilevato)
     # --- la nicchia nel fronte
-    nicchiaZ*: float         ## il bordo in basso dell'apertura, da terra: 137 (rilevato)
+    nicchiaZ*: float         ## il bordo in basso dell'apertura, da terra: 135.3, dedotto
+                             ## perché il bordo alto sia a filo del cielo del cassone
+                             ## (in scala sul prospetto si legge circa 137)
     nicchiaL*, nicchiaH*: float     ## 156.7 × 121.9 (disegno)
     # --- la zona bassa del fronte
     zBassi*: float           ## fondo di ante, cassetti e gradini, da terra: 12 (disegno: 120)
@@ -70,7 +72,8 @@ type
     prof*: float             ## profondità dei mobili: 77.5 (disegno: 775)
     profRisega*: float       ## quelli davanti alla risega: 62.2 (disegno: 622)
     interno*: float          ## il cassone del letto dentro: 193 (disegno: 1930)
-    hNicchia*: float         ## il cassone dentro, dal piano letto al cielo: 150 (disegno)
+    hNicchia*: float         ## il cassone fuori, dal sotto del piano letto alla cima del
+                             ## cielo: 150, come la libreria accanto (Pietro: alte uguali)
     profLibreria*, hLibreria*: float   ## 63.5 × 150 (disegno)
     gavone*: float           ## il frontale del gavone, verso il letto: 32 (disegno)
     comodino*: float         ## profondità del piano sopra il gavone: 38 (disegno)
@@ -81,11 +84,13 @@ type
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
   let r = rilievo()
-  Falegnami(muro: r.muro, materasso: r.materasso, sMulti: 1.8, sMel: 1.9, sSchiena: 0.8,
+  var mat = r.materasso
+  mat.larghezza = 77   # Pietro: nel cassone da 77.5
+  Falegnami(muro: r.muro, materasso: mat, sMulti: 1.8, sMel: 1.9, sSchiena: 0.8,
     spalla: 5.9, pannelloL: 112.5, pannelloH: 156.8, fascia: 6, spazio: 4,
     sormonto: 2, sormontoCassetti: 1, raggioAperture: 3, raggioFrontali: 2, raggioNicchia: 5,
     diamForo: 3,
-    nicchiaZ: 137, nicchiaL: 156.7, nicchiaH: 121.9,
+    nicchiaZ: 135.3, nicchiaL: 156.7, nicchiaH: 121.9,
     zBassi: 12, altezzaAnte: 95, antaA: 75.5, cassetti: 50.2, antaD: 50.2,
     hCassetto: 29, nCassetti: 3, gradini: @[15.8, 15.8, 14.3, 14.3, 15.8], spazioGradini: 4,
     pannello: true, fessura: 3, lungPannello: 67,
@@ -131,8 +136,8 @@ proc colonne*(f: Falegnami): array[4, float] =
   result[3] = result[2] + f.cassetti + f.spazio
 proc pianoLetto*(f: Falegnami): float = f.hBassi + f.sMulti
   ## 110.8: il cassone appoggia sui mobili bassi
-proc cieloNicchia*(f: Falegnami): float = f.pianoLetto + f.hNicchia
-  ## 260.8: il sotto del cielo del cassone
+proc cieloNicchia*(f: Falegnami): float = f.hBassi + f.hNicchia - f.sMulti
+  ## 257.2: il sotto del cielo del cassone; la cima (259) è a filo della libreria
 proc fondoVani*(f: Falegnami): float = f.cieloNicchia + f.sMulti
   ## 262.6: i vani alti sono scatole appoggiate sul cielo del cassone (Pietro)
 proc scalinoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.fondoVani - f.sMel
@@ -363,7 +368,7 @@ proc modello*(f: Falegnami): Model =
   var cas = @[
     part("piano letto", kPanel, 0, y0, f.hBassi, wC, f.prof, sm),
     part("cielo cassone", kPanel, 0, y0, f.cieloNicchia, wC, f.prof, sm),
-    part("fianco cassone", kPanel, 0, y0, f.pianoLetto, sm, f.prof, f.hNicchia)]
+    part("fianco cassone", kPanel, 0, y0, f.pianoLetto, sm, f.prof, f.cieloNicchia - f.pianoLetto)]
   cas[2].hiddenFront = true
   result.aggiungi(cas, "cassone letto")
   var mat = part("materasso", kSoft, sm + (f.interno - f.materasso.lunghezza) / 2,
@@ -472,6 +477,10 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
   if f.scalinoVani > 0.5:
     result.add "il fondo dei vani alti sta " & fmtNum(f.scalinoVani) &
       " cm sotto il bordo dell'apertura delle ribalte: dentro c'è uno scalino"
+  let sopra = f.zRibalte + f.ribaltaH - f.sormonto - (f.fondoVani + f.vanoH)
+  if sopra > 0.5:
+    result.add "il cielo dei vani alti sta " & fmtNum(sopra) &
+      " cm sotto il bordo alto dell'apertura delle ribalte: dall'apertura si vede sopra la scatola"
   for r in fuoriLastra(m):
     result.add r
 
