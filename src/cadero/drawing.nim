@@ -194,7 +194,7 @@ proc testo(d: DimChain; i: int): (string, string) =
   let l = d.loro[i]
   if l.isNaN: (fmtNum(m), inkDedotta)
   elif abs(l - m) < 0.05: (fmtNum(m), ink)
-  else: (fmtNum(m) & " (loro " & fmtNum(l) & ")", inkDiversa)
+  else: (fmtNum(m) & " (" & fmtNum(l) & ")", inkDiversa)
 
 proc draw*(s: var Sheet; v: View; d: DimChain) =
   ## Linea di quota, linee di richiamo, tratti obliqui e testo, come nei
