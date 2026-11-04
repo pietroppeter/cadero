@@ -459,8 +459,8 @@ nbText: """
 ### 3: aprire di più i vani alti
 
 Oggi l'apertura è alta 32.6: la ribalta è alta 36.6 e copre l'apertura di 2 cm sopra
-e 2 sotto. Una scatola IKEA DRÖNA, quella dei Kallax, è alta 33 (misure da
-verificare), quindi oggi non passerebbe. Per la proposta teniamo il loro fronte da
+e 2 sotto. Una scatola IKEA DRÖNA, quella dei Kallax, è larga 33, profonda 38 e
+alta 33 (verificato sul sito IKEA), quindi oggi non passerebbe. Per la proposta teniamo il loro fronte da
 319.6 come giusto e prendiamo un'apertura di **41.7** (Pietro), la misura che lascia
 margine anche se il soffitto fosse davvero a 316.
 
@@ -480,7 +480,10 @@ La proposta: le ribalte partono da dove partono oggi (263.3) e crescono verso l'
   dell'apertura, come oggi.
 - **Scatole** alte 50 invece di 40.9, con la cima sempre a filo della ribalta (309):
   restano 7 cm sotto il soffitto da 316 che abbiamo misurato, per montarle.
-- **Apertura** 41.7 (+9.1): una DRÖNA da 33 passa con quasi 9 cm di gioco.
+- **Apertura** 41.7 (+9.1): una DRÖNA da 33 passa con quasi 9 cm di gioco. In
+  larghezza ne entra una per vano (dentro 64.3, due farebbero 66); in profondità due
+  una dietro l'altra (76 su 76.7) nei due vani a sinistra, una sola nel vano sopra la
+  risega (62.2).
 - **Sotto non cambia niente**: nicchia, cassone, libreria e mobili bassi restano dove
   sono. Nel fronte cambiano solo i tre fori alti, e la striscia di fronte sopra le
   ribalte scende da 13.7 a 4.6 (più la fascia da 6).
