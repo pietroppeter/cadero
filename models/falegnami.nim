@@ -63,6 +63,8 @@ type
     hBassi*: float           ## i quattro mobili bassi: alti 109 (disegno)
     zoccolo*: float          ## sotto il fondo dei mobili bassi: 11.8 (rilevato: 118)
     mobileA*, mobileB*, mobileC*, mobileD*: float   ## larghezze: 75.3, 28.6, 50, 50 (disegno)
+    profGradini*: float      ## il mobile B dei gradini è profondo solo 30 (disegno: 300, confermato
+                             ## da Pietro): dietro resta spazio libero sotto il cassone
     prof*: float             ## profondità dei mobili: 77.5 (disegno: 775)
     profRisega*: float       ## quelli davanti alla risega: 62.2 (disegno: 622)
     interno*: float          ## il cassone del letto dentro: 193 (disegno: 1930)
@@ -87,6 +89,7 @@ proc falegnami*(): Falegnami =
     pannello: true, fessura: 3, lungPannello: 67,
     zRibalte: 270, ribaltaL: 68.3, ribaltaH: 36.6, parteFissa: 15,
     hBassi: 109, zoccolo: 11.8, mobileA: 75.3, mobileB: 28.6, mobileC: 50, mobileD: 50,
+    profGradini: 30,
     prof: 77.5, profRisega: 62.2, interno: 193, hNicchia: 150,
     profLibreria: 63.5, hLibreria: 150, gavone: 32, comodino: 38, scaffali: 27, nScaffali: 3,
     vanoL: 68.1, vanoH: 40.9)
@@ -274,16 +277,17 @@ proc modello*(f: Falegnami): Model =
   # B: i gradini, in multistrato a vista. Sotto ogni apertura un piano, dove si
   # appoggia il piede; con il pannellino, la fessura ha un piano sotto
   let xB = c[1] - sm
-  var b = scatola("mobile B", xB, f.mobileB, f.hBassi, f.prof, sm, f.zBassi - sm)
+  var b = scatola("mobile B", xB, f.mobileB, f.hBassi, f.profGradini, sm, f.zBassi - sm)
   b.del(2)   # il fondo: è il piano del primo gradino, sotto
   let zg = f.zGradini
   for i, z in zg:
-    b.add part("piano gradino", kPanel, xB + sm, y0, z - sm, f.aperturaGradini, f.prof, sm)
+    b.add part("piano gradino", kPanel, xB + sm, y0, z - sm, f.aperturaGradini, f.profGradini, sm)
   if f.pannello:
-    b.add part("piano sotto la fessura", kPanel, xB + sm, y0, f.zFessura - sm, f.aperturaGradini, f.prof, sm)
+    b.add part("piano sotto la fessura", kPanel, xB + sm, y0, f.zFessura - sm, f.aperturaGradini, f.profGradini, sm)
   result.aggiungi(b, "mobile B")
   if f.pannello:
-    # il pannellino, dentro la fessura: esce verso chi guarda
+    # il pannellino, dentro la fessura: esce verso chi guarda. È più lungo del mobile
+    # B (67 contro 30): chiuso rientra nello spazio libero dietro, sotto il cassone
     var pa = part("pannellino estraibile", kFront, c[1] + 0.2, 0, f.zFessura + (f.fessura - sm) / 2,
                   f.aperturaGradini - 0.4, f.lungPannello, sm)
     pa.apribile("pannellino", "tira", f.lungPannello - 12)
@@ -416,6 +420,10 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
   if avanzo > 0.5:
     result.add "tra il cassone (dentro " & fmtNum(f.interno) & ") e la libreria (comodino " &
       fmtNum(f.comodino) & ") avanzano " & fmtNum(avanzo) & " cm di larghezza"
+  if f.pannello and f.lungPannello > f.profGradini:
+    result.add "il pannellino (" & fmtNum(f.lungPannello) & ") è più lungo del mobile dei gradini (" &
+      fmtNum(f.profGradini) & "): chiuso sporge dietro di " & fmtNum(f.lungPannello - f.profGradini) &
+      " cm, nello spazio libero; lì serve una guida che lo regga"
   if f.margine < 0:
     result.add "i frontali in basso non ci stanno nei pannelli"
   for r in fuoriLastra(m):

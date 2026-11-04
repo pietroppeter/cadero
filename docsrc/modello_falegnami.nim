@@ -2,7 +2,7 @@
 ## ridisegnate da codice, il confronto con la nostra parete, i calcoli della
 ## nicchia, i mobili uno per uno e le cose da chiedere.
 import nimib, tema
-import std/[strutils]
+import std/[os, strutils]
 
 nbInit(theme = useTema)
 nb.title = "Il modello dei falegnami"
@@ -21,6 +21,108 @@ ridistribuiscono).
 Le loro misure sono in mm, qui in cm. Quelle scritte sulle tavole sono riportate
 così come sono; quelle che mancano le ho misurate in scala sul prospetto
 (rilevate) o ipotizzate: sono elencate in fondo.
+"""
+
+nbText: """
+## Le tavole dei falegnami
+
+Le sette tavole come le hanno mandate, una accanto all'altra: si scorrono di lato
+con il dito, con la rotella o trascinando, oppure con le frecce. Toccandone una si
+apre a tutta grandezza.
+"""
+
+# le immagini stanno in docsrc/falegnami/ e si copiano accanto alla pagina
+let tavole = [
+  ("Il fronte senza ante", "le aperture nel pannello frontale, con le loro misure"),
+  ("Il fronte con ante e ribalte", "in prospettiva: ante, cassetti, ribalte e il pannellino aperto"),
+  ("Il prospetto", "il fronte di faccia: i quattro pannelli 1125 × 1568, la fascia e le spalle"),
+  ("I mobili senza il fronte", "vani alti, cassone del letto con la libreria, mobili bassi"),
+  ("La libreria", "mensole fisse, il gavone sotto, il taglio per i cavi"),
+  ("I tre vani alti", "le scatole 681 × 409, profonde 775 (622 quella sopra la risega)"),
+  ("I mobili bassi", "A con le mensole mobili, B con i gradini, C dei cassetti, D con l'appenderia")]
+let cartella = $nb.doc.homeDir / "falegnami"
+createDir(cartella)
+var schede = ""
+for i, (titolo, nota) in tavole:
+  let f = "tavola-" & $(i + 1) & ".jpg"
+  copyFile(currentSourcePath().parentDir / "falegnami" / f, cartella / f)
+  schede.add "<figure><a href=\"falegnami/" & f & "\" target=\"_blank\" draggable=\"false\"><img src=\"falegnami/" & f &
+    "\" alt=\"" & titolo & "\" loading=\"lazy\" draggable=\"false\"></a><figcaption><b>" & $(i + 1) & ". " &
+    titolo & "</b><span>" & nota & "</span></figcaption></figure>\n"
+
+nbRawHtml: """
+<style>
+.galleria { position: relative; margin: 1em 0 1.5em; }
+.galleria .striscia { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain; padding-bottom: 10px; cursor: grab; scrollbar-width: thin; }
+.galleria .striscia.trascina { cursor: grabbing; scroll-snap-type: none; }
+.galleria figure { flex: 0 0 min(86%, 560px); margin: 0; scroll-snap-align: start;
+  background: #fff; border: 1px solid var(--line, #ccc); border-radius: 8px; overflow: hidden; }
+.galleria img { display: block; width: 100%; height: 420px; object-fit: contain; background: #fff;
+  user-select: none; -webkit-user-drag: none; }
+.galleria figcaption { padding: 8px 12px 10px; font-size: 14px; background: var(--panel, #f6f6f6);
+  border-top: 1px solid var(--line, #ccc); color: var(--fg, #222); }
+.galleria figcaption b { display: block; }
+.galleria figcaption span { color: var(--muted, #666); }
+.galleria .freccia { position: absolute; top: 190px; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--line, #ccc); background: var(--panel, #fff); color: var(--fg, #222);
+  font-size: 20px; line-height: 1; cursor: pointer; opacity: 0.92; }
+.galleria .indietro { left: 6px; } .galleria .avanti { right: 6px; }
+.galleria .freccia[hidden] { display: none; }
+@media (max-width: 600px) { .galleria img { height: 300px; }
+  .galleria .freccia { top: 135px; width: 32px; height: 32px; font-size: 17px; opacity: 0.8; } }
+</style>
+<div class="galleria">
+  <div class="striscia" tabindex="0" aria-label="Le sette tavole dei falegnami">
+""" & schede & """
+  </div>
+  <button class="freccia indietro" type="button" aria-label="Tavola precedente">‹</button>
+  <button class="freccia avanti" type="button" aria-label="Tavola successiva">›</button>
+</div>
+<script>
+// la galleria: frecce, rotella verticale che scorre di lato, trascinamento con il mouse
+// (con il dito scorre da sola); un trascinamento non apre l'immagine
+document.querySelectorAll('.galleria').forEach(g => {
+  const s = g.querySelector('.striscia');
+  const passo = () => s.querySelector('figure').offsetWidth + 14;
+  g.querySelector('.indietro').onclick = () => s.scrollBy({left: -passo(), behavior: 'smooth'});
+  g.querySelector('.avanti').onclick = () => s.scrollBy({left: passo(), behavior: 'smooth'});
+  s.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && s.scrollWidth > s.clientWidth) {
+      const fine = s.scrollLeft + s.clientWidth >= s.scrollWidth - 2;
+      if ((e.deltaY > 0 && !fine) || (e.deltaY < 0 && s.scrollLeft > 0)) {
+        e.preventDefault(); s.scrollLeft += e.deltaY;
+      }
+    }
+  }, {passive: false});
+  let x0 = 0, l0 = 0, giu = false, mosso = false;
+  s.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse') return;
+    giu = true; mosso = false; x0 = e.clientX; l0 = s.scrollLeft;
+  });
+  window.addEventListener('pointermove', e => {
+    if (!giu) return;
+    if (Math.abs(e.clientX - x0) > 5) { mosso = true; s.classList.add('trascina'); }
+    if (mosso) s.scrollLeft = l0 - (e.clientX - x0);
+  });
+  window.addEventListener('pointerup', () => {
+    if (!giu) return;
+    giu = false; s.classList.remove('trascina');
+  });
+  s.addEventListener('dragstart', e => e.preventDefault());
+  s.addEventListener('click', e => { if (mosso) { e.preventDefault(); mosso = false; } }, true);
+  const frecce = () => {   // la freccia non serve all'inizio e alla fine
+    g.querySelector('.indietro').hidden = s.scrollLeft < 4;
+    g.querySelector('.avanti').hidden = s.scrollLeft + s.clientWidth >= s.scrollWidth - 4;
+  };
+  s.addEventListener('scroll', frecce, {passive: true});
+  frecce();
+  s.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { s.scrollBy({left: passo(), behavior: 'smooth'}); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { s.scrollBy({left: -passo(), behavior: 'smooth'}); e.preventDefault(); }
+  });
+});
+</script>
 """
 
 nbCode:
@@ -46,7 +148,7 @@ nbText: """
   aperta verso il letto, con il gavone sotto (frontale 32), il piano del comodino
   profondo 38 con l'apertura e i due coperchi, tre scaffali profondi 27.
 - **Quattro mobili bassi** alti 109: A con due ripiani mobili (75.3), B con i
-  gradini in multistrato (28.6), C con tre cassetti (50), D con l'appenderia (50,
+  gradini in multistrato (28.6, profondo 30), C con tre cassetti (50), D con l'appenderia (50,
   profondo solo 62.2 per stare davanti alla risega).
 
 Le scatole grigie dei disegni le leggo come melaminico da 19 mm (500 fuori, 462
@@ -158,8 +260,9 @@ nbText: """
   fronte, si arriva a 79.3 e torna con gli 80: da chiedere.
 - **622**: lo leggo come la profondità dei mobili davanti alla risega (il vano alto
   di destra e il mobile D); 775 per gli altri.
-- **300** sul mobile dei gradini: non so a cosa si riferisca. L'ho fatto profondo
-  come gli altri (77.5), così il pannellino lungo 67 ci sta dentro.
+- **300** sul mobile dei gradini è la sua profondità (Pietro): il mobile B è profondo
+  30. Il pannellino lungo 67 chiuso rientra nello spazio libero dietro, sotto il
+  cassone: lì serve una guida che lo regga.
 - **Pannellino**: Pietro lo chiama ribaltabile; dal disegno non capisco come si
   ribalta, nel visore esce dalla fessura verso chi guarda.
 - **Il triangolo** fuori dalla libreria, a 277 da uno scaffale, e il taglio per il
