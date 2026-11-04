@@ -255,3 +255,22 @@ proc tavoleRifatte*(f: Falegnami): seq[TavolaRifatta] =
   let m = modello(f)
   @[tavola1(f, m), tavola2(f, m), tavola3(f, m), tavola4(f, m), tavola5(f, m), tavola6(f, m),
     tavola7(f, m)]
+
+proc disegnoNicchia*(f: Falegnami): string =
+  ## Solo frontale, cassone del letto, materasso e libreria: prospetto e sezione
+  ## laterale a x = 100, con le altezze della nicchia (blu = dedotte).
+  let m = modello(f).filtra(proc (p: Part): bool =
+    p.blocco in ["cassone letto", "libreria"] or p.fronte or p.name == "materasso")
+  let (L, pl, zc, sm) = (f.larghezza, f.pianoLetto, f.cieloNicchia, f.sMulti)
+  let mat = pl + f.materasso.altezza
+  let v = View(kind: vFront)
+  let vs = View(kind: vSide, cut: 100, ox: L + 70)
+  foglio([(v, m), (vs, m)], [
+    (v, catena(vFront, true, -14, 0,
+      @[0.0, f.hBassi, pl, mat, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, zc + sm, 2 * f.pannelloH],
+      @[109.0, no, no, no, 121.9, no, no])),
+    (v, catena(vFront, true, -30, 0, @[f.hBassi, f.hBassi + f.hNicchia], @[150.0])),
+    (v, catena(vFront, true, L + 14, L, @[f.hBassi, f.hBassi + f.hLibreria], @[150.0])),
+    (vs, catena(vSide, true, -14, 0, @[f.hBassi, pl, mat, f.nicchiaZ, zc, zc + sm],
+      @[no, no, no, no, no])),
+    (vs, catena(vSide, true, f.profondita + 14, f.profondita, @[pl, zc], @[no]))])

@@ -265,6 +265,28 @@ nbCode:
   echo "sopra il materasso: fronte ", fmtNum(f.bordo), ", testata ", fmtNum(f.schienale)
 
 nbText: """
+Lo stesso conto disegnato, con solo il frontale, il cassone del letto, il
+materasso e la libreria (prospetto e sezione laterale a x = 100; in blu le misure
+dedotte, in nero le loro). Partendo dal basso:
+
+- mobili bassi 109, sopra il piano del cassone da 1.8: la base del letto è a 110.8;
+- materasso 17, e sopra resta un bordo di 7.5 fino all'apertura;
+- l'apertura della nicchia è alta 121.9 e arriva fino al sotto del cielo del
+  cassone (257.2);
+- il cielo è da 1.8: il cassone è alto 146.4 dentro e 150 fuori, come la libreria.
+
+Il bordo alto dell'apertura coincide quindi con il sotto del cielo. È quello che
+viene prendendo il 150 come misura esterna e il 121.9 dalle loro tavole. Se il 150
+fosse interno, l'apertura partirebbe da 137, ma il cassone finirebbe 3.6 più in
+alto della libreria. Il frontale porta ancora i fori dei vani e delle ante, per
+questo si vedono anche quelli.
+"""
+
+nbCode:
+  let svgNicchia = disegnoNicchia(f)
+nbRawHtml: "<div class=\"disegno-nicchia\">" & svgNicchia & "</div>"
+
+nbText: """
 ## Confronto con la nostra parete
 
 Le stesse misure nei due modelli (la nostra con i parametri di oggi).
