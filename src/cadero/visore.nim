@@ -517,8 +517,8 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   ## delle opzioni. Per la nostra idea la chiave è "base" o "tavolino" seguita da
   ## "Scoperta" (risega), "Antina" (solo con il tavolino), "Comodino" (prese sul
   ## comodino): es. "tavolinoScopertaComodino". Per il modello dei falegnami è
-  ## "falegnami" o "falegnamiSenzaPannello", e il modello rivisto "rivisto" o
-  ## "rivistoVani" (pulsanti Rivisto e Vani alti). Si parte da "base" se c'è, se no
+  ## "falegnami" seguita dalle modifiche proposte accese, sempre in quest'ordine:
+  ## "Tavolino", "Testata", "Risega", "Vani" (es. "falegnamiTestataVani"). Si parte da "base" se c'è, se no
   ## dai falegnami; i pulsanti dei modelli che la pagina non ha restano nascosti.
   for k, m in varianti: modelli[k] = preparato(m)
   carta = cartaDaParati
@@ -526,8 +526,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let falegnami = "falegnami" in modelli
   var variante = if idea: "base" else: "falegnami"
   # i falegnami partono senza il pannellino, se il pulsante non è premuto
-  let chiave0 = if idea: "base"
-                elif premuto(el("m-pannello")): "falegnami" else: "falegnamiSenzaPannello"
+  let chiave0 = if idea: "base" else: "falegnami"   # le modifiche partono spente
   modello = modelli[chiave0]
   mostraTavola(chiave0)
   stage = el("stage")
@@ -616,27 +615,29 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let tRisega = el("m-risega")
   let tAntina = el("m-antina")
   let tPrese = el("m-prese")
-  let tPannello = el("m-pannello")
-  let tRivisto = el("m-rivisto")
-  let tVani = el("m-vani")
-  let rivisto = "rivisto" in modelli
+  # le quattro modifiche proposte al modello dei falegnami, indipendenti
+  let modifiche = [("p-tavolino", "Tavolino"), ("p-testata", "Testata"), ("p-risega", "Risega"),
+                   ("p-vani", "Vani")]
+  el("g-modifiche").nascosto(not falegnami)
+  el("g-mobile").nascosto(not idea)
   # il pulsante di un modello compare solo se la pagina ha anche l'altro
   for n in ["base", "tavolino"]: el("m-" & n).nascosto(not idea)
   el("m-falegnami").nascosto(not (idea and falegnami))
   proc pulsanti() =
     let fal = variante == "falegnami"
     tAntina.nascosto(variante != "tavolino")
-    tPannello.nascosto(not fal or premuto(tRivisto))
-    tRivisto.nascosto(not (fal and rivisto))
-    tVani.nascosto(not (fal and rivisto and premuto(tRivisto)))
     for b in [tRisega, tPrese]: b.nascosto(fal)
   pulsanti()
   proc cambiaModello() =
     pulsanti()
     let fal = variante == "falegnami"
-    let chiave = if fal and rivisto and premuto(tRivisto): "rivisto" & (if premuto(tVani): "Vani" else: "")
-                 elif fal: "falegnami" & (if premuto(tPannello): "" else: "SenzaPannello")
-                 else: variante & (if premuto(tRisega): "Scoperta" else: "") &
+    var chiave = "falegnami"
+    if fal:
+      for (id, nome) in modifiche:
+        if premuto(el(id)): chiave.add nome
+    else:
+      chiave = variante
+      chiave.add (if premuto(tRisega): "Scoperta" else: "") &
                    (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &
                    (if premuto(tPrese): "Comodino" else: "")
     modello = modelli[chiave]
@@ -649,9 +650,11 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       let name = name
       el("m-" & name).addEventListener("click", proc (ev: Event) =
         variante = name; cambiaModello())
-  for b in [tRisega, tAntina, tPrese, tPannello, tRivisto, tVani]:
+  var interruttori = @[tRisega, tAntina, tPrese]
+  for (id, _) in modifiche: interruttori.add el(id)
+  for i in 0 ..< interruttori.len:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
-      let b = b
+      let b = interruttori[i]
       b.addEventListener("click", proc (ev: Event) = b.premi(not premuto(b)); cambiaModello())
   applyToggles()
   # un modello qualsiasi (la pagina dei parametri): ricostruisce la scena e

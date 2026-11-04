@@ -113,10 +113,14 @@ nbRawHtml: """<section class="banco" id="banco">
         <button id="v-iniziale" type="button">Tre quarti</button>
         <button id="v-dentro" type="button">Dentro</button>
       </div>
-      <div class="group" hidden>
+      <div class="group" id="g-mobile" hidden>
         <button id="m-base" type="button" aria-pressed="true"></button><button id="m-tavolino" type="button"></button>
         <button id="m-antina" type="button"></button><button id="m-prese" type="button"></button><button id="m-risega" type="button"></button>
-        <button id="m-falegnami" type="button"></button><button id="m-pannello" type="button"></button>
+        <button id="m-falegnami" type="button"></button>
+      </div>
+      <div class="group" id="g-modifiche" hidden>
+        <button id="p-tavolino" type="button"></button><button id="p-testata" type="button"></button>
+        <button id="p-risega" type="button"></button><button id="p-vani" type="button"></button>
       </div>
       <div class="group" role="group" aria-label="Apertura">
         <span class="label">Apri</span>
