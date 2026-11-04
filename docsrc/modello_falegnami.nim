@@ -151,6 +151,10 @@ nbText: """
   gradini in multistrato (28.6, profondo 30), C con tre cassetti (50), D con l'appenderia (50,
   profondo solo 62.2 per stare davanti alla risega).
 
+Dietro i vani alti e i mobili bassi c'è una schiena sottile (0.8, ipotesi: non è
+segnata sulle tavole), grigia; quella dei gradini è color legno e si apre all'altezza
+della fessura, perché il pannellino chiuso passi dietro.
+
 Le scatole grigie dei disegni le leggo come melaminico da 19 mm (500 fuori, 462
 dentro), le parti color legno come multistrato da 18 (la libreria: 635 fuori,
 599 dentro). Nel visore il melaminico è grigio.
@@ -258,6 +262,8 @@ nbText: """
 - **Profondità**: con le ante davanti al fronte (le ante 755 coprono aperture da 715)
   e i mobili da 775 dietro, si arriva a 81.1. Se invece le ante stanno a filo nel
   fronte, si arriva a 79.3 e torna con gli 80: da chiedere.
+  Nel visore e nelle tavole il muro è disegnato a 81.1, dietro i mobili, perché si
+  vedano le schiene.
 - **622**: lo leggo come la profondità dei mobili davanti alla risega (il vano alto
   di destra e il mobile D); 775 per gli altri.
 - **300** sul mobile dei gradini è la sua profondità (Pietro): il mobile B è profondo

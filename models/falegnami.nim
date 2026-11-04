@@ -30,6 +30,8 @@ type
     materasso*: Materasso
     sMulti*: float           ## multistrato a vista: fronte, ante, cassone, libreria, gradini (18 mm)
     sMel*: float             ## melaminico delle scatole grigie (19 mm)
+    sSchiena*: float         ## la schiena sottile dei vani alti e dei mobili bassi: 0.8 (ipotesi:
+                             ## non è sulle tavole, Pietro la vuole; grigia, color legno nei gradini)
     # --- il fronte
     spalla*: float           ## le due spalle ai lati, da cima a fondo: 5.9 (disegno: 59)
     pannelloL*, pannelloH*: float   ## i quattro pannelli: 112.5 × 156.8 (disegno)
@@ -79,7 +81,7 @@ type
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
   let r = rilievo()
-  Falegnami(muro: r.muro, materasso: r.materasso, sMulti: 1.8, sMel: 1.9,
+  Falegnami(muro: r.muro, materasso: r.materasso, sMulti: 1.8, sMel: 1.9, sSchiena: 0.8,
     spalla: 5.9, pannelloL: 112.5, pannelloH: 156.8, fascia: 6, spazio: 4,
     sormonto: 2, sormontoCassetti: 1, raggioAperture: 3, raggioFrontali: 2, raggioNicchia: 5,
     diamForo: 3,
@@ -258,32 +260,50 @@ proc modello*(f: Falegnami): Model =
   # --- i mobili bassi -------------------------------------------------------------
   # scatole senza schiena (dietro c'è il muro), centrate dietro il loro frontale;
   # i fianchi arrivano a terra, il fondo sta sopra lo zoccolo
+  # dietro, tra i fianchi, una schiena sottile dal fondo al cielo; fondo e cielo
+  # arrivano davanti alla schiena
+  let ss = f.sSchiena
   proc scatola(nome: string; x, w, h, p, s, zFondo: float; z0 = 0.0): seq[Part] =
     for xf in [x, x + w - s]:
       var fi = part("fianco " & nome, kPanel, xf, y0, z0, s, p, h)
       fi.hiddenFront = true
       result.add fi
-    result.add part("fondo " & nome, kPanel, x + s, y0, zFondo, w - 2 * s, p, s)
-    result.add part("cielo " & nome, kPanel, x + s, y0, z0 + h - s, w - 2 * s, p, s)
+    result.add part("fondo " & nome, kPanel, x + s, y0, zFondo, w - 2 * s, p - ss, s)
+    result.add part("cielo " & nome, kPanel, x + s, y0, z0 + h - s, w - 2 * s, p - ss, s)
+    var sc = part("schiena " & nome, kPanel, x + s, y0 + p - ss, zFondo, w - 2 * s, ss, z0 + h - zFondo)
+    sc.hiddenFront = true
+    result.add sc
   let xA = c[0] + (f.antaA - f.mobileA) / 2
   var a = scatola("mobile A", xA, f.mobileA, f.hBassi, f.prof, sl, f.zoccolo)
   let zIn = f.zoccolo + sl
   let passoA = (f.hBassi - sl - zIn - 2 * sl) / 3
   for k in 1..2:   # due ripiani mobili, a passo uguale
     a.add part("ripiano mobile A", kPanel, xA + sl, y0, zIn + float(k) * passoA + float(k - 1) * sl,
-               f.mobileA - 2 * sl, f.prof - 2, sl)
+               f.mobileA - 2 * sl, f.prof - ss - 2, sl)
   result.aggiungi(a, "mobile A", mel = true)
 
   # B: i gradini, in multistrato a vista. Sotto ogni apertura un piano, dove si
   # appoggia il piede; con il pannellino, la fessura ha un piano sotto
   let xB = c[1] - sm
   var b = scatola("mobile B", xB, f.mobileB, f.hBassi, f.profGradini, sm, f.zBassi - sm)
-  b.del(2)   # il fondo: è il piano del primo gradino, sotto
+  b.delete(2)   # il fondo: è il piano del primo gradino, sotto
+  if f.pannello:
+    # la schiena dei gradini si apre all'altezza della fessura: il pannellino
+    # chiuso passa dietro, nello spazio libero
+    let sc = b.pop()
+    let (zs0, zs1) = (f.zFessura, f.zFessura + f.fessura)
+    var sotto = sc
+    sotto.size.z = zs0 - sc.pos.z
+    var sopra = sc
+    sopra.pos.z = zs1
+    sopra.size.z = sc.z1 - zs1
+    b.add sotto
+    b.add sopra
   let zg = f.zGradini
   for i, z in zg:
-    b.add part("piano gradino", kPanel, xB + sm, y0, z - sm, f.aperturaGradini, f.profGradini, sm)
+    b.add part("piano gradino", kPanel, xB + sm, y0, z - sm, f.aperturaGradini, f.profGradini - ss, sm)
   if f.pannello:
-    b.add part("piano sotto la fessura", kPanel, xB + sm, y0, f.zFessura - sm, f.aperturaGradini, f.profGradini, sm)
+    b.add part("piano sotto la fessura", kPanel, xB + sm, y0, f.zFessura - sm, f.aperturaGradini, f.profGradini - ss, sm)
   result.aggiungi(b, "mobile B")
   if f.pannello:
     # il pannellino, dentro la fessura: esce verso chi guarda. È più lungo del mobile
@@ -382,8 +402,11 @@ proc modello*(f: Falegnami): Model =
     result.aggiungi(v, "vano alto " & $(i + 1), mel = true)
 
   # --- il muro ------------------------------------------------------------------------
-  result.add part("muro (carta da parati)", kWall, 0, f.muro.profondita, 0, L, 2, H)
-  result.add part("risega (muro, carta da parati)", kWall, f.xRisega, f.yRisega, 0,
+  # i mobili dei falegnami arrivano a 81.1, oltre gli 80 del muro (vedi `controlli`):
+  # il muro si disegna dietro di loro, altrimenti coprirebbe le schiene
+  let yMuro = max(f.muro.profondita, f.profondita)
+  result.add part("muro (carta da parati)", kWall, 0, yMuro, 0, L, 2, H)
+  result.add part("risega (muro, carta da parati)", kWall, f.xRisega, yMuro - f.muro.risegaProf, 0,
                   f.muro.risegaLarga, f.muro.risegaProf, H)
 
 # --- i controlli ------------------------------------------------------------------
