@@ -2,6 +2,9 @@
 ## (`models/falegnami.nim`), con e senza il pannello estraibile. Una pagina
 ## nimib con un solo blocco di codice Nim compilato in JavaScript (`nbJsFromCode`).
 ##
+## Si parte senza il pannello estraibile (Pietro); la tavola sotto il visore
+## cambia con il pulsante.
+##
 ##   nim r docsrc/visore3d.nim      (o `nimble docs`, che genera tutti i documenti)
 ##
 ## La pagina non usa il tema dei documenti: ha il suo aspetto da banco di lavoro,
@@ -15,11 +18,17 @@ import nimib
 import ../src/cadero, ../models/falegnami, pagina_visore
 
 let f0 = falegnami()
+
+proc tavolaVariante(f: Falegnami; chiave: string; nascosta: bool): string =
+  ## una tavola per variante: il visore mostra quella del modello scelto
+  "<div data-chiave=\"" & chiave & "\"" & (if nascosta: " hidden" else: "") & ">" &
+    tavola(f, modello(f)) & "</div>"
 nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"L <b>{f0.larghezza:g}</b> × H <b>{f0.altezza:g}</b> × P <b>{f0.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",
-  tavola: tavola(f0, modello(f0)),
-  didascalia: "prospetto frontale, sezione laterale nella nicchia (x = 150) e pianta sopra il piano letto (z = 130), con le quote",
+  tavola: tavolaVariante(f0.senzaPannello, "falegnamiSenzaPannello", false) &
+          tavolaVariante(f0, "falegnami", true),
+  didascalia: &"prospetto frontale, sezione laterale nella libreria (x = {f0.xSezione:g}) e pianta sopra il piano letto (z = 130), con le quote; cambia con il pannello estraibile",
   nota: "<strong>Tocca cassetti, ante, ribalte e le altre parti mobili per aprirle o chiuderle.</strong> " &
     "Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. " &
     "Il modello è generato dal codice Nim di Caderò a partire dalle tavole dei falegnami; misure rilevate e ipotesi " &

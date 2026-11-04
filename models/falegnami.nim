@@ -172,6 +172,24 @@ proc catenaFronte*(f: Falegnami): seq[float] =
   @[0.0, f.zBassi, f.zBassi + f.altezzaAnte, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, f.zRibalte,
     f.zRibalte + f.ribaltaH, 2 * f.pannelloH, f.altezza]
 
+proc zScaffali*(f: Falegnami): seq[float] =
+  ## il sotto di ogni scaffale della libreria: passo uguale tra il piano del
+  ## comodino e il cielo della libreria
+  let sm = f.sMulti
+  let top = f.hBassi + f.hLibreria - sm
+  let passo = (top - f.pianoComodino - float(f.nScaffali) * sm) / float(f.nScaffali + 1)
+  for k in 1 .. f.nScaffali:
+    result.add f.pianoComodino + float(k) * passo + float(k - 1) * sm
+
+proc xRibalte*(f: Falegnami): seq[float] =
+  ## dove comincia ogni ribalta dei vani alti, da sinistra
+  for i in 0..2:
+    result.add f.xFronte + f.margineAlto + float(i) * (f.ribaltaL + f.spazio)
+
+proc xSezione*(f: Falegnami): float =
+  ## dove taglia la sezione laterale della tavola: nella libreria, a metà degli scaffali
+  f.larghezza - f.sMulti - f.scaffali / 2
+
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =
   ## Tutte le aperture del pannello frontale, prima di dividerlo nei quattro pezzi.
@@ -381,10 +399,8 @@ proc modello*(f: Falegnami): Model =
   let (xG, yG, wG, dG) = (xl + 4, y0 + sm + 6, wl - 8, pl - 2 * sm - 12)
   com.holesPiano.add rrect(xG, yG, wG, dG, 4)
   lib.add com
-  let passo = (zl + f.hLibreria - sm - zc - float(f.nScaffali) * sm) / float(f.nScaffali + 1)
-  for k in 1 .. f.nScaffali:
-    lib.add part("scaffale", kPanel, L - sm - f.scaffali, y0 + sm,
-                 zc + float(k) * passo + float(k - 1) * sm, f.scaffali, pl - 2 * sm, sm)
+  for z in f.zScaffali:
+    lib.add part("scaffale", kPanel, L - sm - f.scaffali, y0 + sm, z, f.scaffali, pl - 2 * sm, sm)
   for q in lib.mitems:
     if q.name.startsWith("fianco"): q.hiddenFront = true
   result.aggiungi(lib, "libreria")
@@ -461,14 +477,37 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
 proc quote*(f: Falegnami): seq[DimChain] =
   let H = f.altezza
   let L = f.larghezza
+  let c = f.colonne
+  # in alto: le ribalte dei vani alti (con la parte fissa della prima) e la nicchia
+  var alto = @[0.0]
+  for i, x in f.xRibalte:
+    alto.add x
+    if i == 0: alto.add x + f.parteFissa
+    alto.add x + f.ribaltaL
+  alto.add L
+  # in basso: anta A, gradini, cassetti, anta D
+  var basso = @[0.0]
+  for (x, w) in [(c[0], f.antaA), (c[1], f.aperturaGradini), (c[2], f.cassetti), (c[3], f.antaD)]:
+    basso.add x
+    basso.add x + w
+  basso.add L
+  # la libreria nella sezione laterale: comodino e scaffali (il loro piano)
+  var libreria = @[f.hBassi, f.pianoComodino]
+  for z in f.zScaffali: libreria.add z + f.sMulti
+  libreria.add f.hBassi + f.hLibreria
   @[
     DimChain(view: vFront, vertical: true, at: -22, ext: 0, stops: f.catenaFronte),
     DimChain(view: vFront, vertical: true, at: -52, ext: -22, stops: @[0.0, f.pannelloH, 2 * f.pannelloH, H]),
-    DimChain(view: vFront, vertical: false, at: -12, ext: 0,
+    DimChain(view: vFront, vertical: false, at: H + 12, ext: H, stops: alto),
+    DimChain(view: vFront, vertical: false, at: H + 28, ext: H,
+             stops: @[0.0, c[0], c[0] + f.nicchiaL, L]),
+    DimChain(view: vFront, vertical: false, at: -12, ext: 0, stops: basso),
+    DimChain(view: vFront, vertical: false, at: -28, ext: -12,
              stops: @[0.0, f.spalla, f.spalla + f.pannelloL, L - f.spalla, L]),
     DimChain(view: vSide, vertical: true, at: -26, ext: 0,
              stops: @[0.0, f.hBassi, f.pianoLetto, f.cieloNicchia, f.cieloNicchia + f.sMulti,
                       f.fondoVani, f.fondoVani + f.vanoH, H]),
+    DimChain(view: vSide, vertical: true, at: f.profondita + 14, ext: f.profondita, stops: libreria),
     DimChain(view: vSide, vertical: false, at: -18, ext: 0,
              stops: @[0.0, f.yMobili, f.profondita]),
     DimChain(view: vPlan, vertical: false, at: f.profondita + 18, ext: f.profondita,
@@ -477,11 +516,12 @@ proc quote*(f: Falegnami): seq[DimChain] =
   ]
 
 proc tavola*(f: Falegnami; m: Model): string =
-  ## Prospetto, sezione laterale nella nicchia, pianta sopra il piano letto.
+  ## Prospetto, sezione laterale nella libreria (si vedono gli scaffali),
+  ## pianta sopra il piano letto.
   let views = [
     View(kind: vFront, ox: 0, oy: 0),
-    View(kind: vSide, cut: 150, ox: f.larghezza + 110, oy: 0),
-    View(kind: vPlan, cut: 130, ox: 0, oy: 40 + f.profondita),
+    View(kind: vSide, cut: f.xSezione, ox: f.larghezza + 110, oy: 0),
+    View(kind: vPlan, cut: 130, ox: 0, oy: 60 + f.profondita),
   ]
   var s = initSheet()
   for v in views:

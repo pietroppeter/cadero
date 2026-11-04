@@ -263,7 +263,7 @@ nbText: """
 
 - **Altezza**: 60 + 1568 + 1568 fa 319.6, la stanza è 316. Forse hanno rimisurato;
   da chiedere.
-- **Profondità**: con le ante davanti al fronte (le ante 755 coprono aperture da 715)
+- <strong>Profondità</strong>: con le ante davanti al fronte (le ante 755 coprono aperture da 715)
   e i mobili da 775 dietro, si arriva a 81.1. Se invece le ante stanno a filo nel
   fronte, si arriva a 79.3 e torna con gli 80: da chiedere.
   Nel visore e nelle tavole il muro è disegnato a 81.1, dietro i mobili, perché si

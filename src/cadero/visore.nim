@@ -47,6 +47,8 @@ type
     ## Quello che l'esploso sposta: un pannello, o un gruppo/blocco tutto insieme.
     wrap: Group
     fisso, fronte, apribile: bool
+    apre: string            ## come si apre, se è un gruppo apribile
+    blocco: string          ## il mobile a cui appartiene un gruppo apribile (es. un cassetto)
     dir: Vector3
 
   Vista = object
@@ -265,14 +267,18 @@ proc costruisci(m: Model) =
   group = newGroup(); units = @[]; frontPanel = @[]; walls = @[]; pezzi = @[]; geometrie = @[]
   var byName: Table[string, Unita]
   var wrapByName: Table[string, Pezzo]
-  # il contenitore che l'esploso sposta: uno per gruppo, uno per ogni altra parte
+  # il contenitore che l'esploso sposta: uno per gruppo, uno per ogni altra parte.
+  # Il blocco tiene insieme le parti di un mobile; i gruppi apribili (cassetti,
+  # ante) hanno un contenitore loro, che nell'esploso esce in avanti dal mobile
   proc wrapOf(p: Part): Group =
-    let chiave = if p.blocco.len > 0: p.blocco else: p.gruppo   # il blocco tiene insieme più gruppi
+    let gruppoApribile = p.apre.len > 0 and p.gruppo.len > 0
+    let chiave = if gruppoApribile: p.gruppo
+                 elif p.blocco.len > 0: p.blocco else: p.gruppo
     if chiave.len > 0 and chiave in wrapByName:
-      if p.apre.len > 0: wrapByName[chiave].apribile = true
       return wrapByName[chiave].wrap
     let pz = Pezzo(wrap: newGroup(), fisso: p.kind == kWall, fronte: p.isFronte,
-                   apribile: p.apre.len > 0)
+                   apribile: p.apre.len > 0, apre: p.apre,
+                   blocco: if gruppoApribile: p.blocco else: "")
     group.add(pz.wrap); pezzi.add pz
     if chiave.len > 0: wrapByName[chiave] = pz
     pz.wrap
@@ -331,18 +337,33 @@ proc costruisci(m: Model) =
   for u in alzati: zMedio += u.centro.z
   zMedio /= max(alzati.len, 1).float
   for u in alzati: u.verso = sgn(u.centro.z - zMedio).float
-  # l'esploso: ogni pezzo si allontana dal centro del mobile; il fronte va
-  # avanti, e ancora più avanti ante, cassetti, ribalte e tavolino
+  # l'esploso, a strati in profondità perché niente si sovrapponga: il muro va
+  # indietro, i mobili restano dove sono e si allargano nel piano del fronte
+  # (tutti dello stesso fattore: due mobili che non si toccano non si toccano
+  # neanche dopo), il fronte va avanti, ante, ribalte e cassetti ancora più
+  # avanti. Un cassetto esce dritto dal suo mobile, senza spostarsi di lato; i
+  # coperchi del gavone salgono, come aperti.
+  const allarga = 0.3
+  const (muro, fronte, apribili, sollevati) = (-90.0, 90.0, 170.0, 30.0)
   let C = newBox3()
   for pz in pezzi:
     if not pz.fisso: C.expandByObject(pz.wrap)
   let c0 = C.getCenter(newVector3())
+  var dirBlocco: Table[string, Vector3]
+  proc nelPiano(o: Object3D): Vector3 =
+    newBox3().setFromObject(o).getCenter(newVector3()).sub(c0).multiply(newVector3(allarga, allarga, 0))
+  for k, pz in wrapByName:
+    if not pz.apribile and not pz.fronte: dirBlocco[k] = nelPiano(pz.wrap)
   for pz in pezzi:
-    let cz = newBox3().setFromObject(pz.wrap).getCenter(newVector3())
-    pz.dir = if pz.fisso: newVector3() else: cz.sub(c0).multiply(newVector3(0.7, 0.5, 1.2))
-    if pz.fronte:   # il fronte va avanti; i suoi pezzi, se è diviso, si allargano un poco
-      pz.dir = cz.clone().sub(c0).multiply(newVector3(0.25, 0.25, 0)).add(newVector3(0, 0, 70))
-    if pz.apribile: pz.dir.z += 110
+    pz.dir =
+      if pz.fisso: newVector3(0, 0, muro)
+      elif pz.blocco.len > 0 and pz.blocco in dirBlocco:   # cassetto: con il suo mobile, in avanti
+        dirBlocco[pz.blocco].clone().add(newVector3(0, 0, apribili))
+      elif pz.apre == "alza": nelPiano(pz.wrap).add(newVector3(0, sollevati, 0))
+      elif pz.apre == "esce": nelPiano(pz.wrap)              # il materasso resta nel cassone
+      elif pz.apribile: nelPiano(pz.wrap).add(newVector3(0, 0, apribili))
+      elif pz.fronte: nelPiano(pz.wrap).add(newVector3(0, 0, fronte))
+      else: nelPiano(pz.wrap)
   scene.add(group)
 
 proc applyEsploso() =
@@ -693,6 +714,16 @@ proc mostra*(m: Model) =
   if aggiorna != nil: aggiorna(m)
 
 # --- l'avvio ------------------------------------------------------------------------
+proc mostraTavola(chiave: string) =
+  ## Se la pagina ha una tavola per variante (`data-chiave`), mostra quella del
+  ## modello nel visore; le chiavi senza tavola lasciano tutto com'è.
+  let tavole = document.querySelectorAll(".tavola [data-chiave]")
+  var c = false
+  for t in tavole:
+    if t.getAttribute("data-chiave") == chiave.cstring: c = true
+  if not c: return
+  for t in tavole: t.nascosto(t.getAttribute("data-chiave") != chiave.cstring)
+
 proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   ## Avvia il visore nella pagina. `varianti` ha un modello per ogni combinazione
   ## delle opzioni. Per la nostra idea la chiave è "base" o "tavolino" seguita da
@@ -705,7 +736,11 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let idea = "base" in modelli
   let falegnami = "falegnami" in modelli
   var variante = if idea: "base" else: "falegnami"
-  modello = modelli[variante]
+  # i falegnami partono senza il pannellino, se il pulsante non è premuto
+  let chiave0 = if idea: "base"
+                elif premuto(el("m-pannello")): "falegnami" else: "falegnamiSenzaPannello"
+  modello = modelli[chiave0]
+  mostraTavola(chiave0)
   stage = el("stage")
   status = el("status")
 
@@ -836,10 +871,12 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   proc cambiaModello() =
     pulsanti()
     let fal = variante == "falegnami"
-    modello = if fal: modelli["falegnami" & (if premuto(tPannello): "" else: "SenzaPannello")]
-              else: modelli[variante & (if premuto(tRisega): "Scoperta" else: "") &
-                    (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &
-                    (if premuto(tPrese): "Comodino" else: "")]
+    let chiave = if fal: "falegnami" & (if premuto(tPannello): "" else: "SenzaPannello")
+                 else: variante & (if premuto(tRisega): "Scoperta" else: "") &
+                   (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &
+                   (if premuto(tPrese): "Comodino" else: "")
+    modello = modelli[chiave]
+    mostraTavola(chiave)
     for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
     costruisci(modello); applyToggles(); applyEsploso(); pianiTaglio()
     if premuto(tSez): aggiornaSezioni()
@@ -868,7 +905,9 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     status.textContent = cstring($modello.parts.len & " parti")
   # la tavola sotto il visore si scarica com'è
   el("scarica-tavola").addEventListener("click", proc (ev: Event) =
-    scarica(document.querySelector(".tavola svg").outerHTML, "tavola.svg"))
+    let vista = document.querySelector(".tavola [data-chiave]:not([hidden]) svg")
+    let svg = if vista != nil: vista else: document.querySelector(".tavola svg")
+    scarica(svg.outerHTML, "tavola.svg"))
 
   # le sezioni
   assi = {"pianta": newVector3(0, 1, 0), "laterale": newVector3(1, 0, 0),
