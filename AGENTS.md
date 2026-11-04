@@ -52,8 +52,11 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
 - Il visore 3D è Nim compilato in JavaScript: `src/cadero/visore.nim` (logica),
   `src/cadero/js/three.nim` (binding minimi di three.js, solo quello che serve, con i
   nomi di three.js), `src/cadero/js/pagina.nim` (browser). La pagina è il documento
-  nimib `docsrc/visore3d.nim`: un blocco `nbJsFromCode` calcola i modelli nel browser
-  con `parete(...)` e chiama `avviaVisore`. Il file del blocco nimib lo compila in
+  nimib `docsrc/visore3d.nim` (il modello dei falegnami, il default) o
+  `docsrc/visore3d_idea.nim` (la nostra idea, "Visore 3D - Idea"), entrambe con il
+  template riempito da `docsrc/pagina_visore.nim`: un blocco `nbJsFromCode` calcola i
+  modelli nel browser e chiama `avviaVisore`, che parte da "base" se c'è, se no da
+  "falegnami", e nasconde i pulsanti dei modelli che la pagina non ha. Il file del blocco nimib lo compila in
   `docs/`, per questo gli import cominciano con `../`. Nei cicli che creano closure
   (pulsanti) serve `closureScope:` con una copia della variabile. Spiegazione in
   `docsrc/visore_nim.nim`. Un binding three.js nuovo va in `js/three.nim`.
@@ -71,7 +74,7 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   106 × 52.6 cm, Vårklockor di Josef Frank); se manca il pulsante non compare.
 - Le varianti sono funzioni sui parametri (es. `rilievo().conTavolino`); il visore 3D
   riceve un modello per variante, calcolato nel browser nel blocco `nbJsFromCode` di
-  `docsrc/visore3d.nim` (tabella `varianti`).
+  `docsrc/visore3d_idea.nim` / `docsrc/visore3d.nim` (tabella `varianti`).
 - Le cose che non tornano (misure che non ci stanno, decisioni in conflitto) vanno in
   `controlli(p)` di `models/parete.nim`, mostrati nel documento: non si correggono
   i numeri di nascosto.
@@ -94,7 +97,9 @@ models/parete_parametri.nim  gruppi dei parametri per le pagine (etichette, inte
 docsrc/index.nim         indice dei documenti, home di Pages (-> docs/index.html)
 docsrc/parete_nicchia.nim documento della parete (-> docs/parete_nicchia.html)
 docsrc/come_funziona.nim spiegazione del codice (-> docs/come_funziona.html)
-docsrc/visore3d.nim      il visore 3D (-> docs/visore3d.html), template tools/visore3d.tpl.html
+docsrc/visore3d.nim      il visore 3D dei falegnami (-> docs/visore3d.html), template tools/visore3d.tpl.html
+docsrc/visore3d_idea.nim il visore della nostra idea (-> docs/visore3d_idea.html)
+docsrc/pagina_visore.nim il renderer comune dei due visori (titolo, misure, tavola, note)
 docsrc/visore_nim.nim    come funziona il visore in Nim (-> docs/visore_nim.html)
 docsrc/parametri.nim     i parametri della parete (-> docs/parametri.html): banco con visore
                          e cursori (docsrc/banco_parametri.nim, solo JS)
@@ -103,7 +108,8 @@ docsrc/all_docs.nim      importa tutti i documenti: un solo binario
 docsrc/tema.nim          tema nimib con lo stile degli artefatti (nbInit(theme = useTema))
 tests/test_parete.nim    controlli sulle quote della tavola di riferimento
 tests/tavola.nim         prova veloce senza nimib: scrive tavola.svg e parete3d.html
-tools/visore3d.nim       da docs/visore3d.html all'artefatto claude.ai (tools/parete-3d.html)
+tools/visore3d.nim       da docs/visore3d.html all'artefatto claude.ai (tools/parete-3d.html;
+                         con argomento visore3d_idea: tools/parete-3d-idea.html)
 ```
 
 ## Comandi
@@ -114,6 +120,7 @@ nimble test                      # nim c -r tests/test_parete.nim
 nimble docs                      # nim r docsrc/all_docs.nim: tutto docs/ con una compilazione
 nim r docsrc/visore3d.nim        # solo il visore: docs/visore3d.html (compila anche con nim js)
 nim r tools/visore3d.nim         # dopo: tools/parete-3d.html per l'artefatto (senza doctype)
+nim r tools/visore3d.nim visore3d_idea   # idem per l'idea: tools/parete-3d-idea.html
 ```
 
 `config.nims` aggiunge `src` e `models` al path; `nimib.toml` manda l'output in `docs/`

@@ -411,6 +411,38 @@ proc goTo(nome: string; instant = false) =
     camera.position.copy(toPos); controls.target.copy(toTarget); controls.update(); return
   anim = (true, camera.position.clone(), controls.target.clone(), toPos, toTarget, adesso())
 
+proc zoom(fattore: float) =
+  ## Avvicina (fattore < 1) o allontana la camera dal punto che guarda, con la
+  ## stessa animazione delle viste: per i pulsanti + e − (la rotella è lenta).
+  let t = controls.target.clone()
+  let d = camera.position.clone().sub(t)
+  let l = d.length
+  if l <= 0: return
+  d.multiplyScalar(clamp(l * fattore, controls.minDistance, controls.maxDistance) / l)
+  let toPos = t.clone().add(d)
+  if movimentoRidotto():
+    camera.position.copy(toPos); controls.update(); return
+  anim = (true, camera.position.clone(), controls.target.clone(), toPos, t, adesso())
+
+proc pulsantiZoom(stage: Element) =
+  ## I pulsanti + e − in alto a destra sulla scena, creati qui perché ogni
+  ## pagina con il visore li abbia (lo stile dei pulsanti è quello della pagina).
+  let box = document.createElement("div")
+  box.setAttribute("style", "position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:6px;z-index:1")
+  let stile = "width:38px;height:38px;padding:0;font-size:22px;line-height:1;opacity:.92"
+  for (testo, titolo, fattore) in [("+", "Avvicina", 0.7), ("−", "Allontana", 1 / 0.7)]:
+    closureScope:   # ogni giro ha le sue variabili, anche nelle closure
+      let fattore = fattore
+      let b = document.createElement("button")
+      b.setAttribute("type", "button")
+      b.setAttribute("title", titolo.cstring)
+      b.setAttribute("aria-label", titolo.cstring)
+      b.setAttribute("style", stile.cstring)
+      b.textContent = testo.cstring
+      b.addEventListener("click", proc (ev: Event) = zoom(fattore))
+      box.appendChild(b)
+  stage.appendChild(box)
+
 # --- toccare il mobile ------------------------------------------------------------
 var
   ray: Raycaster
@@ -663,12 +695,17 @@ proc mostra*(m: Model) =
 # --- l'avvio ------------------------------------------------------------------------
 proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   ## Avvia il visore nella pagina. `varianti` ha un modello per ogni combinazione
-  ## delle opzioni, con la chiave "base" o "tavolino" seguita da "Scoperta"
-  ## (risega), "Antina" (solo con il tavolino), "Comodino" (prese sul comodino):
-  ## es. "tavolinoScopertaComodino".
+  ## delle opzioni. Per la nostra idea la chiave è "base" o "tavolino" seguita da
+  ## "Scoperta" (risega), "Antina" (solo con il tavolino), "Comodino" (prese sul
+  ## comodino): es. "tavolinoScopertaComodino". Per il modello dei falegnami è
+  ## "falegnami" o "falegnamiSenzaPannello". Si parte da "base" se c'è, se no
+  ## dai falegnami; i pulsanti dei modelli che la pagina non ha restano nascosti.
   for k, m in varianti: modelli[k] = preparato(m)
   carta = cartaDaParati
-  modello = modelli["base"]
+  let idea = "base" in modelli
+  let falegnami = "falegnami" in modelli
+  var variante = if idea: "base" else: "falegnami"
+  modello = modelli[variante]
   stage = el("stage")
   status = el("status")
 
@@ -693,6 +730,8 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   controls.enableDamping = true
   controls.minDistance = 1
   controls.maxDistance = size * 4
+  controls.zoomSpeed = 2   # la rotella del mouse, di serie, avvicina poco
+  pulsantiZoom(stage)
   goTo("iniziale", true)
 
   for nome in nomiViste:
@@ -781,18 +820,22 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   # cambio di variante: si ricostruisce la scena con l'altro modello
   tSez = el("t-sezioni")
   boxSez = el("sezioni")
-  var variante = "base"
   let tRisega = el("m-risega")
   let tAntina = el("m-antina")
   let tPrese = el("m-prese")
   let tPannello = el("m-pannello")
-  let falegnami = "falegnami" in modelli   # il modello dei falegnami, se la pagina lo ha
-  el("m-falegnami").nascosto(not falegnami)
-  proc cambiaModello() =
+  # il pulsante di un modello compare solo se la pagina ha anche l'altro
+  for n in ["base", "tavolino"]: el("m-" & n).nascosto(not idea)
+  el("m-falegnami").nascosto(not (idea and falegnami))
+  proc pulsanti() =
     let fal = variante == "falegnami"
     tAntina.nascosto(variante != "tavolino")
     tPannello.nascosto(not fal)
     for b in [tRisega, tPrese]: b.nascosto(fal)
+  pulsanti()
+  proc cambiaModello() =
+    pulsanti()
+    let fal = variante == "falegnami"
     modello = if fal: modelli["falegnami" & (if premuto(tPannello): "" else: "SenzaPannello")]
               else: modelli[variante & (if premuto(tRisega): "Scoperta" else: "") &
                     (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &

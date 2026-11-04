@@ -372,6 +372,11 @@ proc modello*(f: Falegnami): Model =
     part("fondo gavone", kPanel, xl + sm, y0 + sm, zl, wl - sm, pl - 2 * sm, sm),
     part("frontale gavone", kPanel, xl, y0 + sm, zl, sm, pl - 2 * sm, f.gavone),
     part("cielo libreria", kPanel, xl, y0 + sm, zl + f.hLibreria - sm, wl, pl - 2 * sm, sm)]
+  # il pannello che copre la risega, a sinistra della libreria guardandola dal
+  # letto: in piano con l'apertura della libreria, dal suo fianco dietro fino al
+  # muro (largo quanto serve: profondità del mobile meno fianco e libreria)
+  lib.add part("pannello risega", kPanel, xl - sm, y0 + pl - sm, zl,
+               sm, f.profondita - (y0 + pl - sm), f.hLibreria)
   var com = part("piano comodino", kPanel, xl, y0 + sm, zc - sm, wl, pl - 2 * sm, sm)
   let (xG, yG, wG, dG) = (xl + 4, y0 + sm + 6, wl - 8, pl - 2 * sm - 12)
   com.holesPiano.add rrect(xG, yG, wG, dG, 4)
@@ -439,9 +444,10 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
   if xD + f.mobileD < f.larghezza - 0.5:
     result.add "la libreria appoggia sul mobile D, che finisce a " & fmtNum(xD + f.mobileD) &
       ": per gli ultimi " & fmtNum(f.larghezza - xD - f.mobileD) & " cm sotto non c'è niente"
-  let avanzo = f.xLibreria - f.sMulti - f.interno
+  # tra il cassone e la libreria c'è il pannello che copre la risega
+  let avanzo = f.xLibreria - 2 * f.sMulti - f.interno
   if avanzo > 0.5:
-    result.add "tra il cassone (dentro " & fmtNum(f.interno) & ") e la libreria (comodino " &
+    result.add "tra il cassone (dentro " & fmtNum(f.interno) & "), il pannello della risega e la libreria (comodino " &
       fmtNum(f.comodino) & ") avanzano " & fmtNum(avanzo) & " cm di larghezza"
   if f.pannello and f.lungPannello > f.profGradini:
     result.add "il pannellino (" & fmtNum(f.lungPannello) & ") è più lungo del mobile dei gradini (" &

@@ -32,7 +32,8 @@ nbText: """
 # Come è fatto il visore 3D
 
 Il [visore 3D](visore3d.html) è la pagina dove la parete si gira, si apre e si
-taglia. Fino a questa versione era una pagina HTML con circa 600 righe di
+taglia (c'è anche quello della nostra idea, [Visore 3D - Idea](visore3d_idea.html),
+stessa pagina con altri modelli). Fino a questa versione era una pagina HTML con circa 600 righe di
 JavaScript scritte a mano; ora la logica è scritta in **Nim**, compilata in
 JavaScript, e la pagina è un documento nimib con un solo blocco `nbJsFromCode`
 (il blocco di nimib che compila Nim per il browser).
@@ -80,7 +81,8 @@ parete(p) ─► Model ─► avviaVisore ─► three.js
 | `src/cadero/js/three.nim` | i binding: le classi e i metodi di three.js che servono, visti da Nim |
 | `src/cadero/js/pagina.nim` | le poche cose del browser che mancano in `std/dom` |
 | `src/cadero/visore.nim` | il visore: dalla scena alle sezioni, in Nim |
-| `docsrc/visore3d.nim` | la pagina: template, carta da parati, il blocco `nbJsFromCode` |
+| `docsrc/visore3d.nim`, `docsrc/visore3d_idea.nim` | le due pagine (falegnami e idea): modelli e testi, il blocco `nbJsFromCode` |
+| `docsrc/pagina_visore.nim` | il renderer comune: template, carta da parati |
 | `tools/visore3d.tpl.html` | stile, pulsanti, posti per la tavola e per lo script |
 | `tools/visore3d.nim` | dalla pagina di Pages all'artefatto claude.ai |
 
@@ -93,7 +95,7 @@ esce nella pagina, dentro un `<script>`. Le variabili tra parentesi (qui
 trasforma in JSON durante la generazione e il blocco le ritrova nel browser.
 """
 
-mostra("docsrc/visore3d.nim", "nbJsFromCode(cartaSrc):", "quandoThreePronto")
+mostra("docsrc/visore3d_idea.nim", "nbJsFromCode(cartaSrc):", "quandoThreePronto")
 
 nbText: """
 Le varianti sono le stesse di prima (base o con tavolino, risega rivestita o

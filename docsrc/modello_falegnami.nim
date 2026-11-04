@@ -14,9 +14,9 @@ I falegnami hanno mandato sette tavole SketchUp della parete. È la stessa stanz
 e la stessa idea della [nostra parete](parete_nicchia.html), ma divisa nei mobili
 che costruiranno davvero, con molto dettaglio in più. Qui è ridisegnata da codice
 in `models/falegnami.nim`, accanto alla nostra, che resta com'è. Nel
-[visore 3D](visore3d.html) si sceglie con il pulsante **Falegnami**; il pulsante
-**Pannello estraibile** toglie il pannellino tra i gradini (senza, i gradini si
-ridistribuiscono).
+[visore 3D](visore3d.html) è il modello di default (la nostra idea ha il suo
+[Visore 3D - Idea](visore3d_idea.html)); il pulsante **Pannello estraibile**
+toglie il pannellino tra i gradini (senza, i gradini si ridistribuiscono).
 
 Le loro misure sono in mm, qui in cm. Quelle scritte sulle tavole sono riportate
 così come sono; quelle che mancano le ho misurate in scala sul prospetto
@@ -146,7 +146,11 @@ nbText: """
   chiaro dalle tavole: l'ho assunto).
 - **La libreria** in testa al letto, un mobile a sé: 63.5 di profondità, alta 150,
   aperta verso il letto, con il gavone sotto (frontale 32), il piano del comodino
-  profondo 38 con l'apertura e i due coperchi, tre scaffali profondi 27.
+  profondo 38 con l'apertura e i due coperchi, tre scaffali profondi 27. Alla sua
+  sinistra, guardandola dal letto, il pannello che copre la risega: alto 150, in
+  piano con l'apertura della libreria, largo dal fianco dietro fino al muro (15.8,
+  dedotto: sulla tavola non c'è la misura). Riempie anche lo spazio tra cassone e
+  libreria, dove avanzano solo 0.2 cm.
 - **Quattro mobili bassi** alti 109: A con due ripiani mobili (75.3), B con i
   gradini in multistrato (28.6, profondo 30), C con tre cassetti (50), D con l'appenderia (50,
   profondo solo 62.2 per stare davanti alla risega).

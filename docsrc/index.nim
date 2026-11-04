@@ -24,12 +24,17 @@ nbRawHtml: """
     <b>Il modello dei falegnami</b>
     <span>La parete come l'hanno disegnata i falegnami, divisa nei mobili da
     costruire: tavola, calcoli della nicchia, confronto con la nostra, cose da
-    chiedere e distinta. Nel visore 3D: pulsante Falegnami.</span>
+    chiedere e distinta. È il modello del visore 3D.</span>
   </a>
   <a class="scheda" href="visore3d.html">
     <b>Visore 3D</b>
-    <span>La parete a tutto schermo da ruotare e zoomare, con viste predefinite
-    (anche da dentro la nicchia), cassetto aperto e fronte nascosto.</span>
+    <span>La parete dei falegnami a tutto schermo da ruotare e zoomare, con le
+    parti che si aprono toccandole, esploso, sezioni e la tavola.</span>
+  </a>
+  <a class="scheda" href="visore3d_idea.html">
+    <b>Visore 3D - Idea</b>
+    <span>La nostra idea di partenza nel visore, con le sue varianti: tavolino,
+    risega scoperta, prese sul comodino.</span>
   </a>
   <a class="scheda" href="parametri.html">
     <b>I parametri della parete</b>

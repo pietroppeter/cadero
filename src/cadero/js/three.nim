@@ -87,6 +87,7 @@ type
     target*: Vector3
     enabled*, enableDamping*: bool
     minDistance*, maxDistance*: float
+    zoomSpeed*: float
 {.pop.}
 
 # le costanti si leggono quando servono: al caricamento del modulo three.js non c'è ancora
