@@ -60,7 +60,9 @@ type
     fessura*: float          ## l'altezza della fessura: 3 (rilevato); sopra e sotto c'è `spazioGradini` / 2
     lungPannello*: float     ## 67 (disegno)
     # --- la zona alta del fronte
-    zRibalte*: float         ## fondo delle ribalte, da terra: 270 (rilevato)
+    zRibalte*: float         ## fondo delle ribalte, da terra: 263.3, dedotto perché la
+                             ## cima della ribalta sia a filo della cima delle scatole
+                             ## (Pietro); in scala sul prospetto si legge circa 270
     ribaltaL*, ribaltaH*: float   ## 68.3 × 36.6 (disegno)
     parteFissa*: float       ## la ribalta di sinistra è tagliata: 15 fissi a sinistra (disegno)
     # --- i mobili
@@ -94,7 +96,7 @@ proc falegnami*(): Falegnami =
     zBassi: 12, altezzaAnte: 95, antaA: 75.5, cassetti: 50.2, antaD: 50.2,
     hCassetto: 29, nCassetti: 3, gradini: @[15.8, 15.8, 14.3, 14.3, 15.8], spazioGradini: 4,
     pannello: true, fessura: 3, lungPannello: 67,
-    zRibalte: 270, ribaltaL: 68.3, ribaltaH: 36.6, parteFissa: 15,
+    zRibalte: 263.3, ribaltaL: 68.3, ribaltaH: 36.6, parteFissa: 15,
     hBassi: 109, zoccolo: 11.8, mobileA: 75.3, mobileB: 28.6, mobileC: 50, mobileD: 50,
     profGradini: 30,
     prof: 77.5, profRisega: 62.2, interno: 193, hNicchia: 150,

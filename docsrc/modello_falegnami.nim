@@ -328,18 +328,17 @@ nbText: """
   cassone: lì serve una guida che lo regga.
 - **Il triangolo** fuori dalla libreria, a 277 da uno scaffale, e il taglio per il
   passaggio dei cavi: non li ho disegnati. La scatola delle prese non c'è nelle tavole.
-- **Vani alti e ribalte non allineati.** Le ribalte stanno dove le mette il fronte,
-  le scatole dove le mettono i mobili, e le due catene di misure non tornano tra loro.
-  Il fronte (tavola 3) è alto 156.8 + 156.8 + 6 = 319.6, e le ribalte stanno sotto la
-  fascia: da 270 a 306.6. Le scatole (Pietro: solo scatole, appoggiate sul cassone)
-  stanno sopra mobili bassi e cassone: 109 + 150 = 259, più 40.9, quindi da 259 a
-  299.9. Così le ribalte partono 11 cm più in alto delle scatole e le superano di
-  6.7: dall'apertura si vede sotto il fondo e sopra il cielo della scatola. Sopra le
-  scatole restano 19.7 cm fino alla cima del fronte (e 16 fino al soffitto della
-  stanza, 316). Per allinearle servirebbe un rialzo sotto le scatole (11 cm,
-  prima c'era: due listelli da 7.5), oppure scatole più alte, oppure le ribalte
-  più in basso (ma allora si avvicinano alla nicchia, che finisce a 257.2). Da
-  chiedere ai falegnami; i controlli lo segnalano.
+- **Vani alti e ribalte.** Le ribalte stanno dove le mette il fronte, le scatole
+  dove le mettono i mobili, e le due catene di misure non tornano tra loro. Le
+  scatole (Pietro: solo scatole, appoggiate sul cassone) stanno sopra mobili bassi e
+  cassone: 109 + 150 = 259, più 40.9, quindi da 259 a 299.9. Sul prospetto le
+  ribalte si leggono da 270 a 306.6, cioè 11 cm più in alto delle scatole e 6.7 sopra
+  la loro cima. Pietro: la cima della ribalta deve essere più o meno a filo di quella
+  della scatola, quindi le ribalte ora partono da 263.3 (dedotto). Restano due cose:
+  il dentro della scatola sta 4.4 sotto il bordo dell'apertura (vedi i controlli) e
+  sopra le ribalte, fino alla fascia, resta una striscia di fronte di 13.7 (sul
+  prospetto sembra più bassa). Il motivo è che il fronte è alto 319.6 mentre i
+  mobili impilati arrivano a 299.9: da chiedere ai falegnami.
 - **Libreria**: appoggia sui mobili bassi; a destra del mobile D restano 12 cm
   senza niente sotto.
 - **Cassone alto 150 fuori**, come la libreria (Pietro: mobili bassi tutti a 109,
@@ -347,8 +346,7 @@ nbText: """
   della libreria (259). Perché l'apertura da 121.9 non salga oltre il cielo, il suo
   bordo basso è a 135.3 (dedotto; in scala sul prospetto si legge circa 137).
   Materasso largo 77 (Pietro).
-- **Rilevate in scala**: fondo delle ribalte
-  (270), spazio tra i frontali (4, torna con tutte le larghezze), zoccolo dei
+- **Rilevate in scala**: spazio tra i frontali (4, torna con tutte le larghezze), zoccolo dei
   mobili (11.8), raggi (nicchia 5, aperture 3, frontali 2), fori maniglia (3) a 6
   cm dagli spigoli.
 
