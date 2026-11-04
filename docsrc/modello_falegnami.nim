@@ -385,4 +385,136 @@ nbCode:
       echo $r.count & " × " & fmtNum(r.dims[0]) & " × " & fmtNum(r.dims[1]) & " × " &
         fmtNum(r.dims[2]) & "  " & r.name
 
+nbText: """
+## Le modifiche che vorremmo
+
+Rispetto al loro disegno torna più o meno tutto, ma alcune cose le vorremmo fatte
+in modo diverso. La prima è già decisa: non vogliamo il pannellino estraibile.
+Poi ci sono tre richieste (Pietro, 4 novembre):
+
+1. **Testata più alta**: il gavone sotto il comodino passa da 32 a 58 dal piano
+   letto (la nostra testata), con uno scaffale in meno.
+2. **Pannello della risega più stretto**: da quasi 16 a 10. La risega è profonda
+   7; nella tavola 5 forse serve un listello, ma a 10 dovremmo arrivare.
+3. **Aperture dei vani alti più alte**: con 32.6 potrebbe non starci una scatola
+   IKEA da mettere e togliere.
+
+Le prime due sono nel **modello rivisto** (`rivisto` in `falegnami.nim`), la terza è
+una proposta che si aggiunge sopra (`vaniAlti`). Tutte e due si vedono nel
+[visore](visore3d.html), con i pulsanti *Rivisto* e *Vani alti*.
+"""
+
+nbCode:
+  let fr = f.rivisto
+  let fv = fr.vaniAlti
+  let cambi = @[
+    ("pannellino estraibile", (if f.pannello: "sì" else: "no"), "no", "no"),
+    ("testata: piano comodino dal piano letto", fmtNum(f.pianoComodino - f.pianoLetto),
+      fmtNum(fr.pianoComodino - fr.pianoLetto), fmtNum(fv.pianoComodino - fv.pianoLetto)),
+    ("testata sopra il materasso", fmtNum(f.schienale), fmtNum(fr.schienale), fmtNum(fv.schienale)),
+    ("scaffali", $f.nScaffali, $fr.nScaffali, $fv.nScaffali),
+    ("vano tra due scaffali (netto)", fmtNum(f.zScaffali[0] - f.pianoComodino),
+      fmtNum(fr.zScaffali[0] - fr.pianoComodino), fmtNum(fv.zScaffali[0] - fv.pianoComodino)),
+    ("profondità della libreria", fmtNum(f.profLibreria), fmtNum(fr.profLibreria), fmtNum(fv.profLibreria)),
+    ("pannello della risega", fmtNum(f.pannelloRisega), fmtNum(fr.pannelloRisega), fmtNum(fv.pannelloRisega)),
+    ("dietro della libreria / risega", fmtNum(f.yMobili + f.profLibreria) & " / " & fmtNum(f.yMuro - f.muro.risegaProf),
+      fmtNum(fr.yMobili + fr.profLibreria) & " / " & fmtNum(fr.yMuro - fr.muro.risegaProf),
+      fmtNum(fv.yMobili + fv.profLibreria) & " / " & fmtNum(fv.yMuro - fv.muro.risegaProf)),
+    ("pannelli del fronte (alti)", fmtNum(f.pannelloH), fmtNum(fr.pannelloH), fmtNum(fv.pannelloH)),
+    ("altezza del fronte", fmtNum(f.altezza), fmtNum(fr.altezza), fmtNum(fv.altezza)),
+    ("vani alti: scatole alte", fmtNum(f.vanoH), fmtNum(fr.vanoH), fmtNum(fv.vanoH)),
+    ("ribalte alte", fmtNum(f.ribaltaH), fmtNum(fr.ribaltaH), fmtNum(fv.ribaltaH)),
+    ("apertura dei vani alti", fmtNum(f.ribaltaH - 2 * f.sormonto), fmtNum(fr.ribaltaH - 2 * fr.sormonto),
+      fmtNum(fv.ribaltaH - 2 * fv.sormonto))]
+  echo "".alignLeft(42), "loro".align(14), "rivisto".align(14), "+ vani alti".align(14)
+  for (nome, a, b, c) in cambi:
+    echo nome.alignLeft(42), a.align(14), b.align(14), c.align(14)
+
+nbText: """
+### 1 e 2: testata e pannello della risega
+
+- **Testata**: il frontale del gavone, verso il letto, sale a 58 e il piano del
+  comodino va a 168.8 da terra (41 sopra il materasso, come nella nostra parete).
+  Con due scaffali al posto di tre, fra un piano e l'altro restano 28.3 netti
+  (passo 30.1): meno dei 31 che ci aspettavamo, perché sopra il comodino ci sono
+  88.4 cm (fino al sotto del cielo della libreria) e due scaffali da 1.8. Il gavone
+  diventa molto più alto (56 dentro): da vedere se serve un ripiano anche lì.
+- **Pannello della risega**: va dal fianco dietro della libreria al dietro del
+  mobile, quindi per farlo largo 10 la libreria diventa più profonda (da 63.5 a
+  69.3). Il suo dietro arriva a 72.9 e la risega comincia a 74.1 (con il muro
+  disegnato a 81.1, dove arrivano i loro mobili): restano 1.2 cm. Con il muro vero a
+  80 la risega comincia a 73 e il margine scende a 0.1, quindi 10 è circa il minimo
+  senza toccare la risega. Il listello della tavola 5, se serve, va fra la
+  libreria e la risega. Gli scaffali restano profondi 27; il piano del comodino e
+  l'apertura del gavone diventano più profondi con la libreria.
+
+La tavola del modello rivisto:
+"""
+
+nbCode:
+  let svgRivisto = tavola(fr, modello(fr))
+nbRawHtml: svgRivisto
+
+nbText: """
+### 3: aprire di più i vani alti
+
+Oggi l'apertura è alta 32.6: la ribalta è alta 36.6 e copre l'apertura di 2 cm sopra
+e 2 sotto. Una scatola IKEA DRÖNA, quella dei Kallax, è larga 33, profonda 38 e
+alta 33 (verificato sul sito IKEA), quindi oggi non passerebbe. Per la proposta teniamo il loro fronte da
+319.6 come giusto e prendiamo un'apertura di **41.7** (Pietro), la misura che lascia
+margine anche se il soffitto fosse davvero a 316.
+
+Cosa ci limita:
+
+- **Sotto**: le scatole dei vani appoggiano sul cielo del cassone, a 259. Il cassone è
+  alto 150 come la libreria e l'apertura della nicchia arriva fino al suo cielo. Per
+  abbassare i vani bisognerebbe abbassare cassone e libreria, cioè la nicchia o la
+  base del letto: non serve.
+- **Sopra**: il fronte arriva a 313.6 sotto la fascia, e le ribalte di oggi finiscono a
+  299.9. Sopra c'è posto: tenendo 3 cm di fronte sotto la fascia, l'apertura potrebbe
+  arrivare fino a 45.3.
+
+La proposta: le ribalte partono da dove partono oggi (263.3) e crescono verso l'alto.
+
+- **Ribalta** alta 45.7 invece di 36.6, quindi +9.1; l'anta resta 4 cm più alta
+  dell'apertura, come oggi.
+- **Scatole** alte 50 invece di 40.9, con la cima sempre a filo della ribalta (309):
+  restano 7 cm sotto il soffitto da 316 che abbiamo misurato, per montarle.
+- **Apertura** 41.7 (+9.1): una DRÖNA da 33 passa con quasi 9 cm di gioco. In
+  larghezza ne entra una per vano (dentro 64.3, due farebbero 66); in profondità due
+  una dietro l'altra (76 su 76.7) nei due vani a sinistra, una sola nel vano sopra la
+  risega (62.2).
+- **Sotto non cambia niente**: nicchia, cassone, libreria e mobili bassi restano dove
+  sono. Nel fronte cambiano solo i tre fori alti, e la striscia di fronte sopra le
+  ribalte scende da 13.7 a 4.6 (più la fascia da 6).
+
+Cosa andrebbe verificato:
+
+- **Il limite**: tenendo 3 cm di fronte sotto la fascia si arriverebbe a 45.3; 41.7
+  lascia margine sul soffitto.
+- **Lo scalino dentro (il fondo della scatola è 4.4 sotto il bordo dell'apertura) va
+  scavalcato sollevando la scatola.
+- **Ribalte più grandi**: 45.7 × 68.3 pesano di più (compassi o pistoni più forti) e
+  aperte sporgono 45.7 in avanti.
+- **Il condizionatore**: la prima ribalta, più alta di 9.1, quando si apre sporge di
+  più: va controllato con la posizione vera.
+- **Un'alternativa che non tocca le scatole**: far crescere l'apertura verso il basso
+  invece che verso l'alto. Le scatole di oggi dentro hanno 37.1: l'apertura arriverebbe
+  al massimo a 37.1 (meno di 41.7) e lo scalino sparirebbe. Però la ribalta partirebbe da
+  258.9, e fra la nicchia e le ribalte resterebbero 1.7 cm di fronte invece di 6.1.
+
+Prima la zona alta di oggi (nel modello rivisto, che lì non cambia), poi la proposta.
+Prospetto e sezione nel vano di mezzo, con la ribalta chiusa di fianco:
+"""
+
+nbCode:
+  let svgVaniOggi = disegnoVaniAlti(fr)
+  let svgVaniProposta = disegnoVaniAlti(fv)
+nbRawHtml: "<p><b>Oggi</b>: apertura 32.6</p>" & svgVaniOggi
+nbRawHtml: "<p><b>Proposta</b>: apertura 41.7</p>" & svgVaniProposta
+
+nbText: "I controlli del modello con la proposta:"
+nbCode:
+  for r in controlli(fv, modello(fv)): echo "- ", r
+
 nbSave

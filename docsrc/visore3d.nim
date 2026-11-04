@@ -1,5 +1,6 @@
 ## Il visore 3D (-> docs/visore3d.html): il modello dei falegnami
-## (`models/falegnami.nim`), con e senza il pannello estraibile. Una pagina
+## (`models/falegnami.nim`), con e senza il pannello estraibile, e il modello
+## rivisto con le nostre modifiche (con e senza la proposta per i vani alti). Una pagina
 ## nimib con un solo blocco di codice Nim compilato in JavaScript (`nbJsFromCode`).
 ##
 ## Si parte senza il pannello estraibile (Pietro); la tavola sotto il visore
@@ -27,8 +28,10 @@ nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"L <b>{f0.larghezza:g}</b> × H <b>{f0.altezza:g}</b> × P <b>{f0.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",
   tavola: tavolaVariante(f0.senzaPannello, "falegnamiSenzaPannello", false) &
-          tavolaVariante(f0, "falegnami", true),
-  didascalia: &"prospetto frontale, sezione laterale nella libreria (x = {f0.xSezione:g}) e pianta sopra il piano letto (z = 130), con le quote; cambia con il pannello estraibile",
+          tavolaVariante(f0, "falegnami", true) &
+          tavolaVariante(f0.rivisto, "rivisto", true) &
+          tavolaVariante(f0.rivisto.vaniAlti, "rivistoVani", true),
+  didascalia: &"prospetto frontale, sezione laterale nella libreria (x = {f0.xSezione:g}) e pianta sopra il piano letto (z = 130), con le quote; cambia con il modello scelto",
   nota: "<strong>Tocca cassetti, ante, ribalte e le altre parti mobili per aprirle o chiuderle.</strong> " &
     "Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. " &
     "Il modello è generato dal codice Nim di Caderò a partire dalle tavole dei falegnami; misure rilevate e ipotesi " &
@@ -51,6 +54,10 @@ nbJsFromCode(cartaSrc):
   var varianti: Table[string, Model]
   varianti["falegnami"] = modello(falegnami())
   varianti["falegnamiSenzaPannello"] = modello(falegnami().senzaPannello)
+  # il modello rivisto (testata 58, pannello della risega 10, senza pannellino) e,
+  # sopra, la proposta per i vani alti più alti
+  varianti["rivisto"] = modello(falegnami().rivisto)
+  varianti["rivistoVani"] = modello(falegnami().rivisto.vaniAlti)
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
   quandoThreePronto(proc () = avviaVisore(varianti, carta))
 

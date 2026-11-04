@@ -517,7 +517,8 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   ## delle opzioni. Per la nostra idea la chiave è "base" o "tavolino" seguita da
   ## "Scoperta" (risega), "Antina" (solo con il tavolino), "Comodino" (prese sul
   ## comodino): es. "tavolinoScopertaComodino". Per il modello dei falegnami è
-  ## "falegnami" o "falegnamiSenzaPannello". Si parte da "base" se c'è, se no
+  ## "falegnami" o "falegnamiSenzaPannello", e il modello rivisto "rivisto" o
+  ## "rivistoVani" (pulsanti Rivisto e Vani alti). Si parte da "base" se c'è, se no
   ## dai falegnami; i pulsanti dei modelli che la pagina non ha restano nascosti.
   for k, m in varianti: modelli[k] = preparato(m)
   carta = cartaDaParati
@@ -616,19 +617,25 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let tAntina = el("m-antina")
   let tPrese = el("m-prese")
   let tPannello = el("m-pannello")
+  let tRivisto = el("m-rivisto")
+  let tVani = el("m-vani")
+  let rivisto = "rivisto" in modelli
   # il pulsante di un modello compare solo se la pagina ha anche l'altro
   for n in ["base", "tavolino"]: el("m-" & n).nascosto(not idea)
   el("m-falegnami").nascosto(not (idea and falegnami))
   proc pulsanti() =
     let fal = variante == "falegnami"
     tAntina.nascosto(variante != "tavolino")
-    tPannello.nascosto(not fal)
+    tPannello.nascosto(not fal or premuto(tRivisto))
+    tRivisto.nascosto(not (fal and rivisto))
+    tVani.nascosto(not (fal and rivisto and premuto(tRivisto)))
     for b in [tRisega, tPrese]: b.nascosto(fal)
   pulsanti()
   proc cambiaModello() =
     pulsanti()
     let fal = variante == "falegnami"
-    let chiave = if fal: "falegnami" & (if premuto(tPannello): "" else: "SenzaPannello")
+    let chiave = if fal and rivisto and premuto(tRivisto): "rivisto" & (if premuto(tVani): "Vani" else: "")
+                 elif fal: "falegnami" & (if premuto(tPannello): "" else: "SenzaPannello")
                  else: variante & (if premuto(tRisega): "Scoperta" else: "") &
                    (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &
                    (if premuto(tPrese): "Comodino" else: "")
@@ -642,7 +649,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       let name = name
       el("m-" & name).addEventListener("click", proc (ev: Event) =
         variante = name; cambiaModello())
-  for b in [tRisega, tAntina, tPrese, tPannello]:
+  for b in [tRisega, tAntina, tPrese, tPannello, tRivisto, tVani]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let b = b
       b.addEventListener("click", proc (ev: Event) = b.premi(not premuto(b)); cambiaModello())

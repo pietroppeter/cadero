@@ -289,3 +289,36 @@ proc disegnoNicchia*(f: Falegnami): string =
     (vs, catena(vSide, true, -14, 0, @[f.hBassi, pl, mat, f.nicchiaZ, zc, zc + sm],
       @[no, no, no, no, no])),
     (vs, catena(vSide, true, f.profondita + 14, f.profondita, @[pl, zc], @[no]))])
+
+proc disegnoVaniAlti*(f: Falegnami): string =
+  ## La zona alta: il fronte sopra il pannello di sotto, le ribalte, i vani alti e
+  ## il cielo del cassone. Prospetto e sezione laterale nel vano di mezzo (le
+  ## ribalte si vedono di fianco), con le altezze di apertura e scatole.
+  let m = modello(f)
+  let tieni = proc (p: Part): bool =
+    p.name in ["fronte alto sx", "fronte alto dx", "fronte fascia", "cielo cassone"] or
+      p.name.startsWith("ribalta") or p.blocco.startsWith("vano alto")
+  let mf = m.filtra(tieni)
+  var ms = mf                          # nella sezione le ribalte come pannelli, di fianco
+  for q in ms.parts.mitems:
+    if q.kind == kFront: q.kind = kPanel
+  let (so, sl, H) = (f.sormonto, f.sMel, f.altezza)
+  let xs = f.xRibalte[1] + f.ribaltaL / 2
+  let v = View(kind: vFront)
+  let vs = View(kind: vSide, cut: xs, ox: f.larghezza + 60)
+  let (a0, a1) = (f.zRibalte + so, f.zRibalte + f.ribaltaH - so)   # l'apertura
+  let cima = f.fondoVani + f.vanoH
+  var s = initSheet()
+  s.draw(v, mf)
+  s.draw(vs, ms)
+  s.draw(v, DimChain(view: vFront, vertical: true, at: -14, ext: 0,
+    stops: @[f.cieloNicchia, f.fondoVani, a0, a1, 2 * f.pannelloH, H]))
+  s.draw(v, DimChain(view: vFront, vertical: true, at: -30, ext: -14,
+    stops: @[f.zRibalte, f.zRibalte + f.ribaltaH]))
+  s.draw(v, DimChain(view: vFront, vertical: true, at: f.larghezza + 14, ext: f.larghezza,
+    stops: @[f.pannelloH, 2 * f.pannelloH, H]))
+  s.draw(vs, DimChain(view: vSide, vertical: true, at: -14, ext: 0,
+    stops: @[f.fondoVani, f.fondoVani + sl, a0, a1, cima - sl, cima]))
+  s.draw(vs, DimChain(view: vSide, vertical: true, at: f.profondita + 14, ext: f.profondita,
+    stops: @[f.fondoVani, cima, f.muro.altezza]))
+  s.render()
