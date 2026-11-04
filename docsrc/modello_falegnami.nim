@@ -399,9 +399,12 @@ Poi ci sono tre richieste (Pietro, 4 novembre):
 3. **Aperture dei vani alti più alte**: con 32.6 potrebbe non starci una scatola
    IKEA da mettere e togliere.
 
-Le prime due sono nel **modello rivisto** (`rivisto` in `falegnami.nim`), la terza è
-una proposta che si aggiunge sopra (`vaniAlti`). Tutte e due si vedono nel
-[visore](visore3d.html), con i pulsanti *Rivisto* e *Vani alti*.
+Sono modifiche indipendenti, come il pannellino: in `falegnami.nim` sono
+`testataAlta`, `risegaStretta` e `vaniAlti`, e `conModifiche` le accende una per una.
+Nel [visore](visore3d.html) ci sono quattro pulsanti, tutti spenti all'inizio:
+*Tavolino* (il pannellino estraibile), *Testata alta*, *Risega stretta*, *Vani alti*.
+Qui sotto il **modello rivisto** è quello con le prime due accese e senza pannellino
+(`rivisto`); la terza si aggiunge sopra.
 """
 
 nbCode:

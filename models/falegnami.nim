@@ -208,29 +208,53 @@ const larghezzaPannelloRisega* = 10.0
 const aperturaVani* = 41.7
   ## nella proposta per i vani alti: l'apertura nel fronte (oggi 32.6)
 
-proc rivisto*(f: Falegnami): Falegnami =
-  ## Il modello rivisto: senza il pannellino estraibile (non lo vogliamo), la
-  ## testata della libreria alta 58 dal piano letto (gavone 58 invece di 32) con
-  ## uno scaffale in meno, e il pannello della risega largo 10: la libreria si fa
-  ## più profonda (69.3 invece di 63.5) e arriva quasi alla risega.
-  result = f
-  result.pannello = false
-  result.gavone = 58
-  result.nScaffali = 2
-  # il pannello va dal fianco dietro della libreria (y0 + pl - sm) al dietro del
-  # mobile (profondità): perché sia largo 10, pl = profondità - 10 - y0 + sm
-  result.profLibreria = f.profondita - larghezzaPannelloRisega - f.yMobili + f.sMulti
-
 proc vaniAlti*(f: Falegnami): Falegnami =
   ## La proposta per aprire di più i vani alti, con il loro fronte (319.6, Pietro:
   ## assumiamo che sia giusto). Le ribalte partono da dove partono oggi (263.3) e
   ## crescono verso l'alto: apertura 41.7 invece di 32.6, ribalta 45.7 (2 cm di
-  ## sormonto sopra e sotto); la scatola resta 7 sotto il soffitto da 316. Le scatole crescono con loro (la cima a filo della
-  ## ribalta, come oggi): 50 invece di 40.9. Sotto non cambia niente: nicchia,
+  ## sormonto sopra e sotto). Le scatole crescono con loro (la cima a filo della
+  ## ribalta, come oggi, 7 sotto il soffitto da 316): 50 invece di 40.9. Sotto non cambia niente: nicchia,
   ## cassone, libreria e mobili bassi restano dove sono.
   result = f
   result.ribaltaH = aperturaVani + 2 * f.sormonto        # 45.7
   result.vanoH = f.zRibalte + result.ribaltaH - f.fondoVani   # 50
+
+proc testataAlta*(f: Falegnami): Falegnami =
+  ## La testata della libreria alta 58 dal piano letto (gavone 58 invece di 32),
+  ## come nella nostra parete, con uno scaffale in meno.
+  result = f
+  result.gavone = 58
+  result.nScaffali = 2
+
+proc risegaStretta*(f: Falegnami): Falegnami =
+  ## Il pannello che copre la risega largo 10 invece di 15.8: la libreria si fa
+  ## più profonda (69.3 invece di 63.5) e arriva quasi alla risega. Il pannello va
+  ## dal fianco dietro della libreria (y0 + pl - sm) al dietro del mobile
+  ## (profondità): perché sia largo 10, pl = profondità - 10 - y0 + sm.
+  result = f
+  result.profLibreria = f.profondita - larghezzaPannelloRisega - f.yMobili + f.sMulti
+
+proc rivisto*(f: Falegnami): Falegnami =
+  ## Il modello rivisto: senza il pannellino estraibile (non lo vogliamo), con la
+  ## testata alta e il pannello della risega stretto.
+  f.senzaPannello.testataAlta.risegaStretta
+
+proc conModifiche*(f: Falegnami; tavolino, testata, risega, vani: bool): Falegnami =
+  ## Le modifiche proposte sono indipendenti: si accendono una per una. Il
+  ## "tavolino" è il pannellino estraibile dei falegnami.
+  result = f
+  result.pannello = tavolino
+  if testata: result = result.testataAlta
+  if risega: result = result.risegaStretta
+  if vani: result = result.vaniAlti
+
+proc chiaveModifiche*(tavolino, testata, risega, vani: bool): string =
+  ## la chiave del visore: "falegnami" e le modifiche accese, sempre in quest'ordine
+  result = "falegnami"
+  if tavolino: result.add "Tavolino"
+  if testata: result.add "Testata"
+  if risega: result.add "Risega"
+  if vani: result.add "Vani"
 
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =
