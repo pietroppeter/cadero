@@ -2,7 +2,7 @@
 ##
 ## Ogni tavola disegna gli stessi pezzi della loro, in proiezione, con le stesse
 ## quote. Ogni misura è confrontata con quella scritta sulla loro tavola:
-## nera se torna, rossa con la loro accanto se è diversa, arancio se sulla loro
+## nera se torna, rossa con la loro accanto se è diversa, blu se sulla loro
 ## tavola non c'è (l'abbiamo dedotta). Serve a vedere se ci siamo persi dei pezzi
 ## o se qualche misura non torna.
 ##

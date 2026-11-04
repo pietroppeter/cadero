@@ -94,7 +94,7 @@ src/cadero/js/           binding three.js (three.nim) e browser (pagina.nim)
 models/parete.nim        parametri rilievo(), parete(p), quote(p), tavola(p, m)
 models/falegnami.nim     il modello dei falegnami: falegnami(), modello(f), controlli, quote, tavola
 models/falegnami_tavole.nim le 7 tavole dei falegnami rifatte dal modello; DimChain.loro confronta
-                         ogni quota con la loro (nera torna, rossa diversa, arancio dedotta)
+                         ogni quota con la loro (nera torna, rossa diversa, blu dedotta)
 models/parete_parametri.nim  gruppi dei parametri per le pagine (etichette, intervalli,
                          origine), misure derivate, schema delle catene, tavola proposta.
                          Un parametro nuovo di Parete va aggiunto anche qui.

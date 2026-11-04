@@ -135,7 +135,7 @@ stesse quote: servono a vedere se ci siamo persi dei pezzi e se le misure tornan
 Ogni misura è confrontata con quella scritta sulla loro tavola:
 <span style="color:#1a1a1a">**nera**</span> se torna,
 <span style="color:#d0312d">**rossa**</span> se è diversa (tra parentesi la loro),
-<span style="color:#d4740f">**arancio**</span> se sulla loro tavola non c'è e l'abbiamo
+<span style="color:#1f6fd1">**blu**</span> se sulla loro tavola non c'è e l'abbiamo
 dedotta (per esempio la larghezza del pannello che copre la risega). Toccandone una si
 apre a tutta pagina.
 """

@@ -29,7 +29,7 @@ type
     stops*: seq[float]   ## coordinate lungo la quota; ogni coppia vicina è una misura
     loro*: seq[float]    ## facoltativo, una per misura: quella scritta su un disegno
                          ## di riferimento (cm), NaN se non c'è. Il testo è nero se
-                         ## torna, arancio se è dedotta (NaN), rosso con la loro se no
+                         ## torna, blu se è dedotta (NaN), rosso con la loro se no
 
   Sheet* = object
     ## Un foglio SVG che tiene traccia dei propri limiti.
@@ -42,7 +42,7 @@ const
   dashed = "2 1"
   dotted = "0.5 0.7"
   ink = "#1a1a1a"
-  inkDedotta* = "#d4740f"   ## una misura che sul disegno di riferimento non c'è
+  inkDedotta* = "#1f6fd1"   ## una misura che sul disegno di riferimento non c'è
   inkDiversa* = "#d0312d"   ## una misura diversa da quella del disegno di riferimento
 
 proc fmtNum*(v: float): string =
