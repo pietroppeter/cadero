@@ -205,7 +205,7 @@ proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
 # --- le modifiche che vorremmo (Pietro, 4 novembre 2026) --------------------------
 const larghezzaPannelloRisega* = 10.0
   ## il pannello che copre la risega, nel modello rivisto: 10 invece di 15.8
-const aperturaVani* = 35.0
+const aperturaVani* = 41.7
   ## nella proposta per i vani alti: l'apertura nel fronte (oggi 32.6)
 
 proc rivisto*(f: Falegnami): Falegnami =
@@ -224,13 +224,13 @@ proc rivisto*(f: Falegnami): Falegnami =
 proc vaniAlti*(f: Falegnami): Falegnami =
   ## La proposta per aprire di più i vani alti, con il loro fronte (319.6, Pietro:
   ## assumiamo che sia giusto). Le ribalte partono da dove partono oggi (263.3) e
-  ## crescono verso l'alto: apertura 35 invece di 32.6 (una DRÖNA da 33 con 2 di gioco), ribalta 39 (2 cm di
-  ## sormonto sopra e sotto). Le scatole crescono con loro (la cima a filo della
-  ## ribalta, come oggi): 43.3 invece di 40.9. Sotto non cambia niente: nicchia,
+  ## crescono verso l'alto: apertura 41.7 invece di 32.6, ribalta 45.7 (2 cm di
+  ## sormonto sopra e sotto); la scatola resta 7 sotto il soffitto da 316. Le scatole crescono con loro (la cima a filo della
+  ## ribalta, come oggi): 50 invece di 40.9. Sotto non cambia niente: nicchia,
   ## cassone, libreria e mobili bassi restano dove sono.
   result = f
-  result.ribaltaH = aperturaVani + 2 * f.sormonto        # 39
-  result.vanoH = f.zRibalte + result.ribaltaH - f.fondoVani   # 43.3
+  result.ribaltaH = aperturaVani + 2 * f.sormonto        # 45.7
+  result.vanoH = f.zRibalte + result.ribaltaH - f.fondoVani   # 50
 
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =

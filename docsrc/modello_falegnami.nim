@@ -460,8 +460,9 @@ nbText: """
 
 Oggi l'apertura è alta 32.6: la ribalta è alta 36.6 e copre l'apertura di 2 cm sopra
 e 2 sotto. Una scatola IKEA DRÖNA, quella dei Kallax, è alta 33 (misure da
-verificare), quindi oggi non passerebbe. Per la proposta prendiamo un'apertura di
-**35** (Pietro) e teniamo il loro fronte da 319.6 come giusto.
+verificare), quindi oggi non passerebbe. Per la proposta teniamo il loro fronte da
+319.6 come giusto e prendiamo un'apertura di **41.7** (Pietro), la misura che lascia
+margine anche se il soffitto fosse davvero a 316.
 
 Cosa ci limita:
 
@@ -475,25 +476,29 @@ Cosa ci limita:
 
 La proposta: le ribalte partono da dove partono oggi (263.3) e crescono verso l'alto.
 
-- **Ribalta** alta 39 invece di 36.6, quindi +2.4; l'anta resta 4 cm più alta
+- **Ribalta** alta 45.7 invece di 36.6, quindi +9.1; l'anta resta 4 cm più alta
   dell'apertura, come oggi.
-- **Scatole** alte 43.3 invece di 40.9, con la cima sempre a filo della ribalta (302.3).
-- **Apertura** 35 (+2.4): una DRÖNA da 33 passa con 2 cm di gioco.
+- **Scatole** alte 50 invece di 40.9, con la cima sempre a filo della ribalta (309):
+  restano 7 cm sotto il soffitto da 316 che abbiamo misurato, per montarle.
+- **Apertura** 41.7 (+9.1): una DRÖNA da 33 passa con quasi 9 cm di gioco.
 - **Sotto non cambia niente**: nicchia, cassone, libreria e mobili bassi restano dove
-  sono. Nel fronte cambiano solo i tre fori alti, e la striscia sopra le ribalte
-  scende da 13.7 a 11.3.
+  sono. Nel fronte cambiano solo i tre fori alti, e la striscia di fronte sopra le
+  ribalte scende da 13.7 a 4.6 (più la fascia da 6).
 
 Cosa andrebbe verificato:
 
-- **La scatola da 33**: con 2 cm di gioco passa dritta, ma va misurata quella vera.
-  Lo scalino dentro (il fondo della scatola è 4.4 sotto il bordo dell'apertura) va
-  scavalcato sollevandola.
-- **Il condizionatore**: la prima ribalta, più alta di 2.4, quando si apre sporge un
-  po' di più. È poco, ma va controllato con la posizione vera.
+- **Il limite**: tenendo 3 cm di fronte sotto la fascia si arriverebbe a 45.3; 41.7
+  lascia margine sul soffitto.
+- **Lo scalino dentro (il fondo della scatola è 4.4 sotto il bordo dell'apertura) va
+  scavalcato sollevando la scatola.
+- **Ribalte più grandi**: 45.7 × 68.3 pesano di più (compassi o pistoni più forti) e
+  aperte sporgono 45.7 in avanti.
+- **Il condizionatore**: la prima ribalta, più alta di 9.1, quando si apre sporge di
+  più: va controllato con la posizione vera.
 - **Un'alternativa che non tocca le scatole**: far crescere l'apertura verso il basso
-  invece che verso l'alto. Le scatole di oggi dentro hanno 37.1, quindi un'apertura da
-  35 ci starebbe tutta e lo scalino scenderebbe a 2. Però la ribalta partirebbe da
-  260.9, e fra la nicchia e le ribalte resterebbero 3.7 cm di fronte invece di 6.1.
+  invece che verso l'alto. Le scatole di oggi dentro hanno 37.1: l'apertura arriverebbe
+  al massimo a 37.1 (meno di 41.7) e lo scalino sparirebbe. Però la ribalta partirebbe da
+  258.9, e fra la nicchia e le ribalte resterebbero 1.7 cm di fronte invece di 6.1.
 
 Prima la zona alta di oggi (nel modello rivisto, che lì non cambia), poi la proposta.
 Prospetto e sezione nel vano di mezzo, con la ribalta chiusa di fianco:
@@ -503,7 +508,7 @@ nbCode:
   let svgVaniOggi = disegnoVaniAlti(fr)
   let svgVaniProposta = disegnoVaniAlti(fv)
 nbRawHtml: "<p><b>Oggi</b>: apertura 32.6</p>" & svgVaniOggi
-nbRawHtml: "<p><b>Proposta</b>: apertura 35</p>" & svgVaniProposta
+nbRawHtml: "<p><b>Proposta</b>: apertura 41.7</p>" & svgVaniProposta
 
 nbText: "I controlli del modello con la proposta:"
 nbCode:

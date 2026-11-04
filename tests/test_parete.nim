@@ -323,8 +323,8 @@ suite "modello rivisto e vani alti":
   test "pannello della risega largo 10, la libreria non entra nella risega":
     check abs(r.pannelloRisega - 10) < 1e-6
     check r.yMobili + r.profLibreria < r.yMuro - r.muro.risegaProf
-  test "vani alti: apertura 35, il loro fronte, sotto non cambia niente":
-    check abs(v.ribaltaH - 2 * v.sormonto - 35) < 1e-6
+  test "vani alti: apertura 41.7, il loro fronte, sotto non cambia niente":
+    check abs(v.ribaltaH - 2 * v.sormonto - 41.7) < 1e-6
     check abs(v.fondoVani + v.vanoH - (v.zRibalte + v.ribaltaH)) < 1e-6
     check v.altezza == r.altezza and v.nicchiaZ == r.nicchiaZ and v.pianoLetto == r.pianoLetto
     check v.fondoVani + v.vanoH < 2 * v.pannelloH
