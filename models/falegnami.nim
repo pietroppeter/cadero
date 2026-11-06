@@ -32,6 +32,8 @@ type
     tVerticali = "4 verticali"  ## le spalle e due metà da cima a fondo: tutto verticale
     tSei = "6 pezzi"            ## le spalle, una fascia orizzontale sotto e una sopra
                                 ## (su tutta la larghezza) e due pezzi verticali in mezzo
+    tTre = "3 orizzontali"      ## le spalle e tre pezzi su tutta la larghezza: sotto,
+                                ## in mezzo (225 × 150, con la nicchia) e sopra
 
   Falegnami* = object
     muro*: VincoliMuro
@@ -211,6 +213,11 @@ proc pezziFronte*(f: Falegnami): seq[(string, RRect)] =
     result.add ("sotto", rrect(x0, 0, 2 * L2, zb))
     result.add ("mezzo sx", rrect(x0, zb, L2, za - zb))
     result.add ("mezzo dx", rrect(x0 + L2, zb, L2, za - zb))
+    result.add ("sopra", rrect(x0, za, 2 * L2, H - za))
+  of tTre:
+    let (zb, za) = (f.zTaglioBasso, f.zTaglioAlto)
+    result.add ("sotto", rrect(x0, 0, 2 * L2, zb))
+    result.add ("mezzo", rrect(x0, zb, 2 * L2, za - zb))
     result.add ("sopra", rrect(x0, za, 2 * L2, H - za))
 
 proc catenaFronte*(f: Falegnami): seq[float] =
@@ -547,6 +554,12 @@ proc chiaveTaglio*(t: TaglioFronte): string =
   of tCroce: ""
   of tVerticali: "Verticali"
   of tSei: "Sei"
+  of tTre: "Tre"
+
+proc altoVerticale*(f: Falegnami): Falegnami =
+  ## la variante con la venatura verticale solo nel pezzo in alto del fronte
+  result = f
+  result.venature.add ("fronte sopra", venVerticale)
 
 # --- i controlli ------------------------------------------------------------------
 proc controlli*(f: Falegnami; m: Model): seq[string] =

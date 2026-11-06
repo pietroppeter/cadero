@@ -334,23 +334,30 @@ proc inLastra*(p: Part; lastra = [300.0, 150.0]): bool =
   let (a, b) = (max(p.size.x, p.size.z), min(p.size.x, p.size.z))
   a <= lastra[0] + 0.01 and b <= lastra[1] + 0.01
 
-proc disegnoTagli*(f: Falegnami): string =
-  ## I tre modi di dividere il pannello frontale, affiancati: ogni pezzo color
-  ## betulla con le righe della sua venatura, le misure, verde se sta in una
-  ## lastra 300 × 150, rosso se no.
+var disegniTagli = 0   ## per dare id diversi ai clipPath di più disegni nella stessa pagina
+
+proc disegnoTagli*(f: Falegnami; modi: openArray[(string, Falegnami)] = []): string =
+  ## Alcuni modi di dividere il pannello frontale, affiancati (di serie i primi
+  ## tre: a croce, 4 verticali, 6 pezzi): ogni pezzo color betulla con le righe
+  ## della sua venatura, le misure, verde se sta in una lastra 300 × 150, rosso se no.
+  var modi = @modi
+  if modi.len == 0:
+    for t in [tCroce, tVerticali, tSei]: modi.add ("", f.conTaglio(t))
   let (L, H) = (f.larghezza, f.altezza)
   const (gap, testa, piede) = (46.0, 26.0, 18.0)
-  let W = 3 * L + 2 * gap
+  let W = float(modi.len) * L + float(modi.len - 1) * gap
   var s = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"-6 " & fmtNum(-testa) & " " &
     fmtNum(W + 12) & " " & fmtNum(H + testa + piede) & "\" style=\"width:100%;height:auto;font-family:IBM Plex Sans,sans-serif\">"
   var nClip = 0
-  for k, t in [tCroce, tVerticali, tSei]:
+  inc disegniTagli
+  for k, (titolo, fk) in modi:
+    let t = fk.taglio
     let ox = float(k) * (L + gap)
-    let pezzi = pezziDelFronte(f.conTaglio(t))
+    let pezzi = pezziDelFronte(fk)
     proc px(x: float): string = fmtNum(ox + x)
     proc pz(z: float): string = fmtNum(H - z)
     s.add "<text x=\"" & px(L / 2) & "\" y=\"-10\" text-anchor=\"middle\" font-size=\"13\" font-weight=\"600\">" &
-      (if t == tCroce: "A croce (" & $pezzi.len & " pezzi)" else: $t) & "</text>"
+      (if titolo.len > 0: titolo elif t == tCroce: "A croce (" & $pezzi.len & " pezzi)" else: $t) & "</text>"
     for p in pezzi:
       var pts = p.contorno
       if pts.len == 0:
@@ -362,7 +369,7 @@ proc disegnoTagli*(f: Falegnami): string =
         for i, (x, z) in poligono(h): d.add (if i == 0: "M" else: "L") & px(x) & " " & pz(z) & " "
         d.add "Z "
       inc nClip
-      let id = "t" & $nClip
+      let id = "taglio" & $disegniTagli & "-" & $nClip
       s.add "<clipPath id=\"" & id & "\"><path d=\"" & d & "\" clip-rule=\"evenodd\"/></clipPath>"
       s.add "<path d=\"" & d & "\" fill=\"#efe0c2\" fill-rule=\"evenodd\"/>"
       # le righe della venatura, ogni 4 cm

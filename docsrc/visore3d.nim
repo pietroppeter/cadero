@@ -41,7 +41,7 @@ nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   tavola: tavole,
   didascalia: &"prospetto frontale, sezione laterale nella libreria (x = {f0.xSezione:g}) e pianta sopra il piano letto (z = 130), con le quote; cambia con le modifiche accese",
   nota: "<strong>Tocca cassetti, ante, ribalte e le altre parti mobili per aprirle o chiuderle.</strong> " &
-    "<em>Taglio</em> cambia come è diviso il pannello frontale; con <em>Gira venatura</em> premuto, " &
+    "<em>Taglio</em> cambia come è diviso il pannello frontale (con 3 orizzontali o 6 pezzi, <em>Alto verticale</em> gira la venatura del pezzo in alto); con <em>Gira venatura</em> premuto, " &
     "toccare un pannello gira la sua venatura (orizzontale o verticale). " &
     "Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. " &
     "Il modello è generato dal codice Nim di Caderò a partire dalle tavole dei falegnami; misure rilevate e ipotesi " &

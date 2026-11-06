@@ -827,13 +827,28 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
     costruisci(modello); applyToggles(); applyEsploso()
     status.textContent = cstring($modello.parts.len & " parti")
-  for (id, t) in [("f-croce", ""), ("f-verticali", "Verticali"), ("f-sei", "Sei")]:
+  # "Alto verticale": la venatura verticale nel solo pezzo in alto del fronte
+  # (con i tagli che hanno una fascia sopra: 3 orizzontali e 6 pezzi)
+  let tAltoV = el("f-altov")
+  proc venaturaAlta() =
+    tAltoV.nascosto(taglio notin ["Tre", "Sei"])
+    for (m, p) in legni:
+      if p.name == "fronte sopra":
+        let k = chiaveParte(p)
+        if premuto(tAltoV) and taglio in ["Tre", "Sei"]: sceltaVenatura[k] = venVerticale
+        else: sceltaVenatura.del(k)
+        vestiBetulla(m, p)
+  venaturaAlta()
+  tAltoV.addEventListener("click", proc (ev: Event) =
+    tAltoV.premi(not premuto(tAltoV)); venaturaAlta())
+  const tagli = [("f-croce", ""), ("f-verticali", "Verticali"), ("f-sei", "Sei"), ("f-tre", "Tre")]
+  for (id, t) in tagli:
     closureScope:   # ogni giro ha le sue variabili
       let (id, t) = (id, t)
       el(id).addEventListener("click", proc (ev: Event) =
         taglio = t
-        for b in ["f-croce", "f-verticali", "f-sei"]: el(b).premi(b == id)
-        cambiaModello())
+        for (b, _) in tagli: el(b).premi(b == id)
+        cambiaModello(); venaturaAlta())
   for name in ["base", "tavolino", "falegnami"]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let name = name

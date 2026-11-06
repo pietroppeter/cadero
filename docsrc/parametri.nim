@@ -123,7 +123,7 @@ nbRawHtml: """<section class="banco" id="banco">
         <button id="p-risega" type="button"></button><button id="p-vani" type="button"></button>
       </div>
       <div class="group" id="g-taglio" hidden>
-        <button id="f-croce" type="button"></button><button id="f-verticali" type="button"></button><button id="f-sei" type="button"></button>
+        <button id="f-croce" type="button"></button><button id="f-verticali" type="button"></button><button id="f-sei" type="button"></button><button id="f-tre" type="button"></button><button id="f-altov" type="button" hidden></button>
       </div>
       <div class="group" role="group" aria-label="Multistrato">
         <button id="t-betulla" type="button" aria-pressed="true">Betulla</button>

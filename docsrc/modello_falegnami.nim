@@ -527,7 +527,7 @@ Il pannello frontale è largo 236.8 e alto 319.6: non sta in una lastra di
 multistrato (300 × 150, ipotesi: il formato grande più comune), va diviso. I
 falegnami lo dividono a croce: quattro pannelli 112.5 × 156.8, una fascia alta 6 in
 cima e le due spalle ai lati. Due altri modi (Pietro, 6 novembre), da scegliere nel
-visore con i pulsanti *Taglio*:
+visore con i pulsanti *Taglio* (più sotto il quarto, in 3 pezzi orizzontali):
 
 - **4 verticali**: le spalle e due metà da cima a fondo, tutto verticale. Le metà
   sono alte 319.6: non stanno in una lastra da 300, servono lastre più lunghe (da
@@ -547,6 +547,19 @@ se sta in una lastra, rosso se no:
 nbCode:
   let svgTagli = disegnoTagli(f)
 nbRawHtml: svgTagli
+
+nbText: """
+**In 3 pezzi orizzontali** (Pietro, sulla PR): le spalle e tre pezzi su tutta la
+larghezza, con gli stessi tagli a 109 e a 259. Quello in mezzo, con la nicchia, è
+225 × 150: sta giusto giusto in una lastra 300 × 150 con la venatura orizzontale.
+Con tutte le venature orizzontali, o con la sola fascia in alto verticale (nel
+visore: *3 orizzontali* e poi *Alto verticale*):
+"""
+
+nbCode:
+  let svgTre = disegnoTagli(f, [("3 orizzontali", f.conTaglio(tTre)),
+                                ("3, alto verticale", f.conTaglio(tTre).altoVerticale)])
+nbRawHtml: svgTre
 
 nbText: """
 **La venatura.** Ogni pannello in multistrato ha la sua venatura, orizzontale o
