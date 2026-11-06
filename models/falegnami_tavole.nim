@@ -322,3 +322,78 @@ proc disegnoVaniAlti*(f: Falegnami): string =
   s.draw(vs, DimChain(view: vSide, vertical: true, at: f.profondita + 14, ext: f.profondita,
     stops: @[f.fondoVani, cima, f.muro.altezza]))
   s.render()
+
+# --- il taglio del pannello frontale ------------------------------------------------
+proc pezziDelFronte*(f: Falegnami): seq[Part] =
+  ## I pezzi del pannello frontale (spalle comprese) con il taglio di `f`.
+  for p in modello(f).parts:
+    if p.fronte: result.add p
+
+proc inLastra*(p: Part; lastra = [300.0, 150.0]): bool =
+  ## Il pezzo si ricava da una lastra (in un verso o nell'altro)?
+  let (a, b) = (max(p.size.x, p.size.z), min(p.size.x, p.size.z))
+  a <= lastra[0] + 0.01 and b <= lastra[1] + 0.01
+
+proc disegnoTagli*(f: Falegnami): string =
+  ## I tre modi di dividere il pannello frontale, affiancati: ogni pezzo color
+  ## betulla con le righe della sua venatura, le misure, verde se sta in una
+  ## lastra 300 × 150, rosso se no.
+  let (L, H) = (f.larghezza, f.altezza)
+  const (gap, testa, piede) = (46.0, 26.0, 18.0)
+  let W = 3 * L + 2 * gap
+  var s = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"-6 " & fmtNum(-testa) & " " &
+    fmtNum(W + 12) & " " & fmtNum(H + testa + piede) & "\" style=\"width:100%;height:auto;font-family:IBM Plex Sans,sans-serif\">"
+  var nClip = 0
+  for k, t in [tCroce, tVerticali, tSei]:
+    let ox = float(k) * (L + gap)
+    let pezzi = pezziDelFronte(f.conTaglio(t))
+    proc px(x: float): string = fmtNum(ox + x)
+    proc pz(z: float): string = fmtNum(H - z)
+    s.add "<text x=\"" & px(L / 2) & "\" y=\"-10\" text-anchor=\"middle\" font-size=\"13\" font-weight=\"600\">" &
+      (if t == tCroce: "A croce (" & $pezzi.len & " pezzi)" else: $t) & "</text>"
+    for p in pezzi:
+      var pts = p.contorno
+      if pts.len == 0:
+        pts = @[(p.pos.x, p.pos.z), (p.x1, p.pos.z), (p.x1, p.z1), (p.pos.x, p.z1)]
+      var d = ""
+      for i, (x, z) in pts: d.add (if i == 0: "M" else: "L") & px(x) & " " & pz(z) & " "
+      d.add "Z "
+      for h in p.holes:
+        for i, (x, z) in poligono(h): d.add (if i == 0: "M" else: "L") & px(x) & " " & pz(z) & " "
+        d.add "Z "
+      inc nClip
+      let id = "t" & $nClip
+      s.add "<clipPath id=\"" & id & "\"><path d=\"" & d & "\" clip-rule=\"evenodd\"/></clipPath>"
+      s.add "<path d=\"" & d & "\" fill=\"#efe0c2\" fill-rule=\"evenodd\"/>"
+      # le righe della venatura, ogni 4 cm
+      s.add "<g clip-path=\"url(#" & id & ")\" stroke=\"#b8935c\" stroke-width=\"0.5\" opacity=\"0.8\">"
+      if p.verso == venVerticale:
+        var x = p.pos.x + 2
+        while x < p.x1:
+          s.add "<line x1=\"" & px(x) & "\" y1=\"" & pz(p.pos.z) & "\" x2=\"" & px(x) & "\" y2=\"" & pz(p.z1) & "\"/>"
+          x += 4
+      else:
+        var z = p.pos.z + 2
+        while z < p.z1:
+          s.add "<line x1=\"" & px(p.pos.x) & "\" y1=\"" & pz(z) & "\" x2=\"" & px(p.x1) & "\" y2=\"" & pz(z) & "\"/>"
+          z += 4
+      s.add "</g>"
+      let ok = inLastra(p)
+      s.add "<path d=\"" & d & "\" fill=\"none\" fill-rule=\"evenodd\" stroke=\"" &
+        (if ok: "#2f7a3b" else: "#c0392b") & "\" stroke-width=\"1.2\"/>"
+      # la misura, al centro del pezzo (le spalle, strette, solo il colore)
+      if p.size.x > 20:
+        let (cx, cz) = (p.pos.x + p.size.x / 2, p.pos.z + p.size.z / 2)
+        # dove il pezzo è pieno: sotto le ante, sopra le ribalte, tra ante e nicchia
+        let zt = if p.pos.z < 1: p.pos.z + 4
+                 elif p.z1 > H - 1: p.z1 - 12
+                 elif p.name.startsWith("fronte alto"): p.z1 - 10
+                 elif p.name.startsWith("fronte mezzo"): p.pos.z + 12
+                 else: cz
+        s.add "<text x=\"" & px(cx) & "\" y=\"" & pz(zt) & "\" text-anchor=\"middle\" font-size=\"9.5\" " &
+          "paint-order=\"stroke\" stroke=\"#efe0c2\" stroke-width=\"3\" fill=\"" &
+          (if ok: "#1f5a2a" else: "#a02a1e") & "\">" & fmtNum(p.size.x) & " × " & fmtNum(p.size.z) & "</text>"
+    s.add "<text x=\"" & px(L / 2) & "\" y=\"" & fmtNum(H + 13) & "\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">" &
+      "spalle " & fmtNum(f.spalla) & " × " & fmtNum(H) & "</text>"
+  s.add "</svg>"
+  s

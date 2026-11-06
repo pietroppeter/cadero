@@ -520,4 +520,43 @@ nbText: "I controlli del modello con la proposta:"
 nbCode:
   for r in controlli(fv, modello(fv)): echo "- ", r
 
+nbText: """
+## Il taglio del pannello frontale, in multistrato di betulla
+
+Il pannello frontale è largo 236.8 e alto 319.6: non sta in una lastra di
+multistrato (300 × 150, ipotesi: il formato grande più comune), va diviso. I
+falegnami lo dividono a croce: quattro pannelli 112.5 × 156.8, una fascia alta 6 in
+cima e le due spalle ai lati. Due altri modi (Pietro, 6 novembre), da scegliere nel
+visore con i pulsanti *Taglio*:
+
+- **4 verticali**: le spalle e due metà da cima a fondo, tutto verticale. Le metà
+  sono alte 319.6: non stanno in una lastra da 300, servono lastre più lunghe (da
+  chiedere al fornitore) o un giunto.
+- **6 pezzi**: le spalle, una fascia orizzontale sotto (fino a 109, la cima dei
+  mobili bassi), una sopra (da 259, la cima del cassone, tra la nicchia e le
+  ribalte) e due pezzi verticali in mezzo, divisi a metà come quelli a croce.
+  I tagli cadono dove dietro c'è il fondo o il cielo del cassone, per fissare il
+  giunto; i quattro pezzi stanno tutti in una lastra (quelli in mezzo 112.5 × 150,
+  giusti giusti).
+
+Le spalle (5.9 × 319.6) sono le stesse nei tre casi e non stanno in una lastra
+da 300 nemmeno oggi. Nel disegno ogni pezzo ha le righe della sua venatura; verde
+se sta in una lastra, rosso se no:
+"""
+
+nbCode:
+  let svgTagli = disegnoTagli(f)
+nbRawHtml: svgTagli
+
+nbText: """
+**La venatura.** Ogni pannello in multistrato ha la sua venatura, orizzontale o
+verticale (`Part.venatura`); se non si sceglie, va lungo il lato più lungo, come si
+taglia di solito dalla lastra: fasce e ribalte orizzontali, spalle, ante e pezzi in
+mezzo verticali. Per sceglierla nel modello si scrive il nome del pannello in
+`f.venature`, per esempio `@[("fronte mezzo sx", venOrizzontale)]`. Nel visore il
+pulsante *Betulla* mostra il multistrato (la faccia con la venatura, il bordo con
+gli strati) e *Gira venatura*, premuto, gira la venatura del pannello che si tocca.
+Il melaminico delle scatole resta grigio.
+"""
+
 nbSave

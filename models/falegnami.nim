@@ -25,6 +25,14 @@ import ../src/cadero
 import parete   # i vincoli del muro e il materasso sono gli stessi
 
 type
+  TaglioFronte* = enum
+    ## Come si divide il pannello frontale (236.8 × 319.6, non sta in una lastra
+    ## 300 × 150). In tutti e tre ci sono le due spalle ai lati, da cima a fondo.
+    tCroce = "a croce"          ## i quattro pannelli dei falegnami 112.5 × 156.8 e la fascia
+    tVerticali = "4 verticali"  ## le spalle e due metà da cima a fondo: tutto verticale
+    tSei = "6 pezzi"            ## le spalle, una fascia orizzontale sotto e una sopra
+                                ## (su tutta la larghezza) e due pezzi verticali in mezzo
+
   Falegnami* = object
     muro*: VincoliMuro
     materasso*: Materasso
@@ -82,6 +90,11 @@ type
     scaffali*: float         ## profondità degli scaffali: 27 (disegno)
     nScaffali*: int          ## 3
     vanoL*, vanoH*: float    ## i tre vani alti: 68.1 × 40.9 (disegno)
+    # --- il multistrato di betulla
+    taglio*: TaglioFronte    ## come si divide il pannello frontale: a croce (disegno)
+    venature*: seq[(string, Venatura)]
+                             ## la venatura scelta per un pannello, per nome (es.
+                             ## ("fronte spalla sx", venOrizzontale)); gli altri lungo il lato lungo
 
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
@@ -173,6 +186,32 @@ proc zFessura*(f: Falegnami): float =
   ## il fondo della fessura del pannellino: sopra il 3° gradino, a mezzo spazio
   let z = f.zGradini
   z[2] + f.gradini[2] + f.spazioGradini / 2
+
+proc zTaglioBasso*(f: Falegnami): float = f.hBassi
+  ## 109: il taglio sotto, nel fronte a 6 pezzi: alla cima dei mobili bassi, dove
+  ## comincia il cassone (dietro c'è il fondo del cassone, per fissare il giunto)
+proc zTaglioAlto*(f: Falegnami): float = f.hBassi + f.hNicchia
+  ## 259: il taglio sopra: alla cima del cielo del cassone, tra la nicchia (257.2)
+  ## e le ribalte (263.3)
+
+proc pezziFronte*(f: Falegnami): seq[(string, RRect)] =
+  ## I pezzi del pannello frontale tra le spalle, secondo il taglio scelto
+  ## (nome e rettangolo nel piano x, z).
+  let (x0, L2, H) = (f.xFronte, f.pannelloL, f.altezza)
+  case f.taglio
+  of tCroce:
+    for (nome, i, j) in [("basso sx", 0, 0), ("basso dx", 1, 0), ("alto sx", 0, 1), ("alto dx", 1, 1)]:
+      result.add (nome, rrect(x0 + float(i) * L2, float(j) * f.pannelloH, L2, f.pannelloH))
+    result.add ("fascia", rrect(x0, 2 * f.pannelloH, 2 * L2, f.fascia))
+  of tVerticali:
+    result.add ("sx", rrect(x0, 0, L2, H))
+    result.add ("dx", rrect(x0 + L2, 0, L2, H))
+  of tSei:
+    let (zb, za) = (f.zTaglioBasso, f.zTaglioAlto)
+    result.add ("sotto", rrect(x0, 0, 2 * L2, zb))
+    result.add ("mezzo sx", rrect(x0, zb, L2, za - zb))
+    result.add ("mezzo dx", rrect(x0 + L2, zb, L2, za - zb))
+    result.add ("sopra", rrect(x0, za, 2 * L2, H - za))
 
 proc catenaFronte*(f: Falegnami): seq[float] =
   ## le quote verticali del prospetto
@@ -295,15 +334,13 @@ proc modello*(f: Falegnami): Model =
       if mel: q.materiale = "melaminico"
       m.add q
 
-  # --- il fronte: quattro pannelli, la fascia, le spalle -----------------------
-  # la nicchia e il vano alto di mezzo passano da un pannello all'altro: nei
-  # pezzi diventano tacche del contorno (vedi `pannelloForato`)
+  # --- il fronte: i pezzi del taglio scelto e le spalle ----------------------
+  # le aperture che passano da un pezzo all'altro (la nicchia, il vano alto di
+  # mezzo) nei pezzi diventano tacche del contorno (vedi `pannelloForato`)
   let fori = f.aperture
-  for (nome, i, j) in [("basso sx", 0, 0), ("basso dx", 1, 0), ("alto sx", 0, 1), ("alto dx", 1, 1)]:
-    result.add pannelloForato("fronte " & nome, f.xFronte + float(i) * f.pannelloL, f.yFronte,
-                              float(j) * f.pannelloH, f.pannelloL, sm, f.pannelloH, fori)
-  for q in [part("fronte fascia", kPanel, f.xFronte, f.yFronte, 2 * f.pannelloH, 2 * f.pannelloL, sm, f.fascia),
-            part("fronte spalla sx", kPanel, 0, f.yFronte, 0, f.spalla, sm, H),
+  for (nome, r) in f.pezziFronte:
+    result.add pannelloForato("fronte " & nome, r.x, f.yFronte, r.z, r.w, sm, r.h, fori)
+  for q in [part("fronte spalla sx", kPanel, 0, f.yFronte, 0, f.spalla, sm, H),
             part("fronte spalla dx", kPanel, L - f.spalla, f.yFronte, 0, f.spalla, sm, H)]:
     var q = q
     q.contorno = @[(q.pos.x, q.pos.z), (q.x1, q.pos.z), (q.x1, q.z1), (q.pos.x, q.z1)]   # per le viste
@@ -494,6 +531,23 @@ proc modello*(f: Falegnami): Model =
   result.add part("risega (muro, carta da parati)", kWall, f.xRisega, yMuro - f.muro.risegaProf, 0,
                   f.muro.risegaLarga, f.muro.risegaProf, H)
 
+  # --- la venatura scelta pannello per pannello (le altre: lungo il lato lungo)
+  for (nome, v) in f.venature:
+    for q in result.parts.mitems:
+      if q.name == nome: q.venatura = v
+
+proc conTaglio*(f: Falegnami; t: TaglioFronte): Falegnami =
+  ## lo stesso modello con un altro taglio del pannello frontale
+  result = f
+  result.taglio = t
+
+proc chiaveTaglio*(t: TaglioFronte): string =
+  ## il pezzo di chiave del visore per il taglio: niente per quello a croce
+  case t
+  of tCroce: ""
+  of tVerticali: "Verticali"
+  of tSei: "Sei"
+
 # --- i controlli ------------------------------------------------------------------
 proc controlli*(f: Falegnami; m: Model): seq[string] =
   ## Le cose che non tornano con la stanza o con le nostre decisioni.
@@ -543,7 +597,7 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
     result.add "il fondo dei vani alti sta " & fmtNum(f.scalinoVani) &
       " cm sotto il bordo dell'apertura delle ribalte: dentro c'è uno scalino"
   let rima = 2 * f.pannelloH - (f.zRibalte + f.ribaltaH - f.sormonto)
-  if rima < 2:
+  if f.taglio == tCroce and rima < 2:
     result.add "sopra l'apertura dei vani alti restano solo " & fmtNum(rima) & " cm di fronte sotto la fascia"
   let sopra = f.zRibalte + f.ribaltaH - f.sormonto - (f.fondoVani + f.vanoH)
   if sopra > 0.5:

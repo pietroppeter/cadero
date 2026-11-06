@@ -70,6 +70,15 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   nasconde tutti); solo la parte chiamata esattamente "fronte" riceve come fori le sagome
   dei frontali (`foriVisti`), perché nella nostra parete ante e cassetti stanno a filo.
 - `Part.materiale = "melaminico"`: le scatole grigie dei falegnami (grigie nel visore).
+  Tutte le altre parti `kPanel`/`kFront`/`kBox` sono multistrato di betulla: nel visore
+  hanno la venatura sulla faccia grande e gli strati sui bordi (pulsante "Betulla").
+  `Part.venatura` (`venLunga` di default = lungo il lato più lungo, `verso(p)` dà quella
+  vera); nel modello dei falegnami si sceglie per nome in `f.venature`, nel visore con
+  "Gira venatura" (non resta salvata).
+- Il pannello frontale dei falegnami si divide secondo `f.taglio` (`pezziFronte`):
+  `tCroce` (il loro, 4 pannelli + fascia), `tVerticali` (2 metà da cima a fondo),
+  `tSei` (fasce sotto e sopra, 2 verticali in mezzo); sempre con le 2 spalle. Nel
+  visore la chiave prende in coda `chiaveTaglio` ("", "Verticali", "Sei").
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,

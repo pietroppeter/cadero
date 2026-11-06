@@ -24,6 +24,16 @@ type
     ## Rettangolo con angoli arrotondati nel piano del fronte (x, z).
     x*, z*, w*, h*, r*: float
 
+  Venatura* = enum
+    ## Il verso della venatura del multistrato (betulla) sulla faccia grande di un
+    ## pannello. `venLunga`: lungo il lato più lungo (come si taglia di solito dalla
+    ## lastra). Su un pannello in piedi "orizzontale" è lungo x, "verticale" lungo z;
+    ## su uno steso "orizzontale" è lungo x e "verticale" in profondità; su un
+    ## fianco "orizzontale" è in profondità.
+    venLunga = "lungo il lato lungo"
+    venOrizzontale = "orizzontale"
+    venVerticale = "verticale"
+
   Part* = object
     name*: string
     kind*: Kind
@@ -57,6 +67,7 @@ type
                         ## un pannello frontale diviso in più pezzi, dove un'apertura passa
                         ## da un pezzo all'altro (vedi `pannelloForato`). Vuoto: il rettangolo
     materiale*: string  ## "" multistrato; "melaminico": le scatole grigie dei falegnami
+    venatura*: Venatura ## il verso della venatura del multistrato (vedi `Venatura`)
 
   Model* = object
     name*: string
@@ -94,6 +105,16 @@ proc foriVisti*(m: Model; p: Part): seq[RRect] =
   else: result = p.holes
 
 proc add*(m: var Model; p: Part) = m.parts.add p
+
+proc verso*(p: Part): Venatura =
+  ## La venatura vera della parte: quella scelta o, se `venLunga`, quella lungo il
+  ## lato più lungo della sua faccia grande (orizzontale a pari misura).
+  if p.venatura != venLunga: return p.venatura
+  let s = p.size
+  let (a, b) = if s.y <= s.x and s.y <= s.z: (s.x, s.z)     # in piedi, di faccia
+               elif s.z <= s.x and s.z <= s.y: (s.x, s.y)   # steso
+               else: (s.y, s.z)                            # un fianco
+  if b > a: venVerticale else: venOrizzontale
 
 # --- pannelli frontali divisi in pezzi ---------------------------------------------
 # Un'apertura che passa da un pezzo all'altro del fronte (la nicchia sul giunto dei

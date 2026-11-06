@@ -280,7 +280,7 @@ suite "parete di riferimento":
     check h.x + h.w <= sc2.pos.x - 1.9 and h.w < wBase   # il gavone si stringe
     check pc.controlli.len == 1
 
-import ../models/falegnami
+import ../models/falegnami, ../models/falegnami_tavole
 
 suite "modello dei falegnami":
   let f = falegnami()
@@ -328,3 +328,30 @@ suite "modello rivisto e vani alti":
     check abs(v.fondoVani + v.vanoH - (v.zRibalte + v.ribaltaH)) < 1e-6
     check v.altezza == r.altezza and v.nicchiaZ == r.nicchiaZ and v.pianoLetto == r.pianoLetto
     check v.fondoVani + v.vanoH < 2 * v.pannelloH
+
+suite "taglio del pannello frontale e venatura":
+  let f = falegnami()
+  proc pezzi(t: TaglioFronte): seq[Part] = pezziDelFronte(f.conTaglio(t))
+  test "a croce: 4 pannelli, la fascia, le spalle; tutto come prima":
+    check pezzi(tCroce).len == 7
+  test "4 verticali: le spalle e due metà da cima a fondo, che non stanno in una lastra 300":
+    let p = pezzi(tVerticali)
+    check p.len == 4
+    for q in p: check near(q.size.z, f.altezza) and q.verso == venVerticale
+    check not inLastra(f.conTaglio(tVerticali).modello.find("fronte sx"))
+  test "6 pezzi: fasce sotto e sopra orizzontali, in mezzo verticali, tutti in lastra (spalle a parte)":
+    let p = pezzi(tSei)
+    check p.len == 6
+    var area = 0.0
+    for q in p:
+      area += q.size.x * q.size.z
+      if not q.name.startsWith("fronte spalla"): check inLastra(q)
+    check near(area, f.larghezza * f.altezza)
+    let m = f.conTaglio(tSei).modello
+    check m.find("fronte sotto").verso == venOrizzontale and m.find("fronte mezzo sx").verso == venVerticale
+    check near(m.find("fronte sopra").pos.z, f.hBassi + f.hNicchia)
+  test "la venatura scelta nel modello vale per quel pannello":
+    var g = f
+    g.venature = @[("fronte spalla sx", venOrizzontale)]
+    let m = modello(g)
+    check m.find("fronte spalla sx").verso == venOrizzontale and m.find("fronte spalla dx").verso == venVerticale
