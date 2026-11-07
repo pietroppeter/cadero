@@ -549,9 +549,11 @@ nbCode:
 nbRawHtml: svgTagli
 
 nbText: """
-**In 3 pezzi orizzontali** (Pietro, sulla PR): le spalle e tre pezzi su tutta la
-larghezza, con gli stessi tagli a 109 e a 259. Quello in mezzo, con la nicchia, è
-225 × 150: sta giusto giusto in una lastra 300 × 150 con la venatura orizzontale.
+**In 3 pezzi orizzontali** (richiesta sulla PR): le spalle e tre pezzi su tutta la
+larghezza, alti uguali: un terzo dell'altezza ciascuno, 225 × 106.5, tagli a 106.5
+e 213.1. Stanno tutti in una lastra 300 × 150 con la venatura orizzontale. Il taglio
+sotto passa 0.5 cm dentro l'apertura del gradino più alto (che arriva a 107), quello
+sopra attraversa la nicchia.
 Con tutte le venature orizzontali, o con la sola fascia in alto verticale (nel
 visore: *3 orizzontali* e poi *Alto verticale*):
 """

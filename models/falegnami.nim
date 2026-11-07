@@ -32,8 +32,8 @@ type
     tVerticali = "4 verticali"  ## le spalle e due metà da cima a fondo: tutto verticale
     tSei = "6 pezzi"            ## le spalle, una fascia orizzontale sotto e una sopra
                                 ## (su tutta la larghezza) e due pezzi verticali in mezzo
-    tTre = "3 orizzontali"      ## le spalle e tre pezzi su tutta la larghezza: sotto,
-                                ## in mezzo (225 × 150, con la nicchia) e sopra
+    tTre = "3 orizzontali"      ## le spalle e tre pezzi su tutta la larghezza, alti uguali:
+                                ## un terzo dell'altezza ciascuno (225 × 106.5)
 
   Falegnami* = object
     muro*: VincoliMuro
@@ -214,8 +214,8 @@ proc pezziFronte*(f: Falegnami): seq[(string, RRect)] =
     result.add ("mezzo sx", rrect(x0, zb, L2, za - zb))
     result.add ("mezzo dx", rrect(x0 + L2, zb, L2, za - zb))
     result.add ("sopra", rrect(x0, za, 2 * L2, H - za))
-  of tTre:
-    let (zb, za) = (f.zTaglioBasso, f.zTaglioAlto)
+  of tTre:   # tre altezze uguali (richiesta sulla PR #19)
+    let (zb, za) = (H / 3, 2 * H / 3)
     result.add ("sotto", rrect(x0, 0, 2 * L2, zb))
     result.add ("mezzo", rrect(x0, zb, 2 * L2, za - zb))
     result.add ("sopra", rrect(x0, za, 2 * L2, H - za))

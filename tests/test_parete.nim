@@ -361,7 +361,9 @@ suite "taglio del pannello frontale e venatura":
     check p.len == 5
     let m = modello(g)
     let mezzo = m.find("fronte mezzo")
-    check near(mezzo.size.x, 2 * f.pannelloL) and near(mezzo.size.z, 150) and inLastra(mezzo)
+    for q in p:
+      if not q.name.startsWith("fronte spalla"): check near(q.size.z, f.altezza / 3) and inLastra(q)
+    check near(mezzo.size.x, 2 * f.pannelloL) and near(mezzo.pos.z, f.altezza / 3)
     for n in ["fronte sotto", "fronte mezzo", "fronte sopra"]: check m.find(n).verso == venOrizzontale
     let mv = modello(g.altoVerticale)
     check mv.find("fronte sopra").verso == venVerticale and mv.find("fronte mezzo").verso == venOrizzontale
