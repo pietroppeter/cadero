@@ -104,7 +104,9 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   3 orizzontali, testata alta, vani alti, pannello a L, nicchia, lampada (Pietro, 7/11).
   `docsrc/visore3d.nim` genera tutte le tavole dei tagli anche per questa combinazione.
 - Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e
-  cambiando modello. Quelle trascinate sono arancioni (`trascinata`, classe CSS).
+  cambiando modello. Quelle trascinate sono arancioni (`trascinata`, classe CSS) e sempre
+  dritte (`misuraTra`): l'asse della faccia che sullo schermo va più come il dito, dal punto
+  notevole più vicino al tocco.
 - Betulla: colori come nei disegni dei falegnami e un po' di luce propria (`lucePropria`,
   emissive con la stessa texture), spenta di sera. La risega stretta non è più nel visore
   (Pietro: la risega resta 15.8); `risegaStretta` resta nel modello.
