@@ -401,6 +401,6 @@ proc disegnoTagli*(f: Falegnami; modi: openArray[(string, Falegnami)] = []): str
           "paint-order=\"stroke\" stroke=\"#efe0c2\" stroke-width=\"3\" fill=\"" &
           (if ok: "#1f5a2a" else: "#a02a1e") & "\">" & fmtNum(p.size.x) & " × " & fmtNum(p.size.z) & "</text>"
     s.add "<text x=\"" & px(L / 2) & "\" y=\"" & fmtNum(H + 13) & "\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">" &
-      "spalle " & fmtNum(f.spalla) & " × " & fmtNum(H) & "</text>"
+      (if fk.spalle: "spalle " & fmtNum(f.spalla) & " × " & fmtNum(H) else: "senza spalle") & "</text>"
   s.add "</svg>"
   s

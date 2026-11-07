@@ -358,12 +358,12 @@ suite "taglio del pannello frontale e venatura":
   test "3 orizzontali: sotto, mezzo e sopra su tutta la larghezza, in lastra; la variante con l'alto verticale":
     let g = f.conTaglio(tTre)
     let p = pezziDelFronte(g)
-    check p.len == 5
+    check p.len == 3                      # senza spalle
     let m = modello(g)
     let mezzo = m.find("fronte mezzo")
-    for q in p:
-      if not q.name.startsWith("fronte spalla"): check near(q.size.z, f.altezza / 3) and inLastra(q)
-    check near(mezzo.size.x, 2 * f.pannelloL) and near(mezzo.pos.z, f.altezza / 3)
+    for q in p: check near(q.size.x, f.larghezza) and inLastra(q)
+    check near(mezzo.pos.z, f.hBassi) and near(mezzo.size.z, m.find("fronte sopra").size.z)
+    check f.hBassi > f.zBassi + f.altezzaAnte   # poco sopra gradini e ante
     for n in ["fronte sotto", "fronte mezzo", "fronte sopra"]: check m.find(n).verso == venOrizzontale
     let mv = modello(g.altoVerticale)
     check mv.find("fronte sopra").verso == venVerticale and mv.find("fronte mezzo").verso == venOrizzontale

@@ -549,11 +549,11 @@ nbCode:
 nbRawHtml: svgTagli
 
 nbText: """
-**In 3 pezzi orizzontali** (richiesta sulla PR): le spalle e tre pezzi su tutta la
-larghezza, alti uguali: un terzo dell'altezza ciascuno, 225 × 106.5, tagli a 106.5
-e 213.1. Stanno tutti in una lastra 300 × 150 con la venatura orizzontale. Il taglio
-sotto passa 0.5 cm dentro l'apertura del gradino più alto (che arriva a 107), quello
-sopra attraversa la nicchia.
+**In 3 pezzi orizzontali** (richiesta sulla PR): tre pezzi su tutta la larghezza
+(236.8), senza le spalle: niente cornice esterna. Il taglio basso è a 109, poco sopra
+i gradini e le ante (107), alla cima dei mobili bassi; sopra, due pezzi alti uguali,
+236.8 × 105.3 (taglio a 214.3, attraversa la nicchia). Stanno tutti in una lastra
+300 × 150 con la venatura orizzontale.
 Con tutte le venature orizzontali, o con la sola fascia in alto verticale (nel
 visore: *3 orizzontali* e poi *Alto verticale*):
 """

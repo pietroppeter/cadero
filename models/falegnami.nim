@@ -32,8 +32,9 @@ type
     tVerticali = "4 verticali"  ## le spalle e due metà da cima a fondo: tutto verticale
     tSei = "6 pezzi"            ## le spalle, una fascia orizzontale sotto e una sopra
                                 ## (su tutta la larghezza) e due pezzi verticali in mezzo
-    tTre = "3 orizzontali"      ## le spalle e tre pezzi su tutta la larghezza, alti uguali:
-                                ## un terzo dell'altezza ciascuno (225 × 106.5)
+    tTre = "3 orizzontali"      ## tre pezzi su tutta la larghezza, senza le spalle (la
+                                ## cornice esterna): sotto fino a poco sopra i gradini
+                                ## (109), sopra due pezzi alti uguali (236.8 × 105.3)
 
   Falegnami* = object
     muro*: VincoliMuro
@@ -196,8 +197,15 @@ proc zTaglioAlto*(f: Falegnami): float = f.hBassi + f.hNicchia
   ## 259: il taglio sopra: alla cima del cielo del cassone, tra la nicchia (257.2)
   ## e le ribalte (263.3)
 
+proc zTaglioTre*(f: Falegnami): float = f.hBassi
+  ## 109: il taglio basso del fronte in 3, poco sopra i gradini e le ante (107),
+  ## alla cima dei mobili bassi; sopra, due pezzi alti uguali
+
+proc spalle*(f: Falegnami): bool = f.taglio != tTre
+  ## il fronte ha le due spalle ai lati (la cornice esterna), tranne quello in 3
+
 proc pezziFronte*(f: Falegnami): seq[(string, RRect)] =
-  ## I pezzi del pannello frontale tra le spalle, secondo il taglio scelto
+  ## I pezzi del pannello frontale tra le spalle (o, senza, su tutta la larghezza), secondo il taglio scelto
   ## (nome e rettangolo nel piano x, z).
   let (x0, L2, H) = (f.xFronte, f.pannelloL, f.altezza)
   case f.taglio
@@ -214,11 +222,13 @@ proc pezziFronte*(f: Falegnami): seq[(string, RRect)] =
     result.add ("mezzo sx", rrect(x0, zb, L2, za - zb))
     result.add ("mezzo dx", rrect(x0 + L2, zb, L2, za - zb))
     result.add ("sopra", rrect(x0, za, 2 * L2, H - za))
-  of tTre:   # tre altezze uguali (richiesta sulla PR #19)
-    let (zb, za) = (H / 3, 2 * H / 3)
-    result.add ("sotto", rrect(x0, 0, 2 * L2, zb))
-    result.add ("mezzo", rrect(x0, zb, 2 * L2, za - zb))
-    result.add ("sopra", rrect(x0, za, 2 * L2, H - za))
+  of tTre:   # richiesta sulla PR #19: senza spalle, il taglio basso poco sopra i gradini
+    let L = f.larghezza
+    let zb = f.zTaglioTre
+    let za = (zb + H) / 2
+    result.add ("sotto", rrect(0, 0, L, zb))
+    result.add ("mezzo", rrect(0, zb, L, za - zb))
+    result.add ("sopra", rrect(0, za, L, H - za))
 
 proc catenaFronte*(f: Falegnami): seq[float] =
   ## le quote verticali del prospetto
@@ -347,8 +357,9 @@ proc modello*(f: Falegnami): Model =
   let fori = f.aperture
   for (nome, r) in f.pezziFronte:
     result.add pannelloForato("fronte " & nome, r.x, f.yFronte, r.z, r.w, sm, r.h, fori)
-  for q in [part("fronte spalla sx", kPanel, 0, f.yFronte, 0, f.spalla, sm, H),
-            part("fronte spalla dx", kPanel, L - f.spalla, f.yFronte, 0, f.spalla, sm, H)]:
+  for q in (if not f.spalle: @[] else: @[
+            part("fronte spalla sx", kPanel, 0, f.yFronte, 0, f.spalla, sm, H),
+            part("fronte spalla dx", kPanel, L - f.spalla, f.yFronte, 0, f.spalla, sm, H)]):
     var q = q
     q.contorno = @[(q.pos.x, q.pos.z), (q.x1, q.pos.z), (q.x1, q.z1), (q.pos.x, q.z1)]   # per le viste
     result.add q
