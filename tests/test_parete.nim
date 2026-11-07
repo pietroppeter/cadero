@@ -370,3 +370,4 @@ suite "pannello a L in testa al letto":
     check near(pa.pos.x, pr.pos.x) and near(pa.pos.y, m0.find("fianco libreria").pos.y) and near(pa.pos.y + pa.size.y, f.profondita)
     check m.parts.filterIt(it.name == "fianco libreria") == m0.parts.filterIt(it.name == "fianco libreria")
     check pa.pos.x + pa.size.x <= f.xRisega   # non tocca la risega
+    check pa.contornoLato[^1][1] == m.find("piano comodino").pos.z + f.sMulti   # copre il bordo del comodino

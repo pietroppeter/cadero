@@ -514,12 +514,12 @@ proc modello*(f: Falegnami): Model =
   if f.pannelloAL:
     # testata e pannello della risega in un solo pezzo a L, dove oggi c'è il
     # pannello della risega (x = xl - sm), davanti ai bordi dei due fianchi: il braccio
-    # basso, alto quanto il gavone, va dal davanti al muro; quello alto, alto quanto la
+    # basso, alto fino alla cima del piano del comodino (ne copre il bordo), va dal davanti al muro; quello alto, alto quanto la
     # libreria, dal fianco dietro al muro. Il fondo del gavone arriva fino alla L.
     let (ya, yd, yb) = (y0, y0 + pl - sm, f.profondita)
     var pa = part("pannello a L", kPanel, xl - sm, ya, zl, sm, yb - ya, f.hLibreria)
     pa.contornoLato = @[(ya, zl), (yb, zl), (yb, zl + f.hLibreria), (yd, zl + f.hLibreria),
-                        (yd, zl + f.gavone), (ya, zl + f.gavone)]
+                        (yd, zc), (ya, zc)]
     lib.add pa
     for q in lib.mitems:
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl

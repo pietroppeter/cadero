@@ -525,7 +525,7 @@ nbText: """
 
 Una proposta da fare ai falegnami: il frontale del gavone (la testata, verso il letto)
 e il pannello che copre la risega diventano **un solo pannello a L**, dove oggi c'è il
-pannello della risega. Il braccio basso, alto quanto il gavone, va dal davanti al muro;
+pannello della risega. Il braccio basso arriva fino alla cima del piano del comodino, così ne copre il bordo, e va dal davanti al muro;
 quello alto, alto quanto la libreria, dal fianco dietro al muro. La L passa davanti ai
 bordi dei due fianchi della libreria, che restano come sono, sta a 0.2 dal cassone come
 il pannello della risega di oggi e non tocca la risega. Il fondo del gavone arriva fino
