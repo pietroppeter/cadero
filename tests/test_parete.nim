@@ -331,39 +331,29 @@ suite "modello rivisto e vani alti":
 
 suite "taglio del pannello frontale e venatura":
   let f = falegnami()
-  proc pezzi(t: TaglioFronte): seq[Part] = pezziDelFronte(f.conTaglio(t))
-  test "a croce: 4 pannelli, la fascia, le spalle; tutto come prima":
-    check pezzi(tCroce).len == 7
-  test "4 verticali: le spalle e due metà da cima a fondo, che non stanno in una lastra 300":
-    let p = pezzi(tVerticali)
-    check p.len == 4
-    for q in p: check near(q.size.z, f.altezza) and q.verso == venVerticale
-    check not inLastra(f.conTaglio(tVerticali).modello.find("fronte sx"))
-  test "6 pezzi: fasce sotto e sopra orizzontali, in mezzo verticali, tutti in lastra (spalle a parte)":
-    let p = pezzi(tSei)
-    check p.len == 6
-    var area = 0.0
-    for q in p:
-      area += q.size.x * q.size.z
-      if not q.name.startsWith("fronte spalla"): check inLastra(q)
-    check near(area, f.larghezza * f.altezza)
-    let m = f.conTaglio(tSei).modello
-    check m.find("fronte sotto").verso == venOrizzontale and m.find("fronte mezzo sx").verso == venVerticale
-    check near(m.find("fronte sopra").pos.z, f.hBassi + f.hNicchia)
+  proc pezzi(t: TaglioFronte; cornice: bool): seq[Part] =
+    pezziDelFronte(f.conTaglio(t).conCornice(cornice))
+  test "a croce: 4 pannelli e la fascia, con la cornice anche le spalle; venatura verticale":
+    check pezzi(tCroce, true).len == 7 and pezzi(tCroce, false).len == 5
+    for q in pezzi(tCroce, false): check q.verso == venVerticale
+    check near(f.conCornice(false).modello.find("fronte basso sx").size.x, f.larghezza / 2)
+  test "3 orizzontali: sotto fino a 109, sopra due pezzi uguali, da muro a muro, in lastra, orizzontali":
+    let g = f.conTaglio(tTre).conCornice(false)
+    let p = pezziDelFronte(g)
+    check p.len == 3
+    let m = modello(g)
+    let mezzo = m.find("fronte mezzo")
+    for q in p: check near(q.size.x, f.larghezza) and inLastra(q) and q.verso == venOrizzontale
+    check near(mezzo.pos.z, f.hBassi) and near(mezzo.size.z, m.find("fronte sopra").size.z)
+    check f.hBassi > f.zBassi + f.altezzaAnte   # poco sopra gradini e ante
+    check pezzi(tTre, true).len == 5
+  test "venature di base: ante verticali, cassetti e ribalte orizzontali":
+    let m = modello(f)
+    check m.find("anta A").verso == venVerticale and m.find("anta D").verso == venVerticale
+    check m.find("frontale cassetto").verso == venOrizzontale and m.find("ribalta").verso == venOrizzontale
+    check m.find("ribalta, parte fissa").verso == venOrizzontale
   test "la venatura scelta nel modello vale per quel pannello":
     var g = f
     g.venature = @[("fronte spalla sx", venOrizzontale)]
     let m = modello(g)
     check m.find("fronte spalla sx").verso == venOrizzontale and m.find("fronte spalla dx").verso == venVerticale
-  test "3 orizzontali: sotto, mezzo e sopra su tutta la larghezza, in lastra; la variante con l'alto verticale":
-    let g = f.conTaglio(tTre)
-    let p = pezziDelFronte(g)
-    check p.len == 3                      # senza spalle
-    let m = modello(g)
-    let mezzo = m.find("fronte mezzo")
-    for q in p: check near(q.size.x, f.larghezza) and inLastra(q)
-    check near(mezzo.pos.z, f.hBassi) and near(mezzo.size.z, m.find("fronte sopra").size.z)
-    check f.hBassi > f.zBassi + f.altezzaAnte   # poco sopra gradini e ante
-    for n in ["fronte sotto", "fronte mezzo", "fronte sopra"]: check m.find(n).verso == venOrizzontale
-    let mv = modello(g.altoVerticale)
-    check mv.find("fronte sopra").verso == venVerticale and mv.find("fronte mezzo").verso == venOrizzontale

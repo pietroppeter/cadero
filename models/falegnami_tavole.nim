@@ -337,12 +337,12 @@ proc inLastra*(p: Part; lastra = [300.0, 150.0]): bool =
 var disegniTagli = 0   ## per dare id diversi ai clipPath di più disegni nella stessa pagina
 
 proc disegnoTagli*(f: Falegnami; modi: openArray[(string, Falegnami)] = []): string =
-  ## Alcuni modi di dividere il pannello frontale, affiancati (di serie i primi
-  ## tre: a croce, 4 verticali, 6 pezzi): ogni pezzo color betulla con le righe
-  ## della sua venatura, le misure, verde se sta in una lastra 300 × 150, rosso se no.
+  ## Alcuni modi di dividere il pannello frontale, affiancati (di serie: a croce e
+  ## in 3, senza cornice): ogni pezzo color betulla con le righe della sua
+  ## venatura, le misure, verde se sta in una lastra 300 × 150, rosso se no.
   var modi = @modi
   if modi.len == 0:
-    for t in [tCroce, tVerticali, tSei]: modi.add ("", f.conTaglio(t))
+    for t in [tCroce, tTre]: modi.add ("", f.conTaglio(t).conCornice(false))
   let (L, H) = (f.larghezza, f.altezza)
   const (gap, testa, piede) = (46.0, 26.0, 18.0)
   let W = float(modi.len) * L + float(modi.len - 1) * gap
@@ -357,7 +357,8 @@ proc disegnoTagli*(f: Falegnami; modi: openArray[(string, Falegnami)] = []): str
     proc px(x: float): string = fmtNum(ox + x)
     proc pz(z: float): string = fmtNum(H - z)
     s.add "<text x=\"" & px(L / 2) & "\" y=\"-10\" text-anchor=\"middle\" font-size=\"13\" font-weight=\"600\">" &
-      (if titolo.len > 0: titolo elif t == tCroce: "A croce (" & $pezzi.len & " pezzi)" else: $t) & "</text>"
+      (if titolo.len > 0: titolo else: (if t == tCroce: "A croce" else: "In 3 orizzontali") &
+        (if fk.cornice: ", con cornice" else: "")) & "</text>"
     for p in pezzi:
       var pts = p.contorno
       if pts.len == 0:
@@ -389,7 +390,7 @@ proc disegnoTagli*(f: Falegnami; modi: openArray[(string, Falegnami)] = []): str
       s.add "<path d=\"" & d & "\" fill=\"none\" fill-rule=\"evenodd\" stroke=\"" &
         (if ok: "#2f7a3b" else: "#c0392b") & "\" stroke-width=\"1.2\"/>"
       # la misura, al centro del pezzo (le spalle, strette, solo il colore)
-      if p.size.x > 20:
+      if p.size.x > 20 and p.size.z > 8:
         let (cx, cz) = (p.pos.x + p.size.x / 2, p.pos.z + p.size.z / 2)
         # dove il pezzo è pieno: sotto le ante, sopra le ribalte, tra ante e nicchia
         let zt = if p.pos.z < 1: p.pos.z + 4
@@ -401,6 +402,6 @@ proc disegnoTagli*(f: Falegnami; modi: openArray[(string, Falegnami)] = []): str
           "paint-order=\"stroke\" stroke=\"#efe0c2\" stroke-width=\"3\" fill=\"" &
           (if ok: "#1f5a2a" else: "#a02a1e") & "\">" & fmtNum(p.size.x) & " × " & fmtNum(p.size.z) & "</text>"
     s.add "<text x=\"" & px(L / 2) & "\" y=\"" & fmtNum(H + 13) & "\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">" &
-      (if fk.spalle: "spalle " & fmtNum(f.spalla) & " × " & fmtNum(H) else: "senza spalle") & "</text>"
+      (if fk.cornice: "spalle " & fmtNum(f.spalla) & " × " & fmtNum(H) else: "senza spalle") & "</text>"
   s.add "</svg>"
   s

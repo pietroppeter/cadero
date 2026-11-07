@@ -74,11 +74,13 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   hanno la venatura sulla faccia grande e gli strati sui bordi (pulsante "Betulla").
   `Part.venatura` (`venLunga` di default = lungo il lato più lungo, `verso(p)` dà quella
   vera); nel modello dei falegnami si sceglie per nome in `f.venature`, nel visore con
-  "Gira venatura" (non resta salvata).
+  "Gira venatura" (non resta salvata). Anche la venatura di base si mette nel modello.
 - Il pannello frontale dei falegnami si divide secondo `f.taglio` (`pezziFronte`):
-  `tCroce` (il loro, 4 pannelli + fascia), `tVerticali` (2 metà da cima a fondo),
-  `tSei` (fasce sotto e sopra, 2 verticali in mezzo); sempre con le 2 spalle. Nel
-  visore la chiave prende in coda `chiaveTaglio` ("", "Verticali", "Sei").
+  `tCroce` (il loro, 4 pannelli + fascia, venatura verticale) o `tTre` (3 pezzi
+  orizzontali, taglio a 109 e due pezzi uguali sopra, venatura orizzontale); `f.cornice`
+  aggiunge le 2 spalle (vero in `falegnami()`, falso di base nel visore). Ante basse
+  verticali, cassetti e ribalte orizzontali. Nel visore la chiave prende in coda
+  `chiaveTaglio(t, cornice)` ("" / "Tre", poi "Cornice").
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,

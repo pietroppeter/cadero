@@ -33,15 +33,17 @@ for tav in [false, true]:
     for ris in [false, true]:
       for van in [false, true]:
         for t in TaglioFronte:
-          tavole.add tavolaVariante(f0.conModifiche(tav, tes, ris, van).conTaglio(t),
-            chiaveModifiche(tav, tes, ris, van) & chiaveTaglio(t), tav or tes or ris or van or t != tCroce)
+          for cor in [false, true]:
+            tavole.add tavolaVariante(f0.conModifiche(tav, tes, ris, van).conTaglio(t).conCornice(cor),
+              chiaveModifiche(tav, tes, ris, van) & chiaveTaglio(t, cor),
+              tav or tes or ris or van or t != tCroce or cor)
 nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"L <b>{f0.larghezza:g}</b> × H <b>{f0.altezza:g}</b> × P <b>{f0.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",
   tavola: tavole,
   didascalia: &"prospetto frontale, sezione laterale nella libreria (x = {f0.xSezione:g}) e pianta sopra il piano letto (z = 130), con le quote; cambia con le modifiche accese",
   nota: "<strong>Tocca cassetti, ante, ribalte e le altre parti mobili per aprirle o chiuderle.</strong> " &
-    "<em>Taglio</em> cambia come è diviso il pannello frontale (con 3 orizzontali o 6 pezzi, <em>Alto verticale</em> gira la venatura del pezzo in alto); con <em>Gira venatura</em> premuto, " &
+    "<em>Taglio</em> cambia come è diviso il pannello frontale (a croce o in 3 orizzontali), <em>Cornice</em> rimette le spalle ai lati; con <em>Gira venatura</em> premuto, " &
     "toccare un pannello gira la sua venatura (orizzontale o verticale). " &
     "Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. " &
     "Il modello è generato dal codice Nim di Caderò a partire dalle tavole dei falegnami; misure rilevate e ipotesi " &
@@ -62,7 +64,8 @@ nbJsFromCode(cartaSrc):
   # indipendenti: il tavolino (il pannellino estraibile dei falegnami), la testata
   # alta, il pannello della risega stretto, i vani alti più aperti. La chiave è
   # "falegnami" seguita dalle modifiche accese (`chiaveModifiche`) e dal taglio
-  # del pannello frontale (`chiaveTaglio`: niente per quello a croce). I modelli si
+  # del pannello frontale (`chiaveTaglio`: niente per quello a croce senza cornice,
+  # che è il punto di partenza). I modelli si
   # calcolano qui, nel browser, con lo stesso codice Nim delle tavole.
   var varianti: Table[string, Model]
   for tav in [false, true]:
@@ -70,8 +73,9 @@ nbJsFromCode(cartaSrc):
       for ris in [false, true]:
         for van in [false, true]:
           for t in TaglioFronte:
-            varianti[chiaveModifiche(tav, tes, ris, van) & chiaveTaglio(t)] =
-              modello(falegnami().conModifiche(tav, tes, ris, van).conTaglio(t))
+            for cor in [false, true]:
+              varianti[chiaveModifiche(tav, tes, ris, van) & chiaveTaglio(t, cor)] =
+                modello(falegnami().conModifiche(tav, tes, ris, van).conTaglio(t).conCornice(cor))
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
   quandoThreePronto(proc () = avviaVisore(varianti, carta))
 

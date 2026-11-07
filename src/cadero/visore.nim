@@ -798,8 +798,10 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
                    ("p-vani", "Vani")]
   el("g-modifiche").nascosto(not falegnami)
   el("g-taglio").nascosto(not falegnami)
-  # il taglio del pannello frontale dei falegnami: "" a croce, "Verticali", "Sei"
+  # il taglio del pannello frontale dei falegnami: "" a croce, "Tre" in 3 orizzontali;
+  # "Cornice" (pulsante) rimette le due spalle ai lati
   var taglio = ""
+  let tCornice = el("f-cornice")
   el("g-mobile").nascosto(not idea)
   # il pulsante di un modello compare solo se la pagina ha anche l'altro
   for n in ["base", "tavolino"]: el("m-" & n).nascosto(not idea)
@@ -817,6 +819,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       for (id, nome) in modifiche:
         if premuto(el(id)): chiave.add nome
       chiave.add taglio
+      if premuto(tCornice): chiave.add "Cornice"
     else:
       chiave = variante
       chiave.add (if premuto(tRisega): "Scoperta" else: "") &
@@ -827,34 +830,20 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
     costruisci(modello); applyToggles(); applyEsploso()
     status.textContent = cstring($modello.parts.len & " parti")
-  # "Alto verticale": la venatura verticale nel solo pezzo in alto del fronte
-  # (con i tagli che hanno una fascia sopra: 3 orizzontali e 6 pezzi)
-  let tAltoV = el("f-altov")
-  proc venaturaAlta() =
-    tAltoV.nascosto(taglio notin ["Tre", "Sei"])
-    for (m, p) in legni:
-      if p.name == "fronte sopra":
-        let k = chiaveParte(p)
-        if premuto(tAltoV) and taglio in ["Tre", "Sei"]: sceltaVenatura[k] = venVerticale
-        else: sceltaVenatura.del(k)
-        vestiBetulla(m, p)
-  venaturaAlta()
-  tAltoV.addEventListener("click", proc (ev: Event) =
-    tAltoV.premi(not premuto(tAltoV)); venaturaAlta())
-  const tagli = [("f-croce", ""), ("f-verticali", "Verticali"), ("f-sei", "Sei"), ("f-tre", "Tre")]
+  const tagli = [("f-croce", ""), ("f-tre", "Tre")]
   for (id, t) in tagli:
     closureScope:   # ogni giro ha le sue variabili
       let (id, t) = (id, t)
       el(id).addEventListener("click", proc (ev: Event) =
         taglio = t
         for (b, _) in tagli: el(b).premi(b == id)
-        cambiaModello(); venaturaAlta())
+        cambiaModello())
   for name in ["base", "tavolino", "falegnami"]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let name = name
       el("m-" & name).addEventListener("click", proc (ev: Event) =
         variante = name; cambiaModello())
-  var interruttori = @[tRisega, tAntina, tPrese]
+  var interruttori = @[tRisega, tAntina, tPrese, tCornice]
   for (id, _) in modifiche: interruttori.add el(id)
   for i in 0 ..< interruttori.len:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
