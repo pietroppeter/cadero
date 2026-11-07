@@ -800,10 +800,12 @@ proc numero(v: float): string =
   if abs(r - round(r)) < 0.05: $int(round(r)) else: formatFloat(r, ffDecimal, 1)
 
 proc colpito(ev: PointerEv): Intersezione =
-  ## la prima superficie visibile sotto il dito, o nil
+  ## la prima superficie visibile sotto il dito, o nil; i muri trasparenti (senza
+  ## carta da parati) si attraversano, così si misura il mobile anche da dietro
   mira(ev)
   for k in ray.intersectObject(group, true):
-    if visibile(k.`object`) and k.`object`.isMesh: return k
+    if visibile(k.`object`) and k.`object`.isMesh and
+        not cast[Mesh](k.`object`).material.transparent: return k
   nil
 
 proc normaleAsse(h: Intersezione): Vector3 =

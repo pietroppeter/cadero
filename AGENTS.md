@@ -87,7 +87,7 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   `conPannelloAL`) usa `contornoLato`: poligono nel piano y, z, estruso per `size.x`.
   Sta dove c'è il pannello della risega, davanti ai bordi dei fianchi. Nella chiave del visore "PannelloL" viene dopo le modifiche (`chiaveModifiche(..., pal)`).
 - `nicchiaAperta` (pulsante "Nicchia", chiave "Nicchia" dopo "PannelloL"): le misure della
-  nicchia decise con i falegnami (15 a sinistra, 50 a destra, 10 sotto il cielo, 10 sopra un
+  nicchia decise con i falegnami (15 a sinistra, 52 a destra, 10 sotto il cielo, 10 sopra un
   materasso da 18). Il bordo sinistro dell'apertura è `nicchiaX` (0 in `nicchiaSx` = anta A).
 - Nel visore "Tocca per" sceglie cosa fa un tocco: aprire, misurare (`misuraAt`: dal punto
   toccato, lungo i due assi della faccia, fino a dove la faccia finisce o qualcosa le sta

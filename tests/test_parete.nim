@@ -374,9 +374,9 @@ suite "pannello a L in testa al letto":
 
 suite "nicchia con le misure decise":
   let f = falegnami()
-  test "15 a sinistra, 50 a destra, 10 sotto il cielo, 10 sopra il materasso da 18":
+  test "15 a sinistra, 52 a destra, 10 sotto il cielo, 10 sopra il materasso da 18":
     let g = f.nicchiaAperta
-    check near(g.nicchiaX, 15) and near(g.larghezza - g.nicchiaX - g.nicchiaL, 50)
+    check near(g.nicchiaX, 15) and near(g.larghezza - g.nicchiaX - g.nicchiaL, 52)
     check near(g.cieloNicchia - (g.nicchiaZ + g.nicchiaH), 10)
     check g.materasso.altezza == 18 and near(g.bordo, 10)
     check near(f.nicchiaX, f.colonne[0])   # senza: allineata all'anta A

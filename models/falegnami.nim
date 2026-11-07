@@ -317,14 +317,15 @@ proc rivisto*(f: Falegnami): Falegnami =
 
 proc nicchiaAperta*(f: Falegnami; on = true): Falegnami =
   ## Le misure della nicchia decise con i falegnami: vista da dietro il fronte sporge
-  ## un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 50
-  ## prima di quello di destra, il bordo alto sta 10 sotto il cielo del cassone e quello
+  ## un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 52
+  ## prima di quello di destra (Pietro, 7 novembre: 52 invece di 50, così dentro i due
+  ## lati sono quasi simmetrici), il bordo alto sta 10 sotto il cielo del cassone e quello
   ## basso 10 sopra un materasso da 18 (invece di 17).
   result = f
   if not on: return
   result.materasso.altezza = 18
   result.nicchiaSx = 15
-  result.nicchiaL = f.larghezza - 50 - 15
+  result.nicchiaL = f.larghezza - 52 - 15
   result.nicchiaZ = f.pianoLetto + 18 + 10
   result.nicchiaH = f.cieloNicchia - 10 - result.nicchiaZ
 
