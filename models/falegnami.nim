@@ -92,8 +92,8 @@ type
     # --- il multistrato di betulla
     taglio*: TaglioFronte    ## come si divide il pannello frontale: a croce (disegno)
     pannelloAL*: bool        ## proposta: testata del gavone e pannello della risega in un
-                             ## solo pannello a L; il fianco dietro della libreria si sposta
-                             ## indietro di uno spessore (vedi `conPannelloAL`)
+                             ## solo pannello a L, davanti ai bordi dei fianchi della
+                             ## libreria (vedi `conPannelloAL`)
     cornice*: bool           ## le due spalle ai lati, la cornice esterna (disegno: sì;
                              ## nel visore di base no, si rimette con il pulsante)
     venature*: seq[(string, Venatura)]
@@ -292,10 +292,9 @@ proc conModifiche*(f: Falegnami; tavolino, testata, risega, vani: bool): Falegna
 
 proc conPannelloAL*(f: Falegnami; on = true): Falegnami =
   ## La proposta del pannello a L: il frontale del gavone (la testata, verso il letto)
-  ## e il pannello che copre la risega diventano un solo pannello a L, in piano con
-  ## l'apertura della libreria. Il fianco dietro della libreria si sposta indietro di
-  ## uno spessore (comincia dietro il pannello), così il pannello passa davanti al suo
-  ## bordo e arriva fino al muro.
+  ## e il pannello che copre la risega diventano un solo pannello a L, dove oggi c'è
+  ## il pannello della risega: passa davanti ai bordi dei due fianchi della libreria,
+  ## che restano come sono, e arriva fino al muro (0.2 dal cassone, come oggi).
   result = f
   result.pannelloAL = on
 
@@ -506,23 +505,24 @@ proc modello*(f: Falegnami): Model =
   let pl = f.profLibreria
   let zl = f.hBassi
   let zc = f.pianoComodino
-  # con il pannello a L il fianco dietro comincia uno spessore più indietro
-  let xdl = if f.pannelloAL: xl + sm else: xl
   var lib = @[
     part("fianco libreria", kPanel, xl, y0, zl, wl, sm, f.hLibreria),
-    part("fianco libreria", kPanel, xdl, y0 + pl - sm, zl, L - sm - xdl, sm, f.hLibreria),
+    part("fianco libreria", kPanel, xl, y0 + pl - sm, zl, wl, sm, f.hLibreria),
     part("schiena libreria", kPanel, L - sm, y0, zl, sm, pl, f.hLibreria),
     part("fondo gavone", kPanel, xl + sm, y0 + sm, zl, wl - sm, pl - 2 * sm, sm),
     part("cielo libreria", kPanel, xl, y0 + sm, zl + f.hLibreria - sm, wl, pl - 2 * sm, sm)]
   if f.pannelloAL:
-    # testata e pannello della risega in un solo pezzo a L, in piano con
-    # l'apertura (x = xl): il braccio basso, alto quanto il gavone, va dal fianco
-    # davanti al muro; quello alto, alto quanto la libreria, dal fianco dietro al muro
-    let (ya, yd, yb) = (y0 + sm, y0 + pl - sm, f.profondita)
-    var pa = part("pannello a L", kPanel, xl, ya, zl, sm, yb - ya, f.hLibreria)
+    # testata e pannello della risega in un solo pezzo a L, dove oggi c'è il
+    # pannello della risega (x = xl - sm), davanti ai bordi dei due fianchi: il braccio
+    # basso, alto quanto il gavone, va dal davanti al muro; quello alto, alto quanto la
+    # libreria, dal fianco dietro al muro. Il fondo del gavone arriva fino alla L.
+    let (ya, yd, yb) = (y0, y0 + pl - sm, f.profondita)
+    var pa = part("pannello a L", kPanel, xl - sm, ya, zl, sm, yb - ya, f.hLibreria)
     pa.contornoLato = @[(ya, zl), (yb, zl), (yb, zl + f.hLibreria), (yd, zl + f.hLibreria),
                         (yd, zl + f.gavone), (ya, zl + f.gavone)]
     lib.add pa
+    for q in lib.mitems:
+      if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
   else:
     lib.add part("frontale gavone", kPanel, xl, y0 + sm, zl, sm, pl - 2 * sm, f.gavone)
     # il pannello che copre la risega, a sinistra della libreria guardandola dal

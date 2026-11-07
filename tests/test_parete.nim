@@ -360,13 +360,13 @@ suite "taglio del pannello frontale e venatura":
 
 suite "pannello a L in testa al letto":
   let f = falegnami()
-  test "testata e pannello della risega diventano un pezzo a L, il fianco dietro va indietro":
+  test "testata e pannello della risega diventano un pezzo a L, davanti ai fianchi":
     let m0 = modello(f)
     let m = modello(f.conPannelloAL)
     check m.find("pannello a L").contornoLato.len == 6
     check m.parts.filterIt(it.name in ["frontale gavone", "pannello risega"]).len == 0
-    let d0 = m0.parts.filterIt(it.name == "fianco libreria")[1]
-    let d = m.parts.filterIt(it.name == "fianco libreria")[1]
-    check near(d.pos.x, d0.pos.x + f.sMulti) and near(d.size.x, d0.size.x - f.sMulti)
     let pa = m.find("pannello a L")
-    check near(pa.pos.x, f.xLibreria) and near(pa.pos.y + pa.size.y, f.profondita)
+    let pr = m0.find("pannello risega")
+    check near(pa.pos.x, pr.pos.x) and near(pa.pos.y, m0.find("fianco libreria").pos.y) and near(pa.pos.y + pa.size.y, f.profondita)
+    check m.parts.filterIt(it.name == "fianco libreria") == m0.parts.filterIt(it.name == "fianco libreria")
+    check pa.pos.x + pa.size.x <= f.xRisega   # non tocca la risega

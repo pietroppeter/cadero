@@ -524,16 +524,14 @@ nbText: """
 ## Il pannello a L, in testa al letto
 
 Una proposta da fare ai falegnami: il frontale del gavone (la testata, verso il letto)
-e il pannello che copre la risega diventano **un solo pannello a L**, in piano con
-l'apertura della libreria. Il braccio basso, alto quanto il gavone, va dal fianco
-davanti della libreria al muro; quello alto, alto quanto la libreria, dal fianco dietro
-al muro. Perché il pannello passi davanti al fianco dietro, il fianco comincia uno
-spessore più indietro (1.8 più corto). Nel visore: pulsante *Pannello a L*.
+e il pannello che copre la risega diventano **un solo pannello a L**, dove oggi c'è il
+pannello della risega. Il braccio basso, alto quanto il gavone, va dal davanti al muro;
+quello alto, alto quanto la libreria, dal fianco dietro al muro. La L passa davanti ai
+bordi dei due fianchi della libreria, che restano come sono, sta a 0.2 dal cassone come
+il pannello della risega di oggi e non tocca la risega. Il fondo del gavone arriva fino
+alla L. Nel visore: pulsante *Pannello a L*.
 
-Da verificare: dove prima c'era il pannello della risega (1.8 a sinistra dell'apertura)
-resta una fessura fra il cassone e il pannello a L; si chiude con un listello o
-allargando di poco il cassone. E il pezzo a L va tagliato da una lastra intera
-(i pezzi sotto).
+Il pezzo a L va tagliato da una lastra intera (le misure sotto).
 """
 
 nbCode:
