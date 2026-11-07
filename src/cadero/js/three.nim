@@ -83,6 +83,7 @@ type
     distance*: float
   Raycaster* = ref object of JsRoot
     params*: JsObject
+    near*, far*: float
 
   OrbitControls* = ref object of JsRoot
     target*: Vector3
@@ -185,6 +186,16 @@ proc newRaycaster*(): Raycaster {.importjs: "new THREE.Raycaster()".}
 proc setFromCamera*(r: Raycaster; ndc: Vector2; c: PerspectiveCamera) {.importjs: "#.setFromCamera(@)".}
 proc intersectObject*(r: Raycaster; o: Object3D; ricorsivo: bool): seq[Intersezione] {.importjs: "#.intersectObject(@)".}
 proc intersectObjects*(r: Raycaster; o: seq[Object3D]; ricorsivo: bool): seq[Intersezione] {.importjs: "#.intersectObjects(@)".}
+proc set*(r: Raycaster; origine, direzione: Vector3) {.importjs: "#.set(@)".}
+  ## il raggio da `origine` lungo `direzione` (lunga 1)
+proc normaleMondo*(h: Intersezione): Vector3 {.importjs: "((h) => h.face.normal.clone().transformDirection(h.object.matrixWorld))(#)".}
+  ## la normale della faccia toccata, nelle coordinate della scena
+proc isMesh*(o: Object3D): bool {.importjs: "(#.isMesh === true)".}
+proc newLinee*(punti: seq[Vector3]; m: Material): LineSegments {.importjs: "new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(#), #)".}
+  ## segmenti a coppie di punti (0-1, 2-3, …)
+proc smaltisci*(l: LineSegments) {.importjs: "#.geometry.dispose()".}
+proc dot*(v, w: Vector3): float {.importjs: "#.dot(@)".}
+proc addScaledVector*(v, w: Vector3; s: float): Vector3 {.importjs: "#.addScaledVector(@)", discardable.}
 
 proc newOrbitControls*(c: PerspectiveCamera; el: JsObject): OrbitControls {.importjs: "new THREE.OrbitControls(@)".}
 proc update*(c: OrbitControls) {.importjs: "#.update()".}

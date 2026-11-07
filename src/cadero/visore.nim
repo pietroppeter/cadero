@@ -448,6 +448,7 @@ proc costruisci(m: Model) =
       vestiBetulla(mesh, p)
       mesh.userData["legno"] = legni.len
       legni.add (mesh, p)
+    mesh.userData["nome"] = cstring(p.name)
     obj.add(mesh)
     if p.kind notin {kKnob, kSoft, kWall}:
       let e = newEdgesGeometry(g, 30)
@@ -687,6 +688,164 @@ proc giraVenatura(i: int): string =
   vestiBetulla(m, p)
   p.name & ": venatura " & $v
 
+# --- misurare toccando -----------------------------------------------------------------
+# Con "Misura" premuto, un tocco prende le misure della superficie toccata: in
+# orizzontale e in verticale (sul piano della faccia), fino al punto notevole più
+# vicino da ogni parte. Un punto notevole è dove la superficie finisce (un bordo,
+# un foro, uno scalino) o dove qualcosa le sta davanti (un muro, un pannello, il
+# materasso). Così toccando un'anta si leggono le sue misure, toccando il fronte
+# appena sopra l'anta lo stacco fino al bordo, toccando il muro dentro la nicchia
+# l'altezza dal materasso al cielo.
+type Misura = object
+  a, b: Vector3        ## i due estremi
+  testo: string
+  etichetta: Element   ## il numero, sopra la scena
+var
+  misure: seq[Misura]
+  lavagna: Element   ## l'SVG sopra la scena dove si disegnano le linee delle misure
+
+proc togli(e: Element) {.importjs: "#.remove()".}
+
+proc solidi(): seq[Object3D] =
+  ## le mesh visibili della scena, senza spigoli né misure
+  proc giu(o: Object3D; acc: var seq[Object3D]) =
+    if not o.visible: return
+    if o.isMesh: acc.add o
+    for f in o.children: giu(f, acc)
+  giu(group, result)
+
+proc primo(ss: seq[Object3D]; o, d: Vector3; lontano: float): Intersezione =
+  ## il primo solido sul raggio da o lungo d, entro `lontano`, o nil
+  ray.set(o, d); ray.near = 0; ray.far = lontano
+  let hs = ray.intersectObjects(ss, false)
+  result = if hs.len > 0: hs[0] else: nil
+  ray.near = 0; ray.far = 1e9
+
+proc fino(ss: seq[Object3D]; p, n, d: Vector3; ogg: Object3D): float =
+  ## Da p (sulla faccia di normale n) lungo d: la distanza dal primo punto notevole.
+  const eps = 0.4      # ci si stacca un poco dalla faccia
+  const massimo = 700.0
+  let o = p.clone().addScaledVector(n, eps)
+  var tMax = massimo
+  let h = primo(ss, o, d, massimo)
+  if h != nil: tMax = h.distance      # qualcosa sporge davanti alla faccia
+  let giu = n.clone().negate()
+  proc sopra(t: float): bool =
+    ## a distanza t la faccia c'è ancora, alla stessa profondità e dello stesso pezzo
+    let q = p.clone().addScaledVector(d, t).addScaledVector(n, eps)
+    let k = primo(ss, q, giu, eps + 0.6)
+    k != nil and k.`object` == ogg and abs(k.distance - eps) < 0.2
+  var (a, t) = (0.0, 0.0)
+  const passo = 1.0
+  while t < tMax:
+    let t2 = min(t + passo, tMax)
+    if not sopra(t2):
+      a = t
+      var b = t2
+      for _ in 0 ..< 12:     # il bordo, al decimo di millimetro
+        let m = (a + b) / 2
+        if sopra(m): a = m else: b = m
+      return min((a + b) / 2, tMax)
+    t = t2
+  tMax
+
+proc asse(n: Vector3): int =
+  let (x, y, z) = (abs(n.x), abs(n.y), abs(n.z))
+  if x >= y and x >= z: 0 elif y >= z: 1 else: 2
+
+proc versore(i: int): Vector3 =
+  case i
+  of 0: newVector3(1, 0, 0)
+  of 1: newVector3(0, 1, 0)
+  else: newVector3(0, 0, 1)
+
+proc cancellaMisure() =
+  for m in misure: togli(m.etichetta)
+  misure = @[]
+  if lavagna != nil: lavagna.innerHTML = ""
+
+proc numero(v: float): string =
+  let r = round(v * 10) / 10
+  if abs(r - round(r)) < 0.05: $int(round(r)) else: formatFloat(r, ffDecimal, 1)
+
+proc misuraAt(ev: PointerEv): string =
+  ## Prende le misure dal punto toccato; dice cosa ha misurato.
+  cancellaMisure()
+  mira(ev)
+  var h: Intersezione
+  for k in ray.intersectObject(group, true):
+    if visibile(k.`object`) and k.`object`.isMesh: h = k; break
+  if h == nil: return "Tocca una superficie per misurarla"
+  let ss = solidi()
+  let ax = asse(normaleMondo(h))
+  var n = versore(ax)
+  if normaleMondo(h).dot(n) < 0: n.negate()
+  # sul piano della faccia: orizzontale e verticale; su un piano steso, larghezza e profondità
+  let assi = case ax
+             of 0: @[2, 1]
+             of 2: @[0, 1]
+             else: @[0, 2]
+  let nomiAssi = if ax == 1: @["larghezza", "profondità"] else: @["larghezza", "altezza"]
+  let p = h.point.clone()
+  var parti: seq[string]
+  for j, i in assi:
+    let d = versore(i)
+    let piu = fino(ss, p, n, d, h.`object`)
+    let meno = fino(ss, p, n, d.clone().negate(), h.`object`)
+    let fuori = 0.25        # le linee appena davanti alla faccia
+    let a = p.clone().addScaledVector(d, -meno).addScaledVector(n, fuori)
+    let b = p.clone().addScaledVector(d, piu).addScaledVector(n, fuori)
+    let testo = numero(piu + meno)
+    let lab = document.createElement("div")
+    lab.setAttribute("class", "quota")
+    lab.textContent = cstring(testo)
+    stage.appendChild(lab)
+    misure.add Misura(a: a, b: b, testo: testo, etichetta: lab)
+    parti.add nomiAssi[j] & " " & testo
+  let nome = if h.`object`.userData.hasOwnProperty("nome"): $h.`object`.userData["nome"].to(cstring) else: ""
+  (if nome.len > 0: nome & ": " else: "") & parti.join(" · ") & " cm"
+
+proc posaEtichette() =
+  ## Ogni fotogramma: le linee delle misure sullo schermo (il tratto che si vede, con
+  ## le stanghette agli estremi) e ogni numero a metà del suo tratto; se due numeri si
+  ## toccano, il secondo scende un poco.
+  let (w, hh) = (stage.larghezza, stage.altezza)
+  if lavagna == nil:
+    lavagna = svg("svg")
+    lavagna.setAttribute("class", "lavagna")
+    stage.appendChild(lavagna)
+  lavagna.setAttribute("viewBox", cstring("0 0 " & $w & " " & $hh))
+  var disegno = ""
+  var posti: seq[(float, float)]
+  for m in misure:
+    var n = 0
+    var primo, ultimo: (float, float)
+    var (kPrimo, kUltimo) = (-1, -1)
+    for k in 0 .. 40:
+      let q = m.a.clone().lerpVectors(m.a, m.b, float(k) / 40).project(camera)
+      if q.z > 1 or abs(q.x) > 0.98 or abs(q.y) > 0.98: continue
+      let pt = ((q.x + 1) / 2 * w, (1 - q.y) / 2 * hh)
+      if n == 0: (primo, kPrimo) = (pt, k)
+      (ultimo, kUltimo) = (pt, k); inc n
+    if n < 2:
+      m.etichetta.setAttribute("style", "display:none"); continue
+    let linea = "M" & $primo[0] & " " & $primo[1] & "L" & $ultimo[0] & " " & $ultimo[1]
+    var stanghette = ""
+    let (dx, dy) = (ultimo[0] - primo[0], ultimo[1] - primo[1])
+    let l = max(hypot(dx, dy), 1e-6)
+    let (ox, oy) = (-dy / l * 7, dx / l * 7)
+    for (pt, k, fine) in [(primo, kPrimo, 0), (ultimo, kUltimo, 40)]:
+      if k == fine:
+        stanghette.add "M" & $(pt[0] + ox) & " " & $(pt[1] + oy) & "L" & $(pt[0] - ox) & " " & $(pt[1] - oy)
+    disegno.add "<path class=\"alone\" d=\"" & linea & stanghette & "\"/>"
+    disegno.add "<path class=\"tratto\" d=\"" & linea & stanghette & "\"/>"
+    var (x, y) = ((primo[0] + ultimo[0]) / 2, (primo[1] + ultimo[1]) / 2)
+    for (px, py) in posti:
+      if abs(px - x) < 50 and abs(py - y) < 22: y += 26
+    posti.add (x, y)
+    m.etichetta.setAttribute("style", cstring("left:" & $x & "px;top:" & $y & "px"))
+  lavagna.innerHTML = cstring(disegno)
+
 proc mostra*(m: Model) =
   ## Mostra un altro modello nel visore già avviato (la camera resta dov'è).
   if aggiorna != nil: aggiorna(m)
@@ -769,6 +928,9 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     let dt = adesso() - down.t
     down.attivo = false
     if moved > 6 or dt > 600: return
+    if premuto(el("t-misura")):     # si misura invece di aprire
+      status.textContent = cstring(misuraAt(ev))
+      return
     if premuto(el("t-venatura")):   # si gira la venatura invece di aprire
       let i = legnoAt(ev)
       if i >= 0:
@@ -799,11 +961,17 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     betulla = not premuto(tBetulla)
     tBetulla.premi(betulla)
     for (m, p) in legni: vestiBetulla(m, p))
-  let tVenatura = el("t-venatura")
-  tVenatura.addEventListener("click", proc (ev: Event) =
-    tVenatura.premi(not premuto(tVenatura))
-    status.textContent = if premuto(tVenatura): cstring"Tocca un pannello per girarne la venatura"
-                         else: cstring($modello.parts.len & " parti"))
+  # cosa fa un tocco sulla scena: apre e chiude, gira la venatura o misura
+  const modi = [("t-tocca", "Tocca le parti mobili per aprirle o chiuderle"),
+                ("t-venatura", "Tocca un pannello per girarne la venatura"),
+                ("t-misura", "Tocca un punto: le misure fino ai bordi più vicini")]
+  for (id, aiuto) in modi:
+    closureScope:
+      let (id, aiuto) = (id, aiuto)
+      el(id).addEventListener("click", proc (ev: Event) =
+        for (b, _) in modi: el(b).premi(b == id)
+        if id != "t-misura": cancellaMisure()
+        status.textContent = cstring(aiuto))
   el("t-chiudi").addEventListener("click", proc (ev: Event) =
     for u in units: setOpen(u, false))
   el("t-apri").addEventListener("click", proc (ev: Event) =
@@ -858,6 +1026,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     modello = modelli[chiave]
     mostraTavola(chiave)
     for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
+    cancellaMisure()
     costruisci(modello); applyToggles(); applyEsploso()
     status.textContent = cstring($modello.parts.len & " parti")
   const tagli = [("f-croce", ""), ("f-tre", "Tre")]
@@ -919,6 +1088,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       if abs(u.target - u.k) > 0.001: u.k += (u.target - u.k) * 0.15; posa(u)
       elif u.k != u.target: u.k = u.target; posa(u)
     controls.update()
+    if misure.len > 0: posaEtichette()
     renderer.render(scene, camera)
     prossimoFotogramma(loop)
   prossimoFotogramma(loop)
