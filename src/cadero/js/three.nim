@@ -66,6 +66,7 @@ type
   LineSegments* = ref object of Object3D
     material*: Material
   Light* = ref object of Object3D
+    intensity*: float
   PerspectiveCamera* = ref object of Object3D
     fov*, aspect*: float
 
@@ -142,10 +143,12 @@ proc render*(r: WebGLRenderer; s: Scene; c: PerspectiveCamera) {.importjs: "#.re
 
 proc newHemisphereLight*(cielo, terra: int; intensita: float): Light {.importjs: "new THREE.HemisphereLight(@)".}
 proc newDirectionalLight*(colore: int; intensita: float): Light {.importjs: "new THREE.DirectionalLight(@)".}
+proc newPointLight*(colore: int; intensita, distanza, decadimento: float): Light {.importjs: "new THREE.PointLight(@)".}
 
 # --- materiali e texture -----------------------------------------------------
 proc newMeshStandardMaterial*(params: JsObject): Material {.importjs: "new THREE.MeshStandardMaterial(@)".}
 proc newMeshBasicMaterial*(params: JsObject): Material {.importjs: "new THREE.MeshBasicMaterial(@)".}
+proc `emissiveIntensity=`*(m: Material; v: float) {.importjs: "#.emissiveIntensity = #".}
 proc newLineBasicMaterial*(params: JsObject): Material {.importjs: "new THREE.LineBasicMaterial(@)".}
 proc newCanvasTexture*(canvas: JsObject): Texture {.importjs: "new THREE.CanvasTexture(@)".}
 proc caricaTexture*(src: cstring): Texture {.importjs: "new THREE.TextureLoader().load(@)".}
@@ -154,12 +157,15 @@ proc caricaTexture*(src: cstring): Texture {.importjs: "new THREE.TextureLoader(
 proc newBoxGeometry*(w, h, d: float): BufferGeometry {.importjs: "new THREE.BoxGeometry(@)".}
 proc newCylinderGeometry*(r1, r2, h: float; segmenti: int): BufferGeometry {.importjs: "new THREE.CylinderGeometry(@)".}
 proc newPlaneGeometry*(w, h: float): BufferGeometry {.importjs: "new THREE.PlaneGeometry(@)".}
+proc newSphereGeometry*(r: float; segW, segH: int): BufferGeometry {.importjs: "new THREE.SphereGeometry(@)".}
+proc newCapsuleGeometry*(r, lunghezza: float; segCap, segGiro: int): BufferGeometry {.importjs: "new THREE.CapsuleGeometry(@)".}
 proc newExtrudeGeometry*(s: Shape; params: JsObject): BufferGeometry {.importjs: "new THREE.ExtrudeGeometry(@)".}
 proc newEdgesGeometry*(g: BufferGeometry; soglia = 1.0): BufferGeometry {.importjs: "new THREE.EdgesGeometry(@)".}
 proc dispose*(g: BufferGeometry) {.importjs: "#.dispose()".}
   ## libera la memoria della scheda video (quando la scena si ricostruisce)
 proc translate*(g: BufferGeometry; x, y, z: float): BufferGeometry {.importjs: "#.translate(@)", discardable.}
 proc rotateX*(g: BufferGeometry; a: float): BufferGeometry {.importjs: "#.rotateX(@)", discardable.}
+proc scale*(g: BufferGeometry; x, y, z: float): BufferGeometry {.importjs: "#.scale(@)", discardable.}
 proc rotateY*(g: BufferGeometry; a: float): BufferGeometry {.importjs: "#.rotateY(@)", discardable.}
 proc computeBoundingBox*(g: BufferGeometry) {.importjs: "#.computeBoundingBox()".}
 proc getX*(a: BufferAttribute; i: int): float {.importjs: "#.getX(@)".}

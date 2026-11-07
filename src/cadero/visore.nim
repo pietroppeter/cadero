@@ -86,6 +86,10 @@ var
   mats: Table[Kind, Material]
   matMaterasso: seq[Material]
   matMelaminico: Material  ## le scatole in melaminico grigio dei falegnami
+  matVetro, matGiallo: Material  ## la lampada: la sfera di vetro e la base
+  cielo, sole, lucina: Light    ## le luci della stanza e quella della lampada
+  sera = false                  ## la stanza di sera: luci basse, si vede la lampada
+  lampadaAccesa = true          ## la lampada si accende e si spegne toccandola
   cartaMat: Material
   edgeMat: Material
   group: Group
@@ -140,6 +144,9 @@ proc materiali() =
   mats[kBox] = front
   mats[kKnob] = newMeshStandardMaterial(js{color: 0x3a2e22})
   mats[kAccessory] = newMeshStandardMaterial(js{color: 0xf5f5f5, roughness: 0.4})
+  # la lampada: vetro bianco che si accende un poco, base gialla lucida
+  matVetro = newMeshStandardMaterial(js{color: 0xfffaf0, roughness: 0.3, emissive: 0xffe9b8, emissiveIntensity: 0.75})
+  matGiallo = newMeshStandardMaterial(js{color: 0xf2e49c, roughness: 0.15, metalness: 0.05})
   mats[kWall] = newMeshStandardMaterial(js{color: 0xb8bcc0, roughness: 1, transparent: true, opacity: 0.45})
   # la carta da parati: una piastrella del motivo ripetuta alle sue misure reali (cm)
   if carta.src.len > 0:
@@ -392,7 +399,14 @@ proc extrudedLato(p: Part): BufferGeometry =
 
 proc geometria(p: Part): BufferGeometry =
   ## La forma di una parte: cilindro (foro maniglia), sagoma estrusa o scatola.
-  if p.kind == kKnob:
+  if p.name == "lampada: sfera":       # la sfera di vetro, grande quanto la scatola
+    result = newSphereGeometry(p.w / 2, 32, 20)
+    result.translate(p.x + p.w / 2, p.z + p.h / 2, -(p.y + p.d / 2))
+  elif p.name == "lampada: base":      # la capsula, per metà dentro la striscia
+    result = newCapsuleGeometry(p.d / 2, p.h - p.d, 8, 24)
+    result.scale(p.w / (p.d / 2), 1, 1)
+    result.translate(p.x + p.w, p.z + p.h / 2, -(p.y + p.d / 2))
+  elif p.kind == kKnob:
     result = newCylinderGeometry(p.w / 2, p.w / 2, 0.4, 20)
     result.rotateX(PI / 2)
     result.translate(p.x, p.z, -p.y + 0.15)
@@ -442,6 +456,8 @@ proc costruisci(m: Model) =
     geometrie.add g
     let obj = newGroup()
     let mesh = if p.kind == kSoft: (uvMaterasso(g); newMesh(g, matMaterasso))
+               elif p.name == "lampada: sfera": newMesh(g, matVetro)
+               elif p.name == "lampada: base": newMesh(g, matGiallo)
                elif p.materiale == "melaminico": newMesh(g, matMelaminico)
                else: newMesh(g, mats[p.kind])
     if diLegno(p):
@@ -450,7 +466,7 @@ proc costruisci(m: Model) =
       legni.add (mesh, p)
     mesh.userData["nome"] = cstring(p.name)
     obj.add(mesh)
-    if p.kind notin {kKnob, kSoft, kWall}:
+    if p.kind notin {kKnob, kSoft, kWall} and not p.name.startsWith("lampada"):
       let e = newEdgesGeometry(g, 30)
       geometrie.add e
       obj.add(newLineSegments(e, edgeMat))
@@ -994,6 +1010,21 @@ proc posaEtichette() =
     m.etichetta.setAttribute("style", cstring("left:" & $x & "px;top:" & $y & "px"))
   lavagna.innerHTML = cstring(disegno)
 
+proc luci() =
+  ## Giorno o sera, lampada accesa o spenta: di sera la stanza è quasi buia e la
+  ## lampada fa luce intorno; di giorno accesa si vede solo la sfera che brilla.
+  let sfera = trova("lampada: sfera")
+  let c = if sfera != nil: newBox3().setFromObject(sfera).getCenter(newVector3()) else: newVector3()
+  let accesa = lampadaAccesa and sfera != nil and visibile(sfera)
+  lucina.position.copy(c)
+  cielo.intensity = if sera: 0.12 else: 1.6
+  sole.intensity = if sera: 0.04 else: 1.4
+  lucina.intensity = if not accesa: 0.0 elif sera: 6000.0 else: 1500.0
+  matVetro.emissiveIntensity = if accesa: (if sera: 1.6 else: 0.75) else: 0.04
+  if cartaMat != nil: cartaMat.emissiveIntensity = if sera: 0.02 else: 0.3
+  let s = cssVar("--stage")
+  scene.background = newColor(if sera: cstring"#14171b" elif s.len > 0: s else: cstring"#dfe3e6")
+
 proc mostra*(m: Model) =
   ## Mostra un altro modello nel visore già avviato (la camera resta dov'è).
   if aggiorna != nil: aggiorna(m)
@@ -1036,10 +1067,15 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   renderer.setSize(stage.larghezza, stage.altezza)
   let canvas = renderer.domElement.to(Element)
   stage.prepend(canvas)
-  scene.add(newHemisphereLight(0xffffff, 0xb0a890, 1.6))
-  let sun = newDirectionalLight(0xffffff, 1.4)
-  sun.position.set(-150, 400, 300)
-  scene.add(sun)
+  cielo = newHemisphereLight(0xffffff, 0xb0a890, 1.6)
+  scene.add(cielo)
+  sole = newDirectionalLight(0xffffff, 1.4)
+  sole.position.set(-150, 400, 300)
+  scene.add(sole)
+  # la luce della lampada: calda, nel centro della sfera (le misure sono in cm,
+  # quindi l'intensità è grande: cala con il quadrato della distanza)
+  lucina = newPointLight(0xffc98a, 0, 0, 2)
+  scene.add(lucina)
   materiali()
   materialiBetulla()
 
@@ -1098,6 +1134,12 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
         if not betulla: el("t-betulla").click()
         status.textContent = cstring(giraVenatura(i))
       return
+    let h = colpito(ev)
+    if h != nil and nomeDi(h.`object`).startsWith("lampada"):   # la lampada si accende
+      lampadaAccesa = not lampadaAccesa
+      luci()
+      status.textContent = cstring(if lampadaAccesa: "Lampada accesa" else: "Lampada spenta")
+      return
     let u = unitAt(ev)
     if u != nil: setOpen(u, u.target < 0.5))
   canvas.addEventListener("pointermove", proc (e: Event) =
@@ -1127,6 +1169,14 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     presa(group)
     let on = carta.src.len > 0 and not premuto(tCarta)
     for w in walls: w.material = if on: cartaMat else: mats[kWall]
+    luci()
+  # Sera: la stanza quasi al buio, la lampada (se accesa) fa luce
+  let tSera = el("t-sera")
+  tSera.addEventListener("click", proc (ev: Event) =
+    sera = not premuto(tSera)
+    tSera.premi(sera)
+    if sera and not premuto(tLampada): tLampada.premi(true); applyToggles()
+    luci())
   for btn in [tFront, tCarta, tPresa, tLampada]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let btn = btn
@@ -1258,6 +1308,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   proc applyTheme() =
     let s = cssVar("--stage")
     scene.background = newColor(if s.len > 0: s else: "#dfe3e6")
+    luci()
   applyTheme()
   quandoCambiaTema(applyTheme)
 

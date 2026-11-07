@@ -260,13 +260,18 @@ proc pannelloRisega*(f: Falegnami): float = f.profondita - (f.yMobili + f.profLi
   ## 15.8: il pannello che copre la risega, dal fianco dietro della libreria al dietro del mobile
 proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
   ## dove si disegna il muro: i mobili arrivano a 81.1, oltre gli 80 della stanza
+const sferaLampada* = 12.0
+  ## il diametro della sfera di vetro della lampada
 proc centroLampada*(f: Falegnami): tuple[y, z: float] =
   ## La lampada da lettura: al centro della striscia che copre la risega (dal fianco
-  ## dietro della libreria al muro), all'altezza della metà del primo scaffale
-  ## (Pietro, con la testata alta), ma almeno 55 sopra il materasso.
+  ## dietro della libreria al muro), subito sotto il primo scaffale della testata
+  ## alta (Pietro): il centro della sfera, che finisce 1 sotto lo scaffale. Resta a
+  ## quell'altezza anche con la testata bassa.
   let yd = f.yMobili + f.profLibreria
-  let scaffale = f.zScaffali[0] + f.sMulti / 2
-  ((yd + f.yMuro) / 2, max(scaffale, f.pianoLetto + f.materasso.altezza + 55))
+  var alta = f                 # come in `testataAlta` (più sotto)
+  alta.gavone = 58
+  alta.nScaffali = 2
+  ((yd + f.yMuro) / 2, alta.zScaffali[0] - 1 - sferaLampada / 2)
 
 proc presaDallaRisega*(f: Falegnami): float =
   ## dal centro della presa alla faccia della risega, in orizzontale
@@ -598,14 +603,16 @@ proc modello*(f: Falegnami): Model =
   var scatolaPresa = part("presa: scatola nel muro", kAccessory, L, yP - 5.3, zP - 3.5, 5, 10.6, 7)
   scatolaPresa.hiddenFront = true
   result.add scatolaPresa
-  # la lampada da lettura (facoltativa nel visore): un'applique a braccio sulla
-  # striscia che copre la risega, verso il letto (altezza in `centroLampada`)
+  # la lampada da lettura (facoltativa nel visore): un'applique sulla striscia che
+  # copre la risega, verso il letto (altezza in `centroLampada`), come nella foto di
+  # Pietro: una base a capsula, gialla e lucida, e sopra una sfera di vetro bianco.
+  # Nel visore la base è una capsula (metà nella striscia) e la sfera una sfera.
   let (yLa, zLa) = f.centroLampada
   let xLa = xl - sm                      # la faccia della striscia verso il letto
+  let rS = sferaLampada / 2
   for (nome, x, y, z, w, d, h) in [
-      ("lampada: base", xLa - 1.2, yLa - 5, zLa - 5, 1.2, 10.0, 10.0),
-      ("lampada: braccio", xLa - 26, yLa - 0.6, zLa + 3, 24.8, 1.2, 1.2),
-      ("lampada: testa", xLa - 31, yLa - 3.5, zLa - 2, 7.0, 7.0, 5.0)]:
+      ("lampada: base", xLa - 3.5, yLa - 3.5, zLa - rS - 9, 3.5, 7.0, 14.0),
+      ("lampada: sfera", xLa - 4.5 - rS, yLa - rS, zLa - rS, sferaLampada, sferaLampada, sferaLampada)]:
     var q = part(nome, kAccessory, x, y, z, w, d, h)
     q.hiddenFront = true
     result.add q

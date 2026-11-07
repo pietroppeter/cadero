@@ -96,6 +96,15 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   5 sopra il comodino e 5 dal fianco davanti, scatola nel muro dietro. Le parti si chiamano
   "presa: …": il visore le nasconde con "Senza presa" e, misurando, un tocco sulla presa dà
   centro-risega e centro-pavimento (`misuraPresa`).
+- La lampada (`centroLampada`, `sferaLampada`): "lampada: base" e "lampada: sfera" sulla striscia
+  della risega, la sfera 1 sotto il primo scaffale della testata alta (anche con la testata
+  bassa). Il visore le disegna per nome come capsula e sfera (`geometria`), le mostra con
+  "Lampada"; "Sera" abbassa le luci (`luci`), un tocco sulla lampada la accende o spegne.
+- Il visore parte dai pulsanti premuti nella pagina (`tools/visore3d.tpl.html`): per i falegnami
+  3 orizzontali, testata alta, vani alti, pannello a L, nicchia, lampada (Pietro, 7/11).
+  `docsrc/visore3d.nim` genera tutte le tavole dei tagli anche per questa combinazione.
+- Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e
+  cambiando modello.
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
