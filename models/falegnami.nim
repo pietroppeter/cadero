@@ -25,6 +25,13 @@ import ../src/cadero
 import parete   # i vincoli del muro e il materasso sono gli stessi
 
 type
+  TaglioFronte* = enum
+    ## Come si divide il pannello frontale (236.8 × 319.6, non sta in una lastra
+    ## 300 × 150). Con la cornice (`cornice`) ci sono anche le due spalle ai lati.
+    tCroce = "a croce"          ## i quattro pannelli dei falegnami e la fascia in cima
+    tTre = "3 orizzontali"      ## tre pezzi su tutta la larghezza: sotto fino a poco sopra
+                                ## i gradini (109), sopra due pezzi alti uguali
+
   Falegnami* = object
     muro*: VincoliMuro
     materasso*: Materasso
@@ -82,6 +89,16 @@ type
     scaffali*: float         ## profondità degli scaffali: 27 (disegno)
     nScaffali*: int          ## 3
     vanoL*, vanoH*: float    ## i tre vani alti: 68.1 × 40.9 (disegno)
+    # --- il multistrato di betulla
+    taglio*: TaglioFronte    ## come si divide il pannello frontale: a croce (disegno)
+    pannelloAL*: bool        ## proposta: testata del gavone e pannello della risega in un
+                             ## solo pannello a L, davanti ai bordi dei fianchi della
+                             ## libreria (vedi `conPannelloAL`)
+    cornice*: bool           ## le due spalle ai lati, la cornice esterna (disegno: sì;
+                             ## nel visore di base no, si rimette con il pulsante)
+    venature*: seq[(string, Venatura)]
+                             ## la venatura scelta per un pannello, per nome (es.
+                             ## ("fronte spalla sx", venOrizzontale)); gli altri lungo il lato lungo
 
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
@@ -101,7 +118,7 @@ proc falegnami*(): Falegnami =
     profGradini: 30,
     prof: 77.5, profRisega: 62.2, interno: 193, hNicchia: 150,
     profLibreria: 63.5, hLibreria: 150, gavone: 32, comodino: 38, scaffali: 27, nScaffali: 3,
-    vanoL: 68.1, vanoH: 40.9)
+    vanoL: 68.1, vanoH: 40.9, cornice: true)
 
 proc senzaPannello*(f: Falegnami): Falegnami =
   ## La variante senza il pannellino: niente fessura, i gradini si ridistribuiscono.
@@ -173,6 +190,31 @@ proc zFessura*(f: Falegnami): float =
   ## il fondo della fessura del pannellino: sopra il 3° gradino, a mezzo spazio
   let z = f.zGradini
   z[2] + f.gradini[2] + f.spazioGradini / 2
+
+proc zTaglioTre*(f: Falegnami): float = f.hBassi
+  ## 109: il taglio basso del fronte in 3, poco sopra i gradini e le ante (107),
+  ## alla cima dei mobili bassi; sopra, due pezzi alti uguali
+
+proc pezziFronte*(f: Falegnami): seq[(string, RRect)] =
+  ## I pezzi del pannello frontale secondo il taglio scelto (nome e rettangolo nel
+  ## piano x, z): tra le spalle se c'è la cornice, se no su tutta la larghezza.
+  let H = f.altezza
+  let (x0, L) = if f.cornice: (f.xFronte, 2 * f.pannelloL) else: (0.0, f.larghezza)
+  case f.taglio
+  of tCroce:
+    for (nome, i, j) in [("basso sx", 0, 0), ("basso dx", 1, 0), ("alto sx", 0, 1), ("alto dx", 1, 1)]:
+      result.add (nome, rrect(x0 + float(i) * L / 2, float(j) * f.pannelloH, L / 2, f.pannelloH))
+    result.add ("fascia", rrect(x0, 2 * f.pannelloH, L, f.fascia))
+  of tTre:
+    let zb = f.zTaglioTre
+    let za = (zb + H) / 2
+    result.add ("sotto", rrect(x0, 0, L, zb))
+    result.add ("mezzo", rrect(x0, zb, L, za - zb))
+    result.add ("sopra", rrect(x0, za, L, H - za))
+
+proc venaturaFronte*(f: Falegnami): Venatura =
+  ## la venatura di base dei pezzi del fronte: verticale a croce, orizzontale in 3
+  if f.taglio == tCroce: venVerticale else: venOrizzontale
 
 proc catenaFronte*(f: Falegnami): seq[float] =
   ## le quote verticali del prospetto
@@ -248,13 +290,22 @@ proc conModifiche*(f: Falegnami; tavolino, testata, risega, vani: bool): Falegna
   if risega: result = result.risegaStretta
   if vani: result = result.vaniAlti
 
-proc chiaveModifiche*(tavolino, testata, risega, vani: bool): string =
+proc conPannelloAL*(f: Falegnami; on = true): Falegnami =
+  ## La proposta del pannello a L: il frontale del gavone (la testata, verso il letto)
+  ## e il pannello che copre la risega diventano un solo pannello a L, dove oggi c'è
+  ## il pannello della risega: passa davanti ai bordi dei due fianchi della libreria,
+  ## che restano come sono, e arriva fino al muro (0.2 dal cassone, come oggi).
+  result = f
+  result.pannelloAL = on
+
+proc chiaveModifiche*(tavolino, testata, risega, vani: bool; pannelloL = false): string =
   ## la chiave del visore: "falegnami" e le modifiche accese, sempre in quest'ordine
   result = "falegnami"
   if tavolino: result.add "Tavolino"
   if testata: result.add "Testata"
   if risega: result.add "Risega"
   if vani: result.add "Vani"
+  if pannelloL: result.add "PannelloL"
 
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =
@@ -295,24 +346,28 @@ proc modello*(f: Falegnami): Model =
       if mel: q.materiale = "melaminico"
       m.add q
 
-  # --- il fronte: quattro pannelli, la fascia, le spalle -----------------------
-  # la nicchia e il vano alto di mezzo passano da un pannello all'altro: nei
-  # pezzi diventano tacche del contorno (vedi `pannelloForato`)
+  # --- il fronte: i pezzi del taglio scelto e le spalle ----------------------
+  # le aperture che passano da un pezzo all'altro (la nicchia, il vano alto di
+  # mezzo) nei pezzi diventano tacche del contorno (vedi `pannelloForato`)
   let fori = f.aperture
-  for (nome, i, j) in [("basso sx", 0, 0), ("basso dx", 1, 0), ("alto sx", 0, 1), ("alto dx", 1, 1)]:
-    result.add pannelloForato("fronte " & nome, f.xFronte + float(i) * f.pannelloL, f.yFronte,
-                              float(j) * f.pannelloH, f.pannelloL, sm, f.pannelloH, fori)
-  for q in [part("fronte fascia", kPanel, f.xFronte, f.yFronte, 2 * f.pannelloH, 2 * f.pannelloL, sm, f.fascia),
+  for (nome, r) in f.pezziFronte:
+    var q = pannelloForato("fronte " & nome, r.x, f.yFronte, r.z, r.w, sm, r.h, fori)
+    q.venatura = f.venaturaFronte
+    result.add q
+  for q in (if not f.cornice: @[] else: @[
             part("fronte spalla sx", kPanel, 0, f.yFronte, 0, f.spalla, sm, H),
-            part("fronte spalla dx", kPanel, L - f.spalla, f.yFronte, 0, f.spalla, sm, H)]:
+            part("fronte spalla dx", kPanel, L - f.spalla, f.yFronte, 0, f.spalla, sm, H)]):
     var q = q
     q.contorno = @[(q.pos.x, q.pos.z), (q.x1, q.pos.z), (q.x1, q.z1), (q.pos.x, q.z1)]   # per le viste
+    q.venatura = venVerticale
     result.add q
 
   # --- frontali: ante, cassetti, ribalte --------------------------------------
   let d = f.diamForo
   proc frontale(m: var Model; nome, gruppo, apre: string; x, z, w, h, fx, fz: float; corsa = 0.0) =
     var a = part(nome, kFront, x, 0, z, w, sm, h, f.raggioFrontali)
+    # la venatura: verticale nelle ante, orizzontale in cassetti e ribalte
+    a.venatura = if nome.startsWith("anta"): venVerticale else: venOrizzontale
     var foro = part("foro", kKnob, fx, 0, fz, d, 0, d)
     a.apribile(gruppo, apre, corsa)
     foro.apribile(gruppo, apre, corsa)
@@ -332,6 +387,7 @@ proc modello*(f: Falegnami): Model =
       # tagliata per il condizionatore: a sinistra un pezzo fisso, si apre il resto
       var fisso = part("ribalta, parte fissa", kFront, x, 0, f.zRibalte, f.parteFissa, sm, f.ribaltaH,
                        f.raggioFrontali)
+      fisso.venatura = venOrizzontale
       result.add fisso
       let xa = x + f.parteFissa + 0.3
       let wa = f.ribaltaL - f.parteFissa - 0.3
@@ -454,13 +510,26 @@ proc modello*(f: Falegnami): Model =
     part("fianco libreria", kPanel, xl, y0 + pl - sm, zl, wl, sm, f.hLibreria),
     part("schiena libreria", kPanel, L - sm, y0, zl, sm, pl, f.hLibreria),
     part("fondo gavone", kPanel, xl + sm, y0 + sm, zl, wl - sm, pl - 2 * sm, sm),
-    part("frontale gavone", kPanel, xl, y0 + sm, zl, sm, pl - 2 * sm, f.gavone),
     part("cielo libreria", kPanel, xl, y0 + sm, zl + f.hLibreria - sm, wl, pl - 2 * sm, sm)]
-  # il pannello che copre la risega, a sinistra della libreria guardandola dal
-  # letto: in piano con l'apertura della libreria, dal suo fianco dietro fino al
-  # muro (largo quanto serve: profondità del mobile meno fianco e libreria)
-  lib.add part("pannello risega", kPanel, xl - sm, y0 + pl - sm, zl,
-               sm, f.profondita - (y0 + pl - sm), f.hLibreria)
+  if f.pannelloAL:
+    # testata e pannello della risega in un solo pezzo a L, dove oggi c'è il
+    # pannello della risega (x = xl - sm), davanti ai bordi dei due fianchi: il braccio
+    # basso, alto quanto il gavone, va dal davanti al muro; quello alto, alto quanto la
+    # libreria, dal fianco dietro al muro. Il fondo del gavone arriva fino alla L.
+    let (ya, yd, yb) = (y0, y0 + pl - sm, f.profondita)
+    var pa = part("pannello a L", kPanel, xl - sm, ya, zl, sm, yb - ya, f.hLibreria)
+    pa.contornoLato = @[(ya, zl), (yb, zl), (yb, zl + f.hLibreria), (yd, zl + f.hLibreria),
+                        (yd, zl + f.gavone), (ya, zl + f.gavone)]
+    lib.add pa
+    for q in lib.mitems:
+      if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
+  else:
+    lib.add part("frontale gavone", kPanel, xl, y0 + sm, zl, sm, pl - 2 * sm, f.gavone)
+    # il pannello che copre la risega, a sinistra della libreria guardandola dal
+    # letto: in piano con l'apertura della libreria, dal suo fianco dietro fino al
+    # muro (largo quanto serve: profondità del mobile meno fianco e libreria)
+    lib.add part("pannello risega", kPanel, xl - sm, y0 + pl - sm, zl,
+                 sm, f.profondita - (y0 + pl - sm), f.hLibreria)
   var com = part("piano comodino", kPanel, xl, y0 + sm, zc - sm, wl, pl - 2 * sm, sm)
   let (xG, yG, wG, dG) = (xl + 4, y0 + sm + 6, wl - 8, pl - 2 * sm - 12)
   com.holesPiano.add rrect(xG, yG, wG, dG, 4)
@@ -493,6 +562,26 @@ proc modello*(f: Falegnami): Model =
   result.add part("muro (carta da parati)", kWall, 0, yMuro, 0, L, 2, H)
   result.add part("risega (muro, carta da parati)", kWall, f.xRisega, yMuro - f.muro.risegaProf, 0,
                   f.muro.risegaLarga, f.muro.risegaProf, H)
+
+  # --- la venatura scelta pannello per pannello (le altre: lungo il lato lungo)
+  for (nome, v) in f.venature:
+    for q in result.parts.mitems:
+      if q.name == nome: q.venatura = v
+
+proc conTaglio*(f: Falegnami; t: TaglioFronte): Falegnami =
+  ## lo stesso modello con un altro taglio del pannello frontale
+  result = f
+  result.taglio = t
+
+proc conCornice*(f: Falegnami; cornice: bool): Falegnami =
+  ## lo stesso modello con o senza le due spalle ai lati del fronte
+  result = f
+  result.cornice = cornice
+
+proc chiaveTaglio*(t: TaglioFronte; cornice: bool): string =
+  ## il pezzo di chiave del visore per il fronte: "Tre" per il taglio in 3 (niente
+  ## per quello a croce), poi "Cornice" se ci sono le spalle
+  (if t == tTre: "Tre" else: "") & (if cornice: "Cornice" else: "")
 
 # --- i controlli ------------------------------------------------------------------
 proc controlli*(f: Falegnami; m: Model): seq[string] =
@@ -543,7 +632,7 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
     result.add "il fondo dei vani alti sta " & fmtNum(f.scalinoVani) &
       " cm sotto il bordo dell'apertura delle ribalte: dentro c'è uno scalino"
   let rima = 2 * f.pannelloH - (f.zRibalte + f.ribaltaH - f.sormonto)
-  if rima < 2:
+  if f.taglio == tCroce and rima < 2:
     result.add "sopra l'apertura dei vani alti restano solo " & fmtNum(rima) & " cm di fronte sotto la fascia"
   let sopra = f.zRibalte + f.ribaltaH - f.sormonto - (f.fondoVani + f.vanoH)
   if sopra > 0.5:
@@ -581,7 +670,8 @@ proc quote*(f: Falegnami): seq[DimChain] =
              stops: @[0.0, c[0], c[0] + f.nicchiaL, L]),
     DimChain(view: vFront, vertical: false, at: -12, ext: 0, stops: basso),
     DimChain(view: vFront, vertical: false, at: -28, ext: -12,
-             stops: @[0.0, f.spalla, f.spalla + f.pannelloL, L - f.spalla, L]),
+             stops: (if f.cornice: @[0.0, f.spalla, f.spalla + f.pannelloL, L - f.spalla, L]
+                     else: @[0.0, L / 2, L])),
     DimChain(view: vSide, vertical: true, at: -26, ext: 0,
              stops: @[0.0, f.hBassi, f.pianoLetto, f.cieloNicchia, f.cieloNicchia + f.sMulti,
                       f.fondoVani, f.fondoVani + f.vanoH, H]),

@@ -520,4 +520,64 @@ nbText: "I controlli del modello con la proposta:"
 nbCode:
   for r in controlli(fv, modello(fv)): echo "- ", r
 
+nbText: """
+## Il pannello a L, in testa al letto
+
+Una proposta da fare ai falegnami: il frontale del gavone (la testata, verso il letto)
+e il pannello che copre la risega diventano **un solo pannello a L**, dove oggi c'è il
+pannello della risega. Il braccio basso, alto quanto il gavone, va dal davanti al muro;
+quello alto, alto quanto la libreria, dal fianco dietro al muro. La L passa davanti ai
+bordi dei due fianchi della libreria, che restano come sono, sta a 0.2 dal cassone come
+il pannello della risega di oggi e non tocca la risega. Il fondo del gavone arriva fino
+alla L. Nel visore: pulsante *Pannello a L*.
+
+Il pezzo a L va tagliato da una lastra intera (le misure sotto).
+"""
+
+nbCode:
+  let fl = f.conPannelloAL
+  for p in modello(fl).parts:
+    if p.name in ["pannello a L", "fianco libreria"]:
+      echo p.name, ": ", p.size.x.fmtNum, " × ", p.size.y.fmtNum, " × ", p.size.z.fmtNum
+  for r in controlli(fl, modello(fl)): echo "- ", r
+
+nbText: """
+## Il taglio del pannello frontale, in multistrato di betulla
+
+Il pannello frontale è largo 236.8 e alto 319.6: non sta in una lastra di
+multistrato (300 × 150, ipotesi: il formato grande più comune), va diviso. Due modi,
+da scegliere nel visore con i pulsanti *Taglio*:
+
+- **A croce**, come i falegnami: quattro pannelli alti 156.8 e una fascia alta 6 in
+  cima. Venatura verticale.
+- **In 3 orizzontali** (richiesta sulla PR): tre pezzi su tutta la larghezza. Il
+  taglio basso è a 109, poco sopra i gradini e le ante (107), alla cima dei mobili
+  bassi; sopra, due pezzi alti uguali (taglio a 214.3, attraversa la nicchia).
+  Venatura orizzontale.
+
+**La cornice** (le due spalle ai lati, 5.9 × 319.6, come nel disegno dei falegnami)
+è un pulsante a parte, *Cornice*: nel visore di base non c'è, e i pezzi del fronte
+vanno da muro a muro. Le spalle non stanno in una lastra da 300. Nel disegno ogni
+pezzo ha le righe della sua venatura; verde se sta in una lastra, rosso se no:
+"""
+
+nbCode:
+  let svgTagli = disegnoTagli(f)
+  let svgTagliCornice = disegnoTagli(f, [("", f.conTaglio(tCroce)), ("", f.conTaglio(tTre))])
+nbRawHtml: svgTagli
+nbText: "Con la cornice:"
+nbRawHtml: svgTagliCornice
+
+nbText: """
+**La venatura.** Ogni pannello in multistrato ha la sua venatura, orizzontale o
+verticale (`Part.venatura`). Di base: i pezzi del fronte verticali a croce e
+orizzontali in 3, le spalle verticali, le ante basse verticali, i cassetti e le
+ribalte dei vani alti orizzontali; le altre parti lungo il lato più lungo. Per
+sceglierla nel modello si scrive il nome del pannello in `f.venature`, per esempio
+`@[("fronte sopra", venVerticale)]`. Nel visore il pulsante *Betulla* mostra il
+multistrato (la faccia con la venatura, il bordo con gli strati) e *Gira venatura*,
+premuto, gira la venatura del pannello che si tocca: serve per provare. Il
+melaminico delle scatole resta grigio.
+"""
+
 nbSave

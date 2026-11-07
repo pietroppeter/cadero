@@ -33,6 +33,7 @@ type
 
   BufferAttribute* = ref object of JsRoot
     count*: int
+    needsUpdate*: bool
   Attributi* = ref object of JsRoot
     ## `geometry.attributes`: le coordinate dei vertici
     uv*, position*, normal*: BufferAttribute
@@ -174,6 +175,8 @@ proc closePath*(p: Path) {.importjs: "#.closePath()".}
 
 proc newMesh*(g: BufferGeometry; m: Material): Mesh {.importjs: "new THREE.Mesh(@)".}
 proc newMesh*(g: BufferGeometry; m: seq[Material]): Mesh {.importjs: "new THREE.Mesh(@)".}
+proc `materiali=`*(m: Mesh; mats: seq[Material]) {.importjs: "#.material = #".}
+  ## un materiale per gruppo di facce (scatola: ±x, ±y, ±z; estrusa: facce, bordi)
   ## una faccia per materiale: ±x, ±y, ±z (come il materasso)
 proc newLineSegments*(g: BufferGeometry; m: Material): LineSegments {.importjs: "new THREE.LineSegments(@)".}
 

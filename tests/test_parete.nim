@@ -1,5 +1,5 @@
 import std/unittest
-import std/strutils
+import std/[strutils, sequtils]
 import ../src/cadero, ../models/parete
 
 let p = rilievo()
@@ -280,7 +280,7 @@ suite "parete di riferimento":
     check h.x + h.w <= sc2.pos.x - 1.9 and h.w < wBase   # il gavone si stringe
     check pc.controlli.len == 1
 
-import ../models/falegnami
+import ../models/falegnami, ../models/falegnami_tavole
 
 suite "modello dei falegnami":
   let f = falegnami()
@@ -328,3 +328,45 @@ suite "modello rivisto e vani alti":
     check abs(v.fondoVani + v.vanoH - (v.zRibalte + v.ribaltaH)) < 1e-6
     check v.altezza == r.altezza and v.nicchiaZ == r.nicchiaZ and v.pianoLetto == r.pianoLetto
     check v.fondoVani + v.vanoH < 2 * v.pannelloH
+
+suite "taglio del pannello frontale e venatura":
+  let f = falegnami()
+  proc pezzi(t: TaglioFronte; cornice: bool): seq[Part] =
+    pezziDelFronte(f.conTaglio(t).conCornice(cornice))
+  test "a croce: 4 pannelli e la fascia, con la cornice anche le spalle; venatura verticale":
+    check pezzi(tCroce, true).len == 7 and pezzi(tCroce, false).len == 5
+    for q in pezzi(tCroce, false): check q.verso == venVerticale
+    check near(f.conCornice(false).modello.find("fronte basso sx").size.x, f.larghezza / 2)
+  test "3 orizzontali: sotto fino a 109, sopra due pezzi uguali, da muro a muro, in lastra, orizzontali":
+    let g = f.conTaglio(tTre).conCornice(false)
+    let p = pezziDelFronte(g)
+    check p.len == 3
+    let m = modello(g)
+    let mezzo = m.find("fronte mezzo")
+    for q in p: check near(q.size.x, f.larghezza) and inLastra(q) and q.verso == venOrizzontale
+    check near(mezzo.pos.z, f.hBassi) and near(mezzo.size.z, m.find("fronte sopra").size.z)
+    check f.hBassi > f.zBassi + f.altezzaAnte   # poco sopra gradini e ante
+    check pezzi(tTre, true).len == 5
+  test "venature di base: ante verticali, cassetti e ribalte orizzontali":
+    let m = modello(f)
+    check m.find("anta A").verso == venVerticale and m.find("anta D").verso == venVerticale
+    check m.find("frontale cassetto").verso == venOrizzontale and m.find("ribalta").verso == venOrizzontale
+    check m.find("ribalta, parte fissa").verso == venOrizzontale
+  test "la venatura scelta nel modello vale per quel pannello":
+    var g = f
+    g.venature = @[("fronte spalla sx", venOrizzontale)]
+    let m = modello(g)
+    check m.find("fronte spalla sx").verso == venOrizzontale and m.find("fronte spalla dx").verso == venVerticale
+
+suite "pannello a L in testa al letto":
+  let f = falegnami()
+  test "testata e pannello della risega diventano un pezzo a L, davanti ai fianchi":
+    let m0 = modello(f)
+    let m = modello(f.conPannelloAL)
+    check m.find("pannello a L").contornoLato.len == 6
+    check m.parts.filterIt(it.name in ["frontale gavone", "pannello risega"]).len == 0
+    let pa = m.find("pannello a L")
+    let pr = m0.find("pannello risega")
+    check near(pa.pos.x, pr.pos.x) and near(pa.pos.y, m0.find("fianco libreria").pos.y) and near(pa.pos.y + pa.size.y, f.profondita)
+    check m.parts.filterIt(it.name == "fianco libreria") == m0.parts.filterIt(it.name == "fianco libreria")
+    check pa.pos.x + pa.size.x <= f.xRisega   # non tocca la risega

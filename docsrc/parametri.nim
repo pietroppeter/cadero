@@ -120,7 +120,14 @@ nbRawHtml: """<section class="banco" id="banco">
       </div>
       <div class="group" id="g-modifiche" hidden>
         <button id="p-tavolino" type="button"></button><button id="p-testata" type="button"></button>
-        <button id="p-risega" type="button"></button><button id="p-vani" type="button"></button>
+        <button id="p-risega" type="button"></button><button id="p-vani" type="button"></button><button id="p-pannellol" type="button"></button>
+      </div>
+      <div class="group" id="g-taglio" hidden>
+        <button id="f-croce" type="button"></button><button id="f-tre" type="button"></button><button id="f-cornice" type="button"></button>
+      </div>
+      <div class="group" role="group" aria-label="Multistrato">
+        <button id="t-betulla" type="button" aria-pressed="true">Betulla</button>
+        <button id="t-venatura" type="button" aria-pressed="false">Venatura</button>
       </div>
       <div class="group" role="group" aria-label="Apertura">
         <span class="label">Apri</span>

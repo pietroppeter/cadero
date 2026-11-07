@@ -100,6 +100,10 @@ var
   anim: tuple[attiva: bool, fromPos, fromTarget, toPos, toTarget: Vector3, t0: float]
   geometrie: seq[BufferGeometry]   ## della scena di ora: si liberano quando si ricostruisce
   aggiorna: proc (m: Model)        ## ricostruisce la scena con un altro modello (vedi `mostra`)
+  betulla = true         ## il pulsante "Betulla": il multistrato con la sua venatura
+  matFaccia, matFacciaFrontali, matBordo: Material   ## betulla: faccia, faccia dei frontali, bordo
+  legni: seq[(Mesh, Part)]         ## le parti in multistrato della scena di ora
+  sceltaVenatura: Table[string, Venatura]   ## le venature girate a mano nel visore, per parte
 
 # --- materiali ------------------------------------------------------------------
 proc tessuto(disegna: proc (x: Ctx2D)): Material =
@@ -172,6 +176,140 @@ proc uvCarta(g: BufferGeometry) =
     if carta.w > 0: uv.setXY(i, u / carta.w, pos.getY(i) / carta.h)
     else: uv.setXY(i, 0, 0)
 
+# --- il multistrato di betulla --------------------------------------------------
+# Ogni parte in multistrato ha due materiali: la faccia, con la venatura, e il
+# bordo, con gli strati incollati. Le coordinate uv sono in cm (come per la carta
+# da parati): sulla faccia u va lungo la venatura, sul bordo v attraversa lo spessore.
+const
+  latoVenatura = 60.0   ## la piastrella della venatura: 60 × 60 cm
+  latoBordo = 10.0      ## la piastrella del bordo: 10 cm lungo il bordo, tutto lo spessore
+  strati = 13           ## gli strati di un multistrato di betulla da 18 mm
+
+proc rnd(i: int): float =
+  ## un numero tra 0 e 1, sempre lo stesso per lo stesso i (la venatura non cambia)
+  let x = sin(float(i) * 12.9898 + 78.233) * 43758.5453
+  x - floor(x)
+
+proc rgba(r, g, b: int; a: float): cstring =
+  cstring("rgba(" & $r & "," & $g & "," & $b & "," & formatFloat(a, ffDecimal, 3) & ")")
+
+proc texBetulla(): Texture =
+  ## La faccia: betulla chiara, a fasce morbide e linee sottili ondulate lungo u
+  ## (periodiche, così la piastrella si ripete senza giunte).
+  const n = 512
+  let N = float(n)
+  let cv = nuovoCanvas(n)
+  let x = cv.ctx2d
+  x.fillStyle = "#eedfc2"; x.fillRect(0, 0, N, N)
+  for i in 0 ..< 16:   # le fasce, un po' più chiare o più scure
+    let (y0, h) = (rnd(i) * N, 6 + rnd(i + 100) * 46)
+    x.fillStyle = if i mod 2 == 0: rgba(255, 250, 238, 0.22) else: rgba(196, 160, 104, 0.06)
+    for dy in [-N, 0.0, N]: x.fillRect(0, y0 + dy, N, h)
+  for i in 0 ..< 70:   # le linee della venatura
+    let y0 = rnd(i + 300) * N
+    let a = 0.5 + rnd(i + 400) * 3.5
+    let k = float(1 + int(rnd(i + 500) * 3))
+    let ph = rnd(i + 600) * 2 * PI
+    x.strokeStyle = rgba(160, 118, 64, 0.03 + rnd(i + 700) * 0.09)
+    x.lineWidth = 0.4 + rnd(i + 800) * 1.0
+    for dy in [-N, 0.0, N]:
+      x.beginPath()
+      for t in 0 .. 64:
+        let u = float(t) / 64 * N
+        let v = y0 + dy + a * sin(2 * PI * k * u / N + ph)
+        if t == 0: x.moveTo(u, v) else: x.lineTo(u, v)
+      x.stroke()
+  for i in 0 ..< 30:   # qualche puntino, i piccoli nodi della betulla
+    x.fillStyle = rgba(120, 86, 46, 0.25 + rnd(i + 900) * 0.3)
+    x.beginPath(); x.arc(rnd(i + 1000) * N, rnd(i + 1100) * N, 0.6 + rnd(i + 1200) * 1.2, 0, 7); x.fill()
+  result = newCanvasTexture(cv.toJs)
+  result.wrapS = RepeatWrapping(); result.wrapT = RepeatWrapping(); result.colorSpace = SRGBColorSpace()
+  result.anisotropy = 8
+
+proc texStrati(): Texture =
+  ## Il bordo: gli strati del multistrato, chiari e scuri alternati, con la colla in mezzo.
+  const n = 128
+  let N = float(n)
+  let cv = nuovoCanvas(n)
+  let x = cv.ctx2d
+  let passo = N / float(strati)
+  for i in 0 ..< strati:
+    x.fillStyle = if i mod 2 == 0: cstring"#efe0bf" else: cstring"#d9bf92"
+    x.fillRect(0, float(i) * passo, N, passo + 0.5)
+    x.fillStyle = rgba(104, 76, 40, 0.45)
+    x.fillRect(0, float(i) * passo, N, 0.9)
+  result = newCanvasTexture(cv.toJs)
+  result.wrapS = RepeatWrapping(); result.wrapT = RepeatWrapping(); result.colorSpace = SRGBColorSpace()
+  result.anisotropy = 8
+
+proc materialiBetulla() =
+  let faccia = texBetulla()
+  matFaccia = newMeshStandardMaterial(js{map: faccia, roughness: 0.75})
+  matFacciaFrontali = newMeshStandardMaterial(js{map: faccia, color: 0xfff8ee, roughness: 0.7})
+  matBordo = newMeshStandardMaterial(js{map: texStrati(), roughness: 0.85})
+
+proc diLegno(p: Part): bool =
+  ## le parti in multistrato: pannelli, frontali e cassetti che non sono melaminico
+  p.kind in {kPanel, kFront, kBox} and p.materiale != "melaminico"
+
+proc chiaveParte(p: Part): string =
+  ## una parte, per ricordare la venatura girata anche cambiando variante
+  p.name & "@" & $round(p.pos.x) & "," & $round(p.pos.y) & "," & $round(p.pos.z)
+
+proc versoDi(p: Part): Venatura =
+  ## la venatura di una parte: girata nel visore o scelta nel modello
+  let k = chiaveParte(p)
+  if k in sceltaVenatura: sceltaVenatura[k] else: p.verso
+
+proc sottile(p: Part): int =
+  ## l'asse dello spessore, in coordinate three: 0 x, 1 y (altezza), 2 z (profondità)
+  let s = p.size
+  if s.y <= s.x and s.y <= s.z: 2 elif s.z <= s.x and s.z <= s.y: 1 else: 0
+
+proc uvBetulla(g: BufferGeometry; p: Part; v: Venatura) =
+  ## Le coordinate uv per la betulla: sulla faccia lungo la venatura, sul bordo
+  ## attraverso lo spessore (v da 0 a 1 = tutti gli strati).
+  let uv = g.attributes.uv
+  let pos = g.attributes.position
+  let nor = g.attributes.normal
+  let t = sottile(p)
+  let tmin = [p.x, p.z, -(p.y + p.d)][t]
+  let spess = max([p.w, p.h, p.d][t], 0.01)
+  for i in 0 ..< uv.count:
+    let q = [pos.getX(i), pos.getY(i), pos.getZ(i)]
+    let nn = [abs(nor.getX(i)), abs(nor.getY(i)), abs(nor.getZ(i))]
+    let a = if nn[0] >= nn[1] and nn[0] >= nn[2]: 0 elif nn[1] >= nn[2]: 1 else: 2
+    if a == t:   # la faccia: orizzontale lungo il primo asse del piano, verticale lungo il secondo
+      let (p1, p2) = case a
+                     of 2: (0, 1)    # in piedi, di faccia: x e altezza
+                     of 1: (0, 2)    # steso: x e profondità
+                     else: (2, 1)    # un fianco: profondità e altezza
+      let (lungo, traverso) = if v == venVerticale: (q[p2], q[p1]) else: (q[p1], q[p2])
+      uv.setXY(i, lungo / latoVenatura, traverso / latoVenatura)
+    else:
+      let altro = 3 - a - t
+      uv.setXY(i, q[altro] / latoBordo, (q[t] - tmin) / spess)
+  uv.needsUpdate = true
+
+proc eScatola(p: Part): bool =
+  ## la parte è una scatola semplice (BoxGeometry), non una sagoma estrusa
+  p.kind != kKnob and p.holesPiano.len == 0 and p.taccheP.len == 0 and p.holes.len == 0 and
+    p.contorno.len == 0 and p.contornoLato.len == 0 and not (p.kind in {kFront, kBox} and p.r > 0)
+
+proc vestiBetulla(m: Mesh; p: Part) =
+  ## Mette alla parte la betulla (o il colore semplice, se il pulsante è spento).
+  if not betulla:
+    m.material = mats[p.kind]; return
+  uvBetulla(m.geometry, p, versoDi(p))
+  let faccia = if p.kind == kPanel: matFaccia else: matFacciaFrontali
+  if eScatola(p):   # BoxGeometry: un gruppo per faccia, ±x, ±y, ±z
+    let t = sottile(p)
+    var ms: seq[Material]
+    for i in 0 ..< 6: ms.add(if i div 2 == t: faccia else: matBordo)
+    m.materiali = ms
+  else:             # ExtrudeGeometry: prima le facce, poi i bordi
+    m.materiali = @[faccia, matBordo]
+
 # --- geometrie --------------------------------------------------------------------
 proc roundRect[P: Path](path: P; x, y, w, h, r: float): P =
   ## Un rettangolo con gli angoli arrotondati, come contorno o come foro.
@@ -225,12 +363,25 @@ proc extrudedTop(p: Part): BufferGeometry =
   result.rotateX(-PI / 2)          # (x, y, z) -> (x, z, -y): y CAD -> -z three
   result.translate(0, p.z, 0)
 
+proc extrudedLato(p: Part): BufferGeometry =
+  ## Un pannello sottile in x con una sagoma vista di fianco (il pannello a L):
+  ## il contorno nel piano (y, z), estruso in x per il suo spessore.
+  let shape = newShape()
+  for i, (y, z) in p.contornoLato:
+    if i > 0: shape.lineTo(y, z) else: shape.moveTo(y, z)
+  shape.closePath()
+  result = newExtrudeGeometry(shape, js{depth: p.w, bevelEnabled: false, curveSegments: 8})
+  result.rotateY(PI / 2)           # (y, z, e) -> (e, z, -y): y CAD -> -z three
+  result.translate(p.x, 0, 0)
+
 proc geometria(p: Part): BufferGeometry =
   ## La forma di una parte: cilindro (foro maniglia), sagoma estrusa o scatola.
   if p.kind == kKnob:
     result = newCylinderGeometry(p.w / 2, p.w / 2, 0.4, 20)
     result.rotateX(PI / 2)
     result.translate(p.x, p.z, -p.y + 0.15)
+  elif p.contornoLato.len > 0:
+    result = extrudedLato(p)
   elif p.holesPiano.len > 0 or p.taccheP.len > 0:
     result = extrudedTop(p)
   elif p.holes.len > 0 or p.contorno.len > 0 or (p.kind in {kFront, kBox} and p.r > 0):
@@ -251,6 +402,7 @@ proc costruisci(m: Model) =
   if group != nil and group.parent != nil: scene.remove(group)
   for g in geometrie: g.dispose()
   group = newGroup(); units = @[]; frontPanel = @[]; walls = @[]; pezzi = @[]; geometrie = @[]
+  legni = @[]
   var byName: Table[string, Unita]
   var wrapByName: Table[string, Pezzo]
   # il contenitore che l'esploso sposta: uno per gruppo, uno per ogni altra parte.
@@ -276,6 +428,10 @@ proc costruisci(m: Model) =
     let mesh = if p.kind == kSoft: (uvMaterasso(g); newMesh(g, matMaterasso))
                elif p.materiale == "melaminico": newMesh(g, matMelaminico)
                else: newMesh(g, mats[p.kind])
+    if diLegno(p):
+      vestiBetulla(mesh, p)
+      mesh.userData["legno"] = legni.len
+      legni.add (mesh, p)
     obj.add(mesh)
     if p.kind notin {kKnob, kSoft, kWall}:
       let e = newEdgesGeometry(g, 30)
@@ -497,6 +653,24 @@ proc unitAt(ev: PointerEv): Unita =
     return u
   nil
 
+proc legnoAt(ev: PointerEv): int =
+  ## La parte in multistrato toccata (il suo posto in `legni`), o -1.
+  mira(ev)
+  for h in ray.intersectObject(group, true):
+    if not visibile(h.`object`) or h.`object`.isLineSegments: continue
+    let o = h.`object`
+    if o.userData.hasOwnProperty("legno"): return o.userData["legno"].to(int)
+    return -1
+  -1
+
+proc giraVenatura(i: int): string =
+  ## Gira la venatura della parte i (orizzontale <-> verticale) e dice com'è ora.
+  let (m, p) = legni[i]
+  let v = if versoDi(p) == venVerticale: venOrizzontale else: venVerticale
+  sceltaVenatura[chiaveParte(p)] = v
+  vestiBetulla(m, p)
+  p.name & ": venatura " & $v
+
 proc mostra*(m: Model) =
   ## Mostra un altro modello nel visore già avviato (la camera resta dov'è).
   if aggiorna != nil: aggiorna(m)
@@ -544,6 +718,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   sun.position.set(-150, 400, 300)
   scene.add(sun)
   materiali()
+  materialiBetulla()
 
   costruisci(modello)
   box = newBox3().setFromObject(group)
@@ -578,6 +753,12 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     let dt = adesso() - down.t
     down.attivo = false
     if moved > 6 or dt > 600: return
+    if premuto(el("t-venatura")):   # si gira la venatura invece di aprire
+      let i = legnoAt(ev)
+      if i >= 0:
+        if not betulla: el("t-betulla").click()
+        status.textContent = cstring(giraVenatura(i))
+      return
     let u = unitAt(ev)
     if u != nil: setOpen(u, u.target < 0.5))
   canvas.addEventListener("pointermove", proc (e: Event) =
@@ -597,6 +778,16 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let btn = btn
       btn.addEventListener("click", proc (ev: Event) = btn.premi(not premuto(btn)); applyToggles())
+  let tBetulla = el("t-betulla")
+  tBetulla.addEventListener("click", proc (ev: Event) =
+    betulla = not premuto(tBetulla)
+    tBetulla.premi(betulla)
+    for (m, p) in legni: vestiBetulla(m, p))
+  let tVenatura = el("t-venatura")
+  tVenatura.addEventListener("click", proc (ev: Event) =
+    tVenatura.premi(not premuto(tVenatura))
+    status.textContent = if premuto(tVenatura): cstring"Tocca un pannello per girarne la venatura"
+                         else: cstring($modello.parts.len & " parti"))
   el("t-chiudi").addEventListener("click", proc (ev: Event) =
     for u in units: setOpen(u, false))
   el("t-apri").addEventListener("click", proc (ev: Event) =
@@ -617,8 +808,13 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let tPrese = el("m-prese")
   # le quattro modifiche proposte al modello dei falegnami, indipendenti
   let modifiche = [("p-tavolino", "Tavolino"), ("p-testata", "Testata"), ("p-risega", "Risega"),
-                   ("p-vani", "Vani")]
+                   ("p-vani", "Vani"), ("p-pannellol", "PannelloL")]
   el("g-modifiche").nascosto(not falegnami)
+  el("g-taglio").nascosto(not falegnami)
+  # il taglio del pannello frontale dei falegnami: "" a croce, "Tre" in 3 orizzontali;
+  # "Cornice" (pulsante) rimette le due spalle ai lati
+  var taglio = ""
+  let tCornice = el("f-cornice")
   el("g-mobile").nascosto(not idea)
   # il pulsante di un modello compare solo se la pagina ha anche l'altro
   for n in ["base", "tavolino"]: el("m-" & n).nascosto(not idea)
@@ -635,6 +831,8 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     if fal:
       for (id, nome) in modifiche:
         if premuto(el(id)): chiave.add nome
+      chiave.add taglio
+      if premuto(tCornice): chiave.add "Cornice"
     else:
       chiave = variante
       chiave.add (if premuto(tRisega): "Scoperta" else: "") &
@@ -645,12 +843,20 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
     costruisci(modello); applyToggles(); applyEsploso()
     status.textContent = cstring($modello.parts.len & " parti")
+  const tagli = [("f-croce", ""), ("f-tre", "Tre")]
+  for (id, t) in tagli:
+    closureScope:   # ogni giro ha le sue variabili
+      let (id, t) = (id, t)
+      el(id).addEventListener("click", proc (ev: Event) =
+        taglio = t
+        for (b, _) in tagli: el(b).premi(b == id)
+        cambiaModello())
   for name in ["base", "tavolino", "falegnami"]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let name = name
       el("m-" & name).addEventListener("click", proc (ev: Event) =
         variante = name; cambiaModello())
-  var interruttori = @[tRisega, tAntina, tPrese]
+  var interruttori = @[tRisega, tAntina, tPrese, tCornice]
   for (id, _) in modifiche: interruttori.add el(id)
   for i in 0 ..< interruttori.len:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
