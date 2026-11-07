@@ -32,11 +32,17 @@ for tav in [false, true]:
   for tes in [false, true]:
     for ris in [false, true]:
       for van in [false, true]:
-        for t in TaglioFronte:
-          for cor in [false, true]:
-            tavole.add tavolaVariante(f0.conModifiche(tav, tes, ris, van).conTaglio(t).conCornice(cor),
-              chiaveModifiche(tav, tes, ris, van) & chiaveTaglio(t, cor),
-              tav or tes or ris or van or t != tCroce or cor)
+        for pal in [false, true]:
+          let base = f0.conModifiche(tav, tes, ris, van).conPannelloAL(pal)
+          let chiave = chiaveModifiche(tav, tes, ris, van, pal)
+          let spento = not (tav or tes or ris or van or pal)
+          # le tavole dei tagli e della cornice solo con le modifiche spente (le
+          # altre combinazioni tengono la tavola che c'è): la pagina resta leggera
+          for t in TaglioFronte:
+            for cor in [false, true]:
+              if spento or (t == tCroce and not cor):
+                tavole.add tavolaVariante(base.conTaglio(t).conCornice(cor),
+                  chiave & chiaveTaglio(t, cor), not spento or t != tCroce or cor)
 nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"L <b>{f0.larghezza:g}</b> × H <b>{f0.altezza:g}</b> × P <b>{f0.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",
@@ -72,10 +78,12 @@ nbJsFromCode(cartaSrc):
     for tes in [false, true]:
       for ris in [false, true]:
         for van in [false, true]:
-          for t in TaglioFronte:
-            for cor in [false, true]:
-              varianti[chiaveModifiche(tav, tes, ris, van) & chiaveTaglio(t, cor)] =
-                modello(falegnami().conModifiche(tav, tes, ris, van).conTaglio(t).conCornice(cor))
+          for pal in [false, true]:
+            for t in TaglioFronte:
+              for cor in [false, true]:
+                varianti[chiaveModifiche(tav, tes, ris, van, pal) &
+                         chiaveTaglio(t, cor)] =
+                  modello(falegnami().conModifiche(tav, tes, ris, van).conPannelloAL(pal).conTaglio(t).conCornice(cor))
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
   quandoThreePronto(proc () = avviaVisore(varianti, carta))
 

@@ -1,5 +1,5 @@
 import std/unittest
-import std/strutils
+import std/[strutils, sequtils]
 import ../src/cadero, ../models/parete
 
 let p = rilievo()
@@ -357,3 +357,16 @@ suite "taglio del pannello frontale e venatura":
     g.venature = @[("fronte spalla sx", venOrizzontale)]
     let m = modello(g)
     check m.find("fronte spalla sx").verso == venOrizzontale and m.find("fronte spalla dx").verso == venVerticale
+
+suite "pannello a L in testa al letto":
+  let f = falegnami()
+  test "testata e pannello della risega diventano un pezzo a L, il fianco dietro va indietro":
+    let m0 = modello(f)
+    let m = modello(f.conPannelloAL)
+    check m.find("pannello a L").contornoLato.len == 6
+    check m.parts.filterIt(it.name in ["frontale gavone", "pannello risega"]).len == 0
+    let d0 = m0.parts.filterIt(it.name == "fianco libreria")[1]
+    let d = m.parts.filterIt(it.name == "fianco libreria")[1]
+    check near(d.pos.x, d0.pos.x + f.sMulti) and near(d.size.x, d0.size.x - f.sMulti)
+    let pa = m.find("pannello a L")
+    check near(pa.pos.x, f.xLibreria) and near(pa.pos.y + pa.size.y, f.profondita)

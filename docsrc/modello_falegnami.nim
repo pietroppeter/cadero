@@ -521,6 +521,29 @@ nbCode:
   for r in controlli(fv, modello(fv)): echo "- ", r
 
 nbText: """
+## Il pannello a L, in testa al letto
+
+Una proposta da fare ai falegnami: il frontale del gavone (la testata, verso il letto)
+e il pannello che copre la risega diventano **un solo pannello a L**, in piano con
+l'apertura della libreria. Il braccio basso, alto quanto il gavone, va dal fianco
+davanti della libreria al muro; quello alto, alto quanto la libreria, dal fianco dietro
+al muro. Perché il pannello passi davanti al fianco dietro, il fianco comincia uno
+spessore più indietro (1.8 più corto). Nel visore: pulsante *Pannello a L*.
+
+Da verificare: dove prima c'era il pannello della risega (1.8 a sinistra dell'apertura)
+resta una fessura fra il cassone e il pannello a L; si chiude con un listello o
+allargando di poco il cassone. E il pezzo a L va tagliato da una lastra intera
+(i pezzi sotto).
+"""
+
+nbCode:
+  let fl = f.conPannelloAL
+  for p in modello(fl).parts:
+    if p.name in ["pannello a L", "fianco libreria"]:
+      echo p.name, ": ", p.size.x.fmtNum, " × ", p.size.y.fmtNum, " × ", p.size.z.fmtNum
+  for r in controlli(fl, modello(fl)): echo "- ", r
+
+nbText: """
 ## Il taglio del pannello frontale, in multistrato di betulla
 
 Il pannello frontale è largo 236.8 e alto 319.6: non sta in una lastra di

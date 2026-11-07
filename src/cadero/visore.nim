@@ -294,7 +294,7 @@ proc uvBetulla(g: BufferGeometry; p: Part; v: Venatura) =
 proc eScatola(p: Part): bool =
   ## la parte è una scatola semplice (BoxGeometry), non una sagoma estrusa
   p.kind != kKnob and p.holesPiano.len == 0 and p.taccheP.len == 0 and p.holes.len == 0 and
-    p.contorno.len == 0 and not (p.kind in {kFront, kBox} and p.r > 0)
+    p.contorno.len == 0 and p.contornoLato.len == 0 and not (p.kind in {kFront, kBox} and p.r > 0)
 
 proc vestiBetulla(m: Mesh; p: Part) =
   ## Mette alla parte la betulla (o il colore semplice, se il pulsante è spento).
@@ -363,12 +363,25 @@ proc extrudedTop(p: Part): BufferGeometry =
   result.rotateX(-PI / 2)          # (x, y, z) -> (x, z, -y): y CAD -> -z three
   result.translate(0, p.z, 0)
 
+proc extrudedLato(p: Part): BufferGeometry =
+  ## Un pannello sottile in x con una sagoma vista di fianco (il pannello a L):
+  ## il contorno nel piano (y, z), estruso in x per il suo spessore.
+  let shape = newShape()
+  for i, (y, z) in p.contornoLato:
+    if i > 0: shape.lineTo(y, z) else: shape.moveTo(y, z)
+  shape.closePath()
+  result = newExtrudeGeometry(shape, js{depth: p.w, bevelEnabled: false, curveSegments: 8})
+  result.rotateY(PI / 2)           # (y, z, e) -> (e, z, -y): y CAD -> -z three
+  result.translate(p.x, 0, 0)
+
 proc geometria(p: Part): BufferGeometry =
   ## La forma di una parte: cilindro (foro maniglia), sagoma estrusa o scatola.
   if p.kind == kKnob:
     result = newCylinderGeometry(p.w / 2, p.w / 2, 0.4, 20)
     result.rotateX(PI / 2)
     result.translate(p.x, p.z, -p.y + 0.15)
+  elif p.contornoLato.len > 0:
+    result = extrudedLato(p)
   elif p.holesPiano.len > 0 or p.taccheP.len > 0:
     result = extrudedTop(p)
   elif p.holes.len > 0 or p.contorno.len > 0 or (p.kind in {kFront, kBox} and p.r > 0):
@@ -795,7 +808,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let tPrese = el("m-prese")
   # le quattro modifiche proposte al modello dei falegnami, indipendenti
   let modifiche = [("p-tavolino", "Tavolino"), ("p-testata", "Testata"), ("p-risega", "Risega"),
-                   ("p-vani", "Vani")]
+                   ("p-vani", "Vani"), ("p-pannellol", "PannelloL")]
   el("g-modifiche").nascosto(not falegnami)
   el("g-taglio").nascosto(not falegnami)
   # il taglio del pannello frontale dei falegnami: "" a croce, "Tre" in 3 orizzontali;

@@ -68,6 +68,9 @@ type
                         ## da un pezzo all'altro (vedi `pannelloForato`). Vuoto: il rettangolo
     materiale*: string  ## "" multistrato; "melaminico": le scatole grigie dei falegnami
     venatura*: Venatura ## il verso della venatura del multistrato (vedi `Venatura`)
+    contornoLato*: seq[(float, float)]
+                        ## il contorno vero visto di fianco (y, z), per un pannello sottile
+                        ## in x che non è un rettangolo (il pannello a L della libreria)
 
   Model* = object
     name*: string

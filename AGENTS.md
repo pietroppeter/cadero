@@ -81,6 +81,9 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   aggiunge le 2 spalle (vero in `falegnami()`, falso di base nel visore). Ante basse
   verticali, cassetti e ribalte orizzontali. Nel visore la chiave prende in coda
   `chiaveTaglio(t, cornice)` ("" / "Tre", poi "Cornice").
+- Un pannello sottile in x con una sagoma (il pannello a L della libreria,
+  `conPannelloAL`) usa `contornoLato`: poligono nel piano y, z, estruso per `size.x`.
+  Nella chiave del visore "PannelloL" viene dopo le modifiche (`chiaveModifiche(..., pal)`).
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
