@@ -824,7 +824,8 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let tPrese = el("m-prese")
   # le quattro modifiche proposte al modello dei falegnami, indipendenti
   let modifiche = [("p-tavolino", "Tavolino"), ("p-testata", "Testata"), ("p-risega", "Risega"),
-                   ("p-vani", "Vani"), ("p-pannellol", "PannelloL")]
+                   ("p-vani", "Vani"), ("p-pannellol", "PannelloL"),
+                   ("p-nicchia", "Nicchia")]
   el("g-modifiche").nascosto(not falegnami)
   el("g-taglio").nascosto(not falegnami)
   # il taglio del pannello frontale dei falegnami: "" a croce, "Tre" in 3 orizzontali;

@@ -542,6 +542,21 @@ nbCode:
   for r in controlli(fl, modello(fl)): echo "- ", r
 
 nbText: """
+## La nicchia, con le misure decise
+
+Con i falegnami abbiamo deciso una nicchia più larga, e che vista da dietro il fronte
+sporga un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 55
+prima di quello di destra; il bordo alto sta 10 sotto il cielo del cassone, quello basso
+10 sopra il materasso, che diventa alto 18 (invece di 17). Nel visore: pulsante *Nicchia*.
+"""
+
+nbCode:
+  let fn = f.nicchiaAperta
+  echo "apertura: ", fmtNum(fn.nicchiaL), " × ", fmtNum(fn.nicchiaH), " (prima ",
+    fmtNum(f.nicchiaL), " × ", fmtNum(f.nicchiaH), "), da ", fmtNum(fn.nicchiaZ), " a ",
+    fmtNum(fn.nicchiaZ + fn.nicchiaH), " da terra"
+
+nbText: """
 ## Il taglio del pannello frontale, in multistrato di betulla
 
 Il pannello frontale è largo 236.8 e alto 319.6: non sta in una lastra di

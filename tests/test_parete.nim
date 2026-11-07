@@ -371,3 +371,13 @@ suite "pannello a L in testa al letto":
     check m.parts.filterIt(it.name == "fianco libreria") == m0.parts.filterIt(it.name == "fianco libreria")
     check pa.pos.x + pa.size.x <= f.xRisega   # non tocca la risega
     check pa.contornoLato[^1][1] == m.find("piano comodino").pos.z + f.sMulti   # copre il bordo del comodino
+
+suite "nicchia con le misure decise":
+  let f = falegnami()
+  test "15 a sinistra, 55 a destra, 10 sotto il cielo, 10 sopra il materasso da 18":
+    let g = f.nicchiaAperta
+    check near(g.nicchiaX, 15) and near(g.larghezza - g.nicchiaX - g.nicchiaL, 55)
+    check near(g.cieloNicchia - (g.nicchiaZ + g.nicchiaH), 10)
+    check g.materasso.altezza == 18 and near(g.bordo, 10)
+    check near(f.nicchiaX, f.colonne[0])   # senza: allineata all'anta A
+    check controlli(g, modello(g)).len > 0

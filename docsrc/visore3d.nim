@@ -33,9 +33,10 @@ for tav in [false, true]:
     for ris in [false, true]:
       for van in [false, true]:
         for pal in [false, true]:
-          let base = f0.conModifiche(tav, tes, ris, van).conPannelloAL(pal)
-          let chiave = chiaveModifiche(tav, tes, ris, van, pal)
-          let spento = not (tav or tes or ris or van or pal)
+         for nic in [false, true]:
+          let base = f0.conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic)
+          let chiave = chiaveModifiche(tav, tes, ris, van, pal, nic)
+          let spento = not (tav or tes or ris or van or pal or nic)
           # le tavole dei tagli e della cornice solo con le modifiche spente (le
           # altre combinazioni tengono la tavola che c'è): la pagina resta leggera
           for t in TaglioFronte:
@@ -79,11 +80,12 @@ nbJsFromCode(cartaSrc):
       for ris in [false, true]:
         for van in [false, true]:
           for pal in [false, true]:
+           for nic in [false, true]:
             for t in TaglioFronte:
               for cor in [false, true]:
-                varianti[chiaveModifiche(tav, tes, ris, van, pal) &
+                varianti[chiaveModifiche(tav, tes, ris, van, pal, nic) &
                          chiaveTaglio(t, cor)] =
-                  modello(falegnami().conModifiche(tav, tes, ris, van).conPannelloAL(pal).conTaglio(t).conCornice(cor))
+                  modello(falegnami().conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic).conTaglio(t).conCornice(cor))
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
   quandoThreePronto(proc () = avviaVisore(varianti, carta))
 

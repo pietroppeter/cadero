@@ -54,6 +54,8 @@ type
                              ## perché il bordo alto sia a filo del cielo del cassone
                              ## (in scala sul prospetto si legge circa 137)
     nicchiaL*, nicchiaH*: float     ## 156.7 × 121.9 (disegno)
+    nicchiaSx*: float        ## il bordo sinistro dell'apertura, dal muro; 0 = allineata
+                             ## all'anta A (disegno; vedi `nicchiaX` e `nicchiaAperta`)
     # --- la zona bassa del fronte
     zBassi*: float           ## fondo di ante, cassetti e gradini, da terra: 12 (disegno: 120)
     altezzaAnte*: float      ## 95 (disegno)
@@ -163,6 +165,9 @@ proc scalinoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.fondoVani -
   ## 7.5: di quanto il dentro dei vani alti sta sotto il bordo dell'apertura
 proc pianoComodino*(f: Falegnami): float = f.hBassi + f.gavone + f.sMulti
   ## 142.8: la cima del piano sopra il gavone
+proc nicchiaX*(f: Falegnami): float =
+  ## il bordo sinistro dell'apertura della nicchia: allineato all'anta A, o dove dice `nicchiaSx`
+  if f.nicchiaSx > 0: f.nicchiaSx else: f.colonne[0]
 proc bordo*(f: Falegnami): float = f.nicchiaZ - f.pianoLetto - f.materasso.altezza
   ## 9.2: il fronte sopra il materasso
 proc schienale*(f: Falegnami): float = f.pianoComodino - f.pianoLetto - f.materasso.altezza
@@ -281,6 +286,19 @@ proc rivisto*(f: Falegnami): Falegnami =
   ## testata alta e il pannello della risega stretto.
   f.senzaPannello.testataAlta.risegaStretta
 
+proc nicchiaAperta*(f: Falegnami; on = true): Falegnami =
+  ## Le misure della nicchia decise con i falegnami: vista da dietro il fronte sporge
+  ## un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 55
+  ## prima di quello di destra, il bordo alto sta 10 sotto il cielo del cassone e quello
+  ## basso 10 sopra un materasso da 18 (invece di 17).
+  result = f
+  if not on: return
+  result.materasso.altezza = 18
+  result.nicchiaSx = 15
+  result.nicchiaL = f.larghezza - 55 - 15
+  result.nicchiaZ = f.pianoLetto + 18 + 10
+  result.nicchiaH = f.cieloNicchia - 10 - result.nicchiaZ
+
 proc conModifiche*(f: Falegnami; tavolino, testata, risega, vani: bool): Falegnami =
   ## Le modifiche proposte sono indipendenti: si accendono una per una. Il
   ## "tavolino" è il pannellino estraibile dei falegnami.
@@ -298,7 +316,8 @@ proc conPannelloAL*(f: Falegnami; on = true): Falegnami =
   result = f
   result.pannelloAL = on
 
-proc chiaveModifiche*(tavolino, testata, risega, vani: bool; pannelloL = false): string =
+proc chiaveModifiche*(tavolino, testata, risega, vani: bool; pannelloL = false;
+                      nicchia = false): string =
   ## la chiave del visore: "falegnami" e le modifiche accese, sempre in quest'ordine
   result = "falegnami"
   if tavolino: result.add "Tavolino"
@@ -306,6 +325,7 @@ proc chiaveModifiche*(tavolino, testata, risega, vani: bool; pannelloL = false):
   if risega: result.add "Risega"
   if vani: result.add "Vani"
   if pannelloL: result.add "PannelloL"
+  if nicchia: result.add "Nicchia"
 
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =
@@ -315,7 +335,7 @@ proc aperture*(f: Falegnami): seq[RRect] =
   let zA = f.zBassi + so
   let hA = f.altezzaAnte - 2 * so
   # la nicchia, allineata a sinistra con l'anta A e la prima ribalta
-  result.add rrect(c[0], f.nicchiaZ, f.nicchiaL, f.nicchiaH, f.raggioNicchia)
+  result.add rrect(f.nicchiaX, f.nicchiaZ, f.nicchiaL, f.nicchiaH, f.raggioNicchia)
   # in basso: anta A, i gradini (e la fessura), i cassetti, l'anta D
   result.add rrect(c[0] + so, zA, f.antaA - 2 * so, hA, ra)
   for i, z in f.zGradini:
@@ -667,7 +687,7 @@ proc quote*(f: Falegnami): seq[DimChain] =
     DimChain(view: vFront, vertical: true, at: -52, ext: -22, stops: @[0.0, f.pannelloH, 2 * f.pannelloH, H]),
     DimChain(view: vFront, vertical: false, at: H + 12, ext: H, stops: alto),
     DimChain(view: vFront, vertical: false, at: H + 28, ext: H,
-             stops: @[0.0, c[0], c[0] + f.nicchiaL, L]),
+             stops: @[0.0, f.nicchiaX, f.nicchiaX + f.nicchiaL, L]),
     DimChain(view: vFront, vertical: false, at: -12, ext: 0, stops: basso),
     DimChain(view: vFront, vertical: false, at: -28, ext: -12,
              stops: (if f.cornice: @[0.0, f.spalla, f.spalla + f.pannelloL, L - f.spalla, L]
