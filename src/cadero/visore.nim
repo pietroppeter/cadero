@@ -700,8 +700,10 @@ type Misura = object
   a, b: Vector3        ## i due estremi
   testo: string
   etichetta: Element   ## il numero, sopra la scena
+  gruppo: int          ## le misure di un tocco (o di un trascinamento) vanno via insieme
 var
   misure: seq[Misura]
+  prossimoGruppo, anteprima = -1   ## anteprima: il gruppo che si sta trascinando
   lavagna: Element   ## l'SVG sopra la scena dove si disegnano le linee delle misure
 
 proc togli(e: Element) {.importjs: "#.remove()".}
@@ -762,7 +764,13 @@ proc versore(i: int): Vector3 =
 proc cancellaMisure() =
   for m in misure: togli(m.etichetta)
   misure = @[]
+  anteprima = -1
   if lavagna != nil: lavagna.innerHTML = ""
+  el("t-cancella").nascosto(true)
+
+proc mostraMisure(on: bool) =
+  ## nasconde o rimostra le misure (spegnendo e riaccendendo Misurare)
+  stage.toggleClass("senza-misure", not on)
 
 proc numero(v: float): string =
   let r = round(v * 10) / 10
@@ -810,12 +818,29 @@ proc aggancia(ss: seq[Object3D]; h: Intersezione; soloAsse = -1): Vector3 =
     if min(piu, meno) < raggio - 1e-6:
       if piu <= meno: result.addScaledVector(d, piu) else: result.addScaledVector(d, -meno)
 
+proc togliGruppo(g: int) =
+  ## toglie le misure di un tocco
+  var resta: seq[Misura]
+  for m in misure:
+    if m.gruppo == g: togli(m.etichetta) else: resta.add m
+  misure = resta
+  if misure.len == 0: cancellaMisure()
+
+proc nuovoGruppo(): int =
+  inc prossimoGruppo
+  prossimoGruppo
+
 proc mettiMisura(a, b: Vector3; testo: string) =
+  ## una misura nel gruppo corrente; toccando il numero si toglie il gruppo
+  let g = prossimoGruppo
   let lab = document.createElement("div")
   lab.setAttribute("class", "quota")
+  lab.setAttribute("title", "Tocca per togliere questa misura")
   lab.textContent = cstring(testo)
+  lab.addEventListener("click", proc (ev: Event) = togliGruppo(g))
   stage.appendChild(lab)
-  misure.add Misura(a: a, b: b, testo: testo, etichetta: lab)
+  misure.add Misura(a: a, b: b, testo: testo, etichetta: lab, gruppo: g)
+  el("t-cancella").nascosto(false)
 
 proc componente(v: Vector3; i: int): float =
   case i
@@ -827,7 +852,9 @@ proc misuraTra(ha, hb: Intersezione; finale: bool): string =
   ## La misura trascinata da ha a hb. Se il trascinamento va quasi lungo un asse
   ## (orizzontale, verticale o in profondità) si misura solo lungo quell'asse, dritta;
   ## alla fine gli estremi si agganciano ai bordi vicini.
-  cancellaMisure()
+  if anteprima >= 0: togliGruppo(anteprima)
+  anteprima = if finale: -1 else: nuovoGruppo()
+  if finale: discard nuovoGruppo()
   var (a, b) = (ha.point.clone(), hb.point.clone())
   # la direzione del trascinamento sul piano della faccia da cui parte (senza la
   # profondità: si può finire su una superficie più indietro, come il muro nella nicchia)
@@ -887,10 +914,10 @@ proc misuraPresa(): string =
   testo & numero(c.y) & " da terra"
 
 proc misuraAt(ev: PointerEv): string =
-  ## Prende le misure dal punto toccato; dice cosa ha misurato.
-  cancellaMisure()
+  ## Prende le misure dal punto toccato; dice cosa ha misurato. Le misure di prima restano.
   let h = colpito(ev)
   if h == nil: return "Tocca una superficie per misurarla"
+  discard nuovoGruppo()
   if nomeDi(h.`object`).startsWith("presa"): return misuraPresa()
   let ss = solidi()
   let n = normaleAsse(h)
@@ -921,6 +948,10 @@ proc posaEtichette() =
   if lavagna == nil:
     lavagna = svg("svg")
     lavagna.setAttribute("class", "lavagna")
+    # toccando una linea si toglie la sua misura
+    lavagna.addEventListener("click", proc (ev: Event) =
+      let g = ev.target.Element.getAttribute("data-g")
+      if g != nil and g.len > 0: togliGruppo(parseInt($g)))
     stage.appendChild(lavagna)
   lavagna.setAttribute("viewBox", cstring("0 0 " & $w & " " & $hh))
   var disegno = ""
@@ -945,8 +976,9 @@ proc posaEtichette() =
     for (pt, k, fine) in [(primo, kPrimo, 0), (ultimo, kUltimo, 40)]:
       if k == fine:
         stanghette.add "M" & $(pt[0] + ox) & " " & $(pt[1] + oy) & "L" & $(pt[0] - ox) & " " & $(pt[1] - oy)
-    disegno.add "<path class=\"alone\" d=\"" & linea & stanghette & "\"/>"
-    disegno.add "<path class=\"tratto\" d=\"" & linea & stanghette & "\"/>"
+    let g = " data-g=\"" & $m.gruppo & "\""
+    disegno.add "<path class=\"alone\"" & g & " d=\"" & linea & stanghette & "\"/>"
+    disegno.add "<path class=\"tratto\"" & g & " d=\"" & linea & stanghette & "\"/>"
     var (x, y) = ((primo[0] + ultimo[0]) / 2, (primo[1] + ultimo[1]) / 2)
     for (px, py) in posti:
       if abs(px - x) < 50 and abs(py - y) < 22: y += 26
@@ -1102,12 +1134,20 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     closureScope:
       let (id, aiuto) = (id, aiuto)
       el(id).addEventListener("click", proc (ev: Event) =
+        # Misurare premuto di nuovo si spegne: si torna ad aprire
+        let id = if id == "t-misura" and premuto(el(id)): "t-tocca" else: id
         for (b, _) in modi: el(b).premi(b == id)
-        # misurando la scena sta ferma: niente rotazione né spostamento, solo lo zoom
-        controls.enableRotate = id != "t-misura"
-        controls.enablePan = id != "t-misura"
-        if id != "t-misura": cancellaMisure(); canvas.cursore("")
-        status.textContent = cstring(aiuto))
+        # misurando la scena sta ferma: niente rotazione né spostamento, solo lo zoom;
+        # spento Misurare, le misure si nascondono (tornano riaccendendolo)
+        let mis = id == "t-misura"
+        controls.enableRotate = not mis
+        controls.enablePan = not mis
+        mostraMisure(mis)
+        if not mis: canvas.cursore("")
+        for (b, a) in modi:
+          if b == id: status.textContent = cstring(a))
+  el("t-cancella").addEventListener("click", proc (ev: Event) =
+    cancellaMisure())
   el("t-chiudi").addEventListener("click", proc (ev: Event) =
     for u in units: setOpen(u, false))
   el("t-apri").addEventListener("click", proc (ev: Event) =
