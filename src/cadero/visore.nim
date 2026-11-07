@@ -1109,15 +1109,17 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let tCarta = el("t-carta")
   tCarta.nascosto(carta.src.len == 0)
   let tPresa = el("t-presa")
+  let tLampada = el("t-lampada")
   proc applyToggles() =
     for f in frontPanel: f.visible = not premuto(tFront)
     proc presa(o: Object3D) =
       if o.isMesh and nomeDi(o).startsWith("presa"): o.parent.visible = not premuto(tPresa)
+      if o.isMesh and nomeDi(o).startsWith("lampada"): o.parent.visible = premuto(tLampada)
       for f in o.children: presa(f)
     presa(group)
     let on = carta.src.len > 0 and not premuto(tCarta)
     for w in walls: w.material = if on: cartaMat else: mats[kWall]
-  for btn in [tFront, tCarta, tPresa]:
+  for btn in [tFront, tCarta, tPresa, tLampada]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let btn = btn
       btn.addEventListener("click", proc (ev: Event) = btn.premi(not premuto(btn)); applyToggles())

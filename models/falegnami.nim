@@ -260,6 +260,12 @@ proc pannelloRisega*(f: Falegnami): float = f.profondita - (f.yMobili + f.profLi
   ## 15.8: il pannello che copre la risega, dal fianco dietro della libreria al dietro del mobile
 proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
   ## dove si disegna il muro: i mobili arrivano a 81.1, oltre gli 80 della stanza
+proc centroLampada*(f: Falegnami): tuple[y, z: float] =
+  ## La lampada da lettura: al centro della striscia che copre la risega (dal fianco
+  ## dietro della libreria al muro), 45 sopra il materasso.
+  let yd = f.yMobili + f.profLibreria
+  ((yd + f.yMuro) / 2, f.pianoLetto + f.materasso.altezza + 45)
+
 proc presaDallaRisega*(f: Falegnami): float =
   ## dal centro della presa alla faccia della risega, in orizzontale
   f.yMuro - f.muro.risegaProf - f.centroPresa.y
@@ -590,6 +596,17 @@ proc modello*(f: Falegnami): Model =
   var scatolaPresa = part("presa: scatola nel muro", kAccessory, L, yP - 5.3, zP - 3.5, 5, 10.6, 7)
   scatolaPresa.hiddenFront = true
   result.add scatolaPresa
+  # la lampada da lettura (facoltativa nel visore): un'applique a braccio sulla
+  # striscia che copre la risega, verso il letto, 45 sopra il materasso
+  let (yLa, zLa) = f.centroLampada
+  let xLa = xl - sm                      # la faccia della striscia verso il letto
+  for (nome, x, y, z, w, d, h) in [
+      ("lampada: base", xLa - 1.2, yLa - 5, zLa - 5, 1.2, 10.0, 10.0),
+      ("lampada: braccio", xLa - 26, yLa - 0.6, zLa + 3, 24.8, 1.2, 1.2),
+      ("lampada: testa", xLa - 31, yLa - 3.5, zLa - 2, 7.0, 7.0, 5.0)]:
+    var q = part(nome, kAccessory, x, y, z, w, d, h)
+    q.hiddenFront = true
+    result.add q
   for k in 0..1:
     var cop = part("coperchio gavone", kPanel, xG + 0.2, yG + 0.2 + float(k) * dG / 2,
                    zc - 1, wG - 0.4, dG / 2 - 0.4, 1, r = 4)
