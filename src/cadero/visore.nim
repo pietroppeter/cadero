@@ -181,7 +181,8 @@ proc uvCarta(g: BufferGeometry) =
 # bordo, con gli strati incollati. Le coordinate uv sono in cm (come per la carta
 # da parati): sulla faccia u va lungo la venatura, sul bordo v attraversa lo spessore.
 const
-  latoVenatura = 60.0   ## la piastrella della venatura: 60 × 60 cm
+  lungoVenatura = 120.0 ## la piastrella della venatura: 120 cm lungo la venatura
+  latoVenatura = 60.0   ## e 60 di traverso
   latoBordo = 10.0      ## la piastrella del bordo: 10 cm lungo il bordo, tutto lo spessore
   strati = 13           ## gli strati di un multistrato di betulla da 18 mm
 
@@ -193,35 +194,50 @@ proc rnd(i: int): float =
 proc rgba(r, g, b: int; a: float): cstring =
   cstring("rgba(" & $r & "," & $g & "," & $b & "," & formatFloat(a, ffDecimal, 3) & ")")
 
+proc hash2(i, j, seme: int): float =
+  ## un numero tra 0 e 1 per il nodo (i, j) della griglia: sempre lo stesso
+  let x = sin(float(i) * 127.1 + float(j) * 311.7 + float(seme) * 74.7) * 43758.5453
+  x - floor(x)
+
+proc rumore(x, y: float; gx, gy, seme: int): float =
+  ## rumore liscio e periodico: x, y in [0, 1), una griglia gx × gy che si richiude
+  let (fx0, fy0) = (x * float(gx), y * float(gy))
+  let (i0, j0) = (int(floor(fx0)), int(floor(fy0)))
+  var (fx, fy) = (fx0 - float(i0), fy0 - float(j0))
+  fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy)
+  let (ia, ib) = (floorMod(i0, gx), floorMod(i0 + 1, gx))
+  let (ja, jb) = (floorMod(j0, gy), floorMod(j0 + 1, gy))
+  let (a, b) = (hash2(ia, ja, seme), hash2(ib, ja, seme))
+  let (c, d) = (hash2(ia, jb, seme), hash2(ib, jb, seme))
+  (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy
+
+proc fbm(x, y: float; gx, gy, seme, ottave: int): float =
+  ## più rumori sovrapposti, ognuno fitto il doppio e forte la metà
+  var (amp, tot) = (1.0, 0.0)
+  for o in 0 ..< ottave:
+    result += amp * rumore(x, y, gx shl o, gy shl o, seme + o)
+    tot += amp; amp *= 0.5
+  result /= tot
+
 proc texBetulla(): Texture =
-  ## La faccia: betulla chiara, a fasce morbide e linee sottili ondulate lungo u
-  ## (periodiche, così la piastrella si ripete senza giunte).
-  const n = 512
-  let N = float(n)
-  let cv = nuovoCanvas(n)
+  ## La faccia: betulla sfogliata, come nei disegni dei falegnami. Fibre fitte lungo
+  ## u che si piegano in archi larghi, fasce morbide e qualche nuvola più chiara o
+  ## più scura. Tutto periodico, così la piastrella si ripete senza giunte.
+  const (w, h) = (1024, 512)
+  let cv = nuovoCanvas(w, h)
   let x = cv.ctx2d
-  x.fillStyle = "#eedfc2"; x.fillRect(0, 0, N, N)
-  for i in 0 ..< 16:   # le fasce, un po' più chiare o più scure
-    let (y0, h) = (rnd(i) * N, 6 + rnd(i + 100) * 46)
-    x.fillStyle = if i mod 2 == 0: rgba(255, 250, 238, 0.22) else: rgba(196, 160, 104, 0.06)
-    for dy in [-N, 0.0, N]: x.fillRect(0, y0 + dy, N, h)
-  for i in 0 ..< 70:   # le linee della venatura
-    let y0 = rnd(i + 300) * N
-    let a = 0.5 + rnd(i + 400) * 3.5
-    let k = float(1 + int(rnd(i + 500) * 3))
-    let ph = rnd(i + 600) * 2 * PI
-    x.strokeStyle = rgba(160, 118, 64, 0.03 + rnd(i + 700) * 0.09)
-    x.lineWidth = 0.4 + rnd(i + 800) * 1.0
-    for dy in [-N, 0.0, N]:
-      x.beginPath()
-      for t in 0 .. 64:
-        let u = float(t) / 64 * N
-        let v = y0 + dy + a * sin(2 * PI * k * u / N + ph)
-        if t == 0: x.moveTo(u, v) else: x.lineTo(u, v)
-      x.stroke()
-  for i in 0 ..< 30:   # qualche puntino, i piccoli nodi della betulla
-    x.fillStyle = rgba(120, 86, 46, 0.25 + rnd(i + 900) * 0.3)
-    x.beginPath(); x.arc(rnd(i + 1000) * N, rnd(i + 1100) * N, 0.6 + rnd(i + 1200) * 1.2, 0, 7); x.fill()
+  let img = x.pixel(w, h)
+  for j in 0 ..< h:
+    let v = float(j) / float(h)
+    for i in 0 ..< w:
+      let u = float(i) / float(w)
+      let vv = floorMod(v + (fbm(u, v, 2, 2, 1, 3) - 0.5) * 0.18, 1.0)   # gli archi
+      let fibre = fbm(0, vv, 1, 220, 7, 3) * 0.6 + fbm(u, vv, 3, 90, 9, 2) * 0.4
+      let nuvole = fbm(u, v, 3, 6, 20, 4)
+      let fasce = fbm(u, vv, 1, 14, 30, 2)
+      let t = clamp(0.45 + 0.66 * (fasce - 0.5) + 0.56 * (fibre - 0.5) + 0.5 * (nuvole - 0.5), 0.0, 1.0)
+      img.metti(j * w + i, int(250 - 20 * t), int(236 - 38 * t), int(204 - 58 * t))
+  x.disegna(img)
   result = newCanvasTexture(cv.toJs)
   result.wrapS = RepeatWrapping(); result.wrapT = RepeatWrapping(); result.colorSpace = SRGBColorSpace()
   result.anisotropy = 8
@@ -285,7 +301,7 @@ proc uvBetulla(g: BufferGeometry; p: Part; v: Venatura) =
                      of 1: (0, 2)    # steso: x e profondità
                      else: (2, 1)    # un fianco: profondità e altezza
       let (lungo, traverso) = if v == venVerticale: (q[p2], q[p1]) else: (q[p1], q[p2])
-      uv.setXY(i, lungo / latoVenatura, traverso / latoVenatura)
+      uv.setXY(i, lungo / lungoVenatura, traverso / latoVenatura)
     else:
       let altro = 3 - a - t
       uv.setXY(i, q[altro] / latoBordo, (q[t] - tmin) / spess)

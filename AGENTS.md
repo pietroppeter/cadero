@@ -75,6 +75,8 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   `Part.venatura` (`venLunga` di default = lungo il lato più lungo, `verso(p)` dà quella
   vera); nel modello dei falegnami si sceglie per nome in `f.venature`, nel visore con
   "Gira venatura" (non resta salvata). Anche la venatura di base si mette nel modello.
+  La texture (`texBetulla`) è disegnata pixel per pixel con rumore periodico (`fbm`):
+  piastrella 1024 × 512 per 120 × 60 cm, ispirata ai disegni dei falegnami.
 - Il pannello frontale dei falegnami si divide secondo `f.taglio` (`pezziFronte`):
   `tCroce` (il loro, 4 pannelli + fascia, venatura verticale) o `tTre` (3 pezzi
   orizzontali, taglio a 109 e due pezzi uguali sopra, venatura orizzontale); `f.cornice`
