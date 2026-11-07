@@ -700,9 +700,11 @@ type Misura = object
   a, b: Vector3        ## i due estremi
   testo: string
   etichetta: Element   ## il numero, sopra la scena
-  gruppo: int          ## le misure di un tocco (o di un trascinamento) vanno via insieme
+  gruppo: int          ## le misure di un trascinamento (l'anteprima) vanno via insieme
+  id: int              ## toccando il numero o la linea si toglie solo questa misura
 var
   misure: seq[Misura]
+  prossimaMisura = 0
   prossimoGruppo, anteprima = -1   ## anteprima: il gruppo che si sta trascinando
   lavagna: Element   ## l'SVG sopra la scena dove si disegnano le linee delle misure
 
@@ -768,10 +770,6 @@ proc cancellaMisure() =
   if lavagna != nil: lavagna.innerHTML = ""
   el("t-cancella").nascosto(true)
 
-proc mostraMisure(on: bool) =
-  ## nasconde o rimostra le misure (spegnendo e riaccendendo Misurare)
-  stage.toggleClass("senza-misure", not on)
-
 proc numero(v: float): string =
   let r = round(v * 10) / 10
   if abs(r - round(r)) < 0.05: $int(round(r)) else: formatFloat(r, ffDecimal, 1)
@@ -826,20 +824,30 @@ proc togliGruppo(g: int) =
   misure = resta
   if misure.len == 0: cancellaMisure()
 
+proc togliMisura(id: int) =
+  ## toglie una sola misura (toccata sul numero o sulla linea)
+  var resta: seq[Misura]
+  for m in misure:
+    if m.id == id: togli(m.etichetta) else: resta.add m
+  misure = resta
+  if misure.len == 0: cancellaMisure()
+
 proc nuovoGruppo(): int =
   inc prossimoGruppo
   prossimoGruppo
 
 proc mettiMisura(a, b: Vector3; testo: string) =
-  ## una misura nel gruppo corrente; toccando il numero si toglie il gruppo
+  ## una misura nel gruppo corrente; toccando il numero si toglie lei sola
   let g = prossimoGruppo
+  let id = prossimaMisura
+  inc prossimaMisura
   let lab = document.createElement("div")
   lab.setAttribute("class", "quota")
   lab.setAttribute("title", "Tocca per togliere questa misura")
   lab.textContent = cstring(testo)
-  lab.addEventListener("click", proc (ev: Event) = togliGruppo(g))
+  lab.addEventListener("click", proc (ev: Event) = togliMisura(id))
   stage.appendChild(lab)
-  misure.add Misura(a: a, b: b, testo: testo, etichetta: lab, gruppo: g)
+  misure.add Misura(a: a, b: b, testo: testo, etichetta: lab, gruppo: g, id: id)
   el("t-cancella").nascosto(false)
 
 proc componente(v: Vector3; i: int): float =
@@ -950,8 +958,8 @@ proc posaEtichette() =
     lavagna.setAttribute("class", "lavagna")
     # toccando una linea si toglie la sua misura
     lavagna.addEventListener("click", proc (ev: Event) =
-      let g = ev.target.Element.getAttribute("data-g")
-      if g != nil and g.len > 0: togliGruppo(parseInt($g)))
+      let g = ev.target.Element.getAttribute("data-m")
+      if g != nil and g.len > 0: togliMisura(parseInt($g)))
     stage.appendChild(lavagna)
   lavagna.setAttribute("viewBox", cstring("0 0 " & $w & " " & $hh))
   var disegno = ""
@@ -976,7 +984,7 @@ proc posaEtichette() =
     for (pt, k, fine) in [(primo, kPrimo, 0), (ultimo, kUltimo, 40)]:
       if k == fine:
         stanghette.add "M" & $(pt[0] + ox) & " " & $(pt[1] + oy) & "L" & $(pt[0] - ox) & " " & $(pt[1] - oy)
-    let g = " data-g=\"" & $m.gruppo & "\""
+    let g = " data-m=\"" & $m.id & "\""
     disegno.add "<path class=\"alone\"" & g & " d=\"" & linea & stanghette & "\"/>"
     disegno.add "<path class=\"tratto\"" & g & " d=\"" & linea & stanghette & "\"/>"
     var (x, y) = ((primo[0] + ultimo[0]) / 2, (primo[1] + ultimo[1]) / 2)
@@ -1140,11 +1148,10 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
         let id = if id == "t-misura" and premuto(el(id)): "t-tocca" else: id
         for (b, _) in modi: el(b).premi(b == id)
         # misurando la scena sta ferma: niente rotazione né spostamento, solo lo zoom;
-        # spento Misurare, le misure si nascondono (tornano riaccendendolo)
+        # spento Misurare, le misure restano (si tolgono toccandole o con Togli le misure)
         let mis = id == "t-misura"
         controls.enableRotate = not mis
         controls.enablePan = not mis
-        mostraMisure(mis)
         if not mis: canvas.cursore("")
         for (b, a) in modi:
           if b == id: status.textContent = cstring(a))
@@ -1176,7 +1183,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   el("g-taglio").nascosto(not falegnami)
   # il taglio del pannello frontale dei falegnami: "" a croce, "Tre" in 3 orizzontali;
   # "Cornice" (pulsante) rimette le due spalle ai lati
-  var taglio = ""
+  var taglio = if premuto(el("f-tre")): "Tre" else: ""
   let tCornice = el("f-cornice")
   el("g-mobile").nascosto(not idea)
   # il pulsante di un modello compare solo se la pagina ha anche l'altro
@@ -1201,10 +1208,10 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       chiave.add (if premuto(tRisega): "Scoperta" else: "") &
                    (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &
                    (if premuto(tPrese): "Comodino" else: "")
-    modello = modelli[chiave]
+    if chiave in modelli: modello = modelli[chiave]
     mostraTavola(chiave)
     for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
-    cancellaMisure()
+    # le misure restano anche cambiando modello: si tolgono a mano
     costruisci(modello); applyToggles(); applyEsploso()
     status.textContent = cstring($modello.parts.len & " parti")
   const tagli = [("f-croce", ""), ("f-tre", "Tre")]
@@ -1226,6 +1233,9 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let b = interruttori[i]
       b.addEventListener("click", proc (ev: Event) = b.premi(not premuto(b)); cambiaModello())
+  # si parte dalle opzioni premute nella pagina (per i falegnami: 3 orizzontali,
+  # testata alta, vani alti, pannello a L e nicchia, decise da Pietro)
+  if falegnami and not idea: cambiaModello()
   applyToggles()
   # un modello qualsiasi (la pagina dei parametri): ricostruisce la scena e
   # rimette aperto quello che era aperto

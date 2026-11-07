@@ -4,7 +4,8 @@
 ## vani alti. Una pagina
 ## nimib con un solo blocco di codice Nim compilato in JavaScript (`nbJsFromCode`).
 ##
-## Si parte con tutte le modifiche spente (Pietro); la tavola sotto il visore
+## Si parte (Pietro, 7 novembre) con 3 orizzontali, testata alta, vani alti, pannello
+## a L, nicchia e lampada accesi; la tavola sotto il visore
 ## cambia con i pulsanti.
 ##
 ##   nim r docsrc/visore3d.nim      (o `nimble docs`, che genera tutti i documenti)
@@ -25,8 +26,7 @@ proc tavolaVariante(f: Falegnami; chiave: string; nascosta: bool): string =
   ## una tavola per variante: il visore mostra quella del modello scelto
   "<div data-chiave=\"" & chiave & "\"" & (if nascosta: " hidden" else: "") & ">" &
     tavola(f, modello(f)) & "</div>"
-# una tavola per ogni combinazione delle quattro modifiche proposte (tutte spente
-# all'inizio): il visore mostra quella del modello scelto
+# una tavola per ogni combinazione delle modifiche proposte: il visore mostra quella del modello scelto
 var tavole = ""
 for tav in [false, true]:
   for tes in [false, true]:
@@ -37,13 +37,15 @@ for tav in [false, true]:
           let base = f0.conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic)
           let chiave = chiaveModifiche(tav, tes, ris, van, pal, nic)
           let spento = not (tav or tes or ris or van or pal or nic)
-          # le tavole dei tagli e della cornice solo con le modifiche spente (le
-          # altre combinazioni tengono la tavola che c'è): la pagina resta leggera
+          let partenza = not tav and tes and not ris and van and pal and nic
+          # le tavole dei tagli e della cornice solo con le modifiche spente e con
+          # quelle di partenza (le altre combinazioni tengono la tavola che c'è): la
+          # pagina resta leggera
           for t in TaglioFronte:
             for cor in [false, true]:
-              if spento or (t == tCroce and not cor):
+              if spento or partenza or (t == tCroce and not cor):
                 tavole.add tavolaVariante(base.conTaglio(t).conCornice(cor),
-                  chiave & chiaveTaglio(t, cor), not spento or t != tCroce or cor)
+                  chiave & chiaveTaglio(t, cor), not (partenza and t == tTre and not cor))
 nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"L <b>{f0.larghezza:g}</b> × H <b>{f0.altezza:g}</b> × P <b>{f0.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",

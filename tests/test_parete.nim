@@ -396,8 +396,10 @@ suite "la presa dietro la libreria":
     echo "presa: centro a ", f.presaDallaRisega, " dalla risega e ", z, " da terra"
 
 suite "la lampada in testa al letto":
-  test "sulla striscia della risega, 45 sopra il materasso":
+  test "sulla striscia della risega, 55 sopra il materasso o al primo scaffale":
     let f = falegnami()
     let b = modello(f).find("lampada: base")
     check near(b.pos.x + b.size.x, f.xLibreria - f.sMulti)
-    check near(b.pos.z + b.size.z / 2, f.pianoLetto + f.materasso.altezza + 45)
+    check near(f.centroLampada.z, f.pianoLetto + f.materasso.altezza + 55)
+    let t = f.testataAlta
+    check near(t.centroLampada.z, t.zScaffali[0] + t.sMulti / 2)

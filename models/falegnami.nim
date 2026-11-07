@@ -262,9 +262,11 @@ proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
   ## dove si disegna il muro: i mobili arrivano a 81.1, oltre gli 80 della stanza
 proc centroLampada*(f: Falegnami): tuple[y, z: float] =
   ## La lampada da lettura: al centro della striscia che copre la risega (dal fianco
-  ## dietro della libreria al muro), 45 sopra il materasso.
+  ## dietro della libreria al muro), all'altezza della metà del primo scaffale
+  ## (Pietro, con la testata alta), ma almeno 55 sopra il materasso.
   let yd = f.yMobili + f.profLibreria
-  ((yd + f.yMuro) / 2, f.pianoLetto + f.materasso.altezza + 45)
+  let scaffale = f.zScaffali[0] + f.sMulti / 2
+  ((yd + f.yMuro) / 2, max(scaffale, f.pianoLetto + f.materasso.altezza + 55))
 
 proc presaDallaRisega*(f: Falegnami): float =
   ## dal centro della presa alla faccia della risega, in orizzontale
@@ -597,7 +599,7 @@ proc modello*(f: Falegnami): Model =
   scatolaPresa.hiddenFront = true
   result.add scatolaPresa
   # la lampada da lettura (facoltativa nel visore): un'applique a braccio sulla
-  # striscia che copre la risega, verso il letto, 45 sopra il materasso
+  # striscia che copre la risega, verso il letto (altezza in `centroLampada`)
   let (yLa, zLa) = f.centroLampada
   let xLa = xl - sm                      # la faccia della striscia verso il letto
   for (nome, x, y, z, w, d, h) in [

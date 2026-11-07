@@ -47,7 +47,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .lavagna { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .lavagna .alone { pointer-events: stroke; cursor: pointer; fill: none; stroke: rgba(255,255,255,.55); stroke-width: 5; stroke-linecap: round; }
 .lavagna .tratto { fill: none; stroke: rgba(37, 99, 170, 0.75); stroke-width: 2; stroke-linecap: round; }
-.senza-misure .quota, .senza-misure .lavagna { display: none; }
 .tavola { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 12px; display: grid; gap: 8px; }
 .tavola h2 { font-family: var(--display); font-weight: 600; font-size: 20px; margin: 0; letter-spacing: 0.01em; }
 .tavola .riga { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -82,7 +81,7 @@ __BACK__
       <button id="t-fronte" type="button" aria-pressed="false" title="Premuto: il pannello frontale è nascosto">Senza fronte</button>
       <button id="t-carta" type="button" aria-pressed="false" hidden title="Premuto: i muri sono grigi">Senza carta da parati</button>
       <button id="t-presa" type="button" aria-pressed="false" title="Premuto: senza la presa sulla schiena della libreria (e la sua scatola nel muro)">Senza presa</button>
-      <button id="t-lampada" type="button" aria-pressed="false" title="Una lampada da lettura a braccio sulla striscia in testa al letto, 45 sopra il materasso">Lampada</button>
+      <button id="t-lampada" type="button" aria-pressed="true" title="Una lampada da lettura a braccio sulla striscia in testa al letto, all'altezza del primo scaffale (almeno 55 sopra il materasso)">Lampada</button>
       <button id="t-betulla" type="button" aria-pressed="true" title="I pannelli in multistrato di betulla, con la venatura e gli strati sul bordo">Betulla</button>
     </div>
     <div class="group" id="g-mobile" role="group" aria-label="Mobile">
@@ -96,18 +95,18 @@ __BACK__
     </div>
     <div class="group" id="g-taglio" role="group" aria-label="Il pannello frontale" hidden>
       <span class="label">Fronte</span>
-      <button id="f-croce" type="button" aria-pressed="true" title="Quattro pannelli e la fascia in cima, come i falegnami: venatura verticale">A croce</button>
-      <button id="f-tre" type="button" aria-pressed="false" title="Tre pezzi su tutta la larghezza: sotto fino a 109 (poco sopra i gradini), sopra due pezzi alti uguali: venatura orizzontale">3 orizzontali</button>
+      <button id="f-croce" type="button" aria-pressed="false" title="Quattro pannelli e la fascia in cima, come i falegnami: venatura verticale">A croce</button>
+      <button id="f-tre" type="button" aria-pressed="true" title="Tre pezzi su tutta la larghezza: sotto fino a 109 (poco sopra i gradini), sopra due pezzi alti uguali: venatura orizzontale">3 orizzontali</button>
       <button id="f-cornice" type="button" aria-pressed="false" title="Le due spalle ai lati, la cornice esterna dei falegnami">Cornice</button>
     </div>
     <div class="group" id="g-modifiche" role="group" aria-label="Modifiche" hidden>
       <span class="label">Modifiche</span>
       <button id="p-tavolino" type="button" aria-pressed="false" title="Il pannellino dei falegnami che esce dalla fessura tra il 3° e il 4° gradino; senza, i gradini si ridistribuiscono">Tavolino</button>
-      <button id="p-testata" type="button" aria-pressed="false" title="La testata della libreria alta 58 dal piano letto invece di 32, con due scaffali invece di tre">Testata alta</button>
+      <button id="p-testata" type="button" aria-pressed="true" title="La testata della libreria alta 58 dal piano letto invece di 32, con due scaffali invece di tre">Testata alta</button>
       <button id="p-risega" type="button" aria-pressed="false" title="Il pannello che copre la risega largo 10 invece di 15.8: la libreria è più profonda (69.3)">Risega stretta</button>
-      <button id="p-vani" type="button" aria-pressed="false" title="Le aperture dei vani alti da 41.7 invece di 32.6: ribalte e scatole più alte di 9.1, sotto non cambia niente">Vani alti</button>
-      <button id="p-pannellol" type="button" aria-pressed="false" title="La testata del gavone e il pannello della risega in un solo pannello a L, davanti ai bordi dei fianchi della libreria e del piano del comodino">Pannello a L</button>
-      <button id="p-nicchia" type="button" aria-pressed="false" title="Le misure della nicchia decise con i falegnami: apertura da 15 a sinistra a 50 da destra, 10 sotto il cielo del cassone, 10 sopra un materasso da 18">Nicchia</button>
+      <button id="p-vani" type="button" aria-pressed="true" title="Le aperture dei vani alti da 41.7 invece di 32.6: ribalte e scatole più alte di 9.1, sotto non cambia niente">Vani alti</button>
+      <button id="p-pannellol" type="button" aria-pressed="true" title="La testata del gavone e il pannello della risega in un solo pannello a L, davanti ai bordi dei fianchi della libreria e del piano del comodino">Pannello a L</button>
+      <button id="p-nicchia" type="button" aria-pressed="true" title="Le misure della nicchia decise con i falegnami: apertura da 15 a sinistra a 50 da destra, 10 sotto il cielo del cassone, 10 sopra un materasso da 18">Nicchia</button>
     </div>
   </div>
   <section class="tavola" aria-label="La tavola">
