@@ -401,8 +401,9 @@ Poi ci sono tre richieste (Pietro, 4 novembre):
 
 Sono modifiche indipendenti, come il pannellino: in `falegnami.nim` sono
 `testataAlta`, `risegaStretta` e `vaniAlti`, e `conModifiche` le accende una per una.
-Nel [visore](visore3d.html) ci sono quattro pulsanti, tutti spenti all'inizio:
-*Tavolino* (il pannellino estraibile), *Testata alta*, *Risega stretta*, *Vani alti*.
+Nel [visore](visore3d.html) ci sono i pulsanti *Tavolino* (il pannellino estraibile),
+*Testata alta* e *Vani alti*; la risega stretta l'abbiamo scartata (7 novembre: la
+risega resta 15.8), quindi il suo pulsante non c'è più.
 Qui sotto il **modello rivisto** è quello con le prime due accese e senza pannellino
 (`rivisto`); la terza si aggiunge sopra.
 """
@@ -525,7 +526,7 @@ nbText: """
 
 Una proposta da fare ai falegnami: il frontale del gavone (la testata, verso il letto)
 e il pannello che copre la risega diventano **un solo pannello a L**, dove oggi c'è il
-pannello della risega. Il braccio basso, alto quanto il gavone, va dal davanti al muro;
+pannello della risega. Il braccio basso arriva fino alla cima del piano del comodino, così ne copre il bordo, e va dal davanti al muro;
 quello alto, alto quanto la libreria, dal fianco dietro al muro. La L passa davanti ai
 bordi dei due fianchi della libreria, che restano come sono, sta a 0.2 dal cassone come
 il pannello della risega di oggi e non tocca la risega. Il fondo del gavone arriva fino
@@ -540,6 +541,37 @@ nbCode:
     if p.name in ["pannello a L", "fianco libreria"]:
       echo p.name, ": ", p.size.x.fmtNum, " × ", p.size.y.fmtNum, " × ", p.size.z.fmtNum
   for r in controlli(fl, modello(fl)): echo "- ", r
+
+nbText: """
+## La nicchia, con le misure decise
+
+Con i falegnami abbiamo deciso una nicchia più larga, e che vista da dietro il fronte
+sporga un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 50
+prima di quello di destra; il bordo alto sta 10 sotto il cielo del cassone, quello basso
+10 sopra il materasso, che diventa alto 18 (invece di 17). Nel visore: pulsante *Nicchia*.
+"""
+
+nbCode:
+  let fn = f.nicchiaAperta
+  echo "apertura: ", fmtNum(fn.nicchiaL), " × ", fmtNum(fn.nicchiaH), " (prima ",
+    fmtNum(f.nicchiaL), " × ", fmtNum(f.nicchiaH), "), da ", fmtNum(fn.nicchiaZ), " a ",
+    fmtNum(fn.nicchiaZ + fn.nicchiaH), " da terra"
+
+nbText: """
+## La presa dietro la libreria
+
+Abbiamo deciso di portare la corrente dietro la libreria: una traccia e una scatola nel
+muro (3 moduli), e la presa che esce dalla schiena della libreria. Guardando il comodino
+sta in basso a destra: la placca (12 × 8.2) è 5 sopra il piano del comodino e 5 dal
+fianco davanti. Si sposta con la testata e con la libreria. Nel visore, con *Misurare*,
+toccare la presa dà le misure dal centro della placca alla risega e al pavimento;
+*Senza presa* la toglie.
+"""
+
+nbCode:
+  for (nome, g) in [("oggi", f), ("testata alta", f.testataAlta), ("rivisto", f.rivisto)]:
+    echo nome, ": centro della presa a ", fmtNum(g.presaDallaRisega), " dalla risega e ",
+      fmtNum(g.centroPresa.z), " da terra"
 
 nbText: """
 ## Il taglio del pannello frontale, in multistrato di betulla

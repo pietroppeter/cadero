@@ -120,7 +120,7 @@ nbRawHtml: """<section class="banco" id="banco">
       </div>
       <div class="group" id="g-modifiche" hidden>
         <button id="p-tavolino" type="button"></button><button id="p-testata" type="button"></button>
-        <button id="p-risega" type="button"></button><button id="p-vani" type="button"></button><button id="p-pannellol" type="button"></button>
+        <button id="p-risega" type="button"></button><button id="p-vani" type="button"></button><button id="p-pannellol" type="button"></button><button id="p-nicchia" type="button"></button>
       </div>
       <div class="group" id="g-taglio" hidden>
         <button id="f-croce" type="button"></button><button id="f-tre" type="button"></button><button id="f-cornice" type="button"></button>
@@ -128,6 +128,7 @@ nbRawHtml: """<section class="banco" id="banco">
       <div class="group" role="group" aria-label="Multistrato">
         <button id="t-betulla" type="button" aria-pressed="true">Betulla</button>
         <button id="t-venatura" type="button" aria-pressed="false">Venatura</button>
+        <button id="t-tocca" type="button" aria-pressed="true" hidden></button><button id="t-misura" type="button" aria-pressed="false" hidden></button><button id="t-presa" type="button" aria-pressed="false" hidden></button><button id="t-cancella" type="button" hidden></button><button id="t-lampada" type="button" aria-pressed="false" hidden></button><button id="t-sera" type="button" aria-pressed="false" hidden></button>
       </div>
       <div class="group" role="group" aria-label="Apertura">
         <span class="label">Apri</span>
