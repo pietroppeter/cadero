@@ -87,7 +87,7 @@ type
 
   OrbitControls* = ref object of JsRoot
     target*: Vector3
-    enabled*, enableDamping*: bool
+    enabled*, enableDamping*, enableRotate*, enablePan*: bool
     minDistance*, maxDistance*: float
     zoomSpeed*: float
 {.pop.}

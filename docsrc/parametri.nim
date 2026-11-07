@@ -128,7 +128,7 @@ nbRawHtml: """<section class="banco" id="banco">
       <div class="group" role="group" aria-label="Multistrato">
         <button id="t-betulla" type="button" aria-pressed="true">Betulla</button>
         <button id="t-venatura" type="button" aria-pressed="false">Venatura</button>
-        <button id="t-tocca" type="button" aria-pressed="true" hidden></button><button id="t-misura" type="button" aria-pressed="false" hidden></button>
+        <button id="t-tocca" type="button" aria-pressed="true" hidden></button><button id="t-misura" type="button" aria-pressed="false" hidden></button><button id="t-presa" type="button" aria-pressed="false" hidden></button>
       </div>
       <div class="group" role="group" aria-label="Apertura">
         <span class="label">Apri</span>

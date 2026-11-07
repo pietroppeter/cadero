@@ -545,7 +545,7 @@ nbText: """
 ## La nicchia, con le misure decise
 
 Con i falegnami abbiamo deciso una nicchia più larga, e che vista da dietro il fronte
-sporga un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 55
+sporga un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 50
 prima di quello di destra; il bordo alto sta 10 sotto il cielo del cassone, quello basso
 10 sopra il materasso, che diventa alto 18 (invece di 17). Nel visore: pulsante *Nicchia*.
 """
@@ -555,6 +555,22 @@ nbCode:
   echo "apertura: ", fmtNum(fn.nicchiaL), " × ", fmtNum(fn.nicchiaH), " (prima ",
     fmtNum(f.nicchiaL), " × ", fmtNum(f.nicchiaH), "), da ", fmtNum(fn.nicchiaZ), " a ",
     fmtNum(fn.nicchiaZ + fn.nicchiaH), " da terra"
+
+nbText: """
+## La presa dietro la libreria
+
+Abbiamo deciso di portare la corrente dietro la libreria: una traccia e una scatola nel
+muro (3 moduli), e la presa che esce dalla schiena della libreria. Guardando il comodino
+sta in basso a destra: la placca (12 × 8.2) è 5 sopra il piano del comodino e 5 dal
+fianco davanti. Si sposta con la testata e con la libreria. Nel visore, con *Misurare*,
+toccare la presa dà le misure dal centro della placca alla risega e al pavimento;
+*Senza presa* la toglie.
+"""
+
+nbCode:
+  for (nome, g) in [("oggi", f), ("testata alta", f.testataAlta), ("rivisto", f.rivisto)]:
+    echo nome, ": centro della presa a ", fmtNum(g.presaDallaRisega), " dalla risega e ",
+      fmtNum(g.centroPresa.z), " da terra"
 
 nbText: """
 ## Il taglio del pannello frontale, in multistrato di betulla

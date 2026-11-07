@@ -721,10 +721,10 @@ proc primo(ss: seq[Object3D]; o, d: Vector3; lontano: float): Intersezione =
   result = if hs.len > 0: hs[0] else: nil
   ray.near = 0; ray.far = 1e9
 
-proc fino(ss: seq[Object3D]; p, n, d: Vector3; ogg: Object3D): float =
-  ## Da p (sulla faccia di normale n) lungo d: la distanza dal primo punto notevole.
+proc fino(ss: seq[Object3D]; p, n, d: Vector3; ogg: Object3D; massimo = 700.0): float =
+  ## Da p (sulla faccia di normale n) lungo d: la distanza dal primo punto notevole
+  ## (al più `massimo`).
   const eps = 0.4      # ci si stacca un poco dalla faccia
-  const massimo = 700.0
   let o = p.clone().addScaledVector(n, eps)
   var tMax = massimo
   let h = primo(ss, o, d, massimo)
@@ -736,7 +736,7 @@ proc fino(ss: seq[Object3D]; p, n, d: Vector3; ogg: Object3D): float =
     let k = primo(ss, q, giu, eps + 0.6)
     k != nil and k.`object` == ogg and abs(k.distance - eps) < 0.2
   var (a, t) = (0.0, 0.0)
-  const passo = 1.0
+  let passo = min(1.0, massimo / 4)
   while t < tMax:
     let t2 = min(t + passo, tMax)
     if not sopra(t2):
@@ -768,23 +768,135 @@ proc numero(v: float): string =
   let r = round(v * 10) / 10
   if abs(r - round(r)) < 0.05: $int(round(r)) else: formatFloat(r, ffDecimal, 1)
 
+proc colpito(ev: PointerEv): Intersezione =
+  ## la prima superficie visibile sotto il dito, o nil
+  mira(ev)
+  for k in ray.intersectObject(group, true):
+    if visibile(k.`object`) and k.`object`.isMesh: return k
+  nil
+
+proc normaleAsse(h: Intersezione): Vector3 =
+  ## la normale della faccia toccata, sull'asse più vicino
+  let nm = normaleMondo(h)
+  result = versore(asse(nm))
+  if nm.dot(result) < 0: result.negate()
+
+proc assiFaccia(ax: int): seq[int] =
+  ## sul piano della faccia: orizzontale e verticale; su un piano steso, x e profondità
+  case ax
+  of 0: @[2, 1]
+  of 2: @[0, 1]
+  else: @[0, 2]
+
+proc nomeDi(o: Object3D): string =
+  if o.userData.hasOwnProperty("nome"): $o.userData["nome"].to(cstring) else: ""
+
+proc cmPerPixel(p: Vector3): float =
+  ## quanti cm fa un pixel dello schermo, alla distanza di p
+  let d = camera.position.clone().sub(p).length
+  2 * d * tan(degToRad(camera.fov) / 2) / stage.altezza
+
+proc aggancia(ss: seq[Object3D]; h: Intersezione; soloAsse = -1): Vector3 =
+  ## Il punto toccato, spostato sul bordo più vicino se ce n'è uno a pochi pixel:
+  ## lungo `soloAsse`, o su ognuno dei due assi della faccia (così si aggancia un angolo).
+  let n = normaleAsse(h)
+  result = h.point.clone()
+  let raggio = 14 * cmPerPixel(h.point)
+  for i in assiFaccia(asse(n)):
+    if soloAsse >= 0 and i != soloAsse: continue
+    let d = versore(i)
+    let piu = fino(ss, h.point, n, d, h.`object`, raggio)
+    let meno = fino(ss, h.point, n, d.clone().negate(), h.`object`, raggio)
+    if min(piu, meno) < raggio - 1e-6:
+      if piu <= meno: result.addScaledVector(d, piu) else: result.addScaledVector(d, -meno)
+
+proc mettiMisura(a, b: Vector3; testo: string) =
+  let lab = document.createElement("div")
+  lab.setAttribute("class", "quota")
+  lab.textContent = cstring(testo)
+  stage.appendChild(lab)
+  misure.add Misura(a: a, b: b, testo: testo, etichetta: lab)
+
+proc componente(v: Vector3; i: int): float =
+  case i
+  of 0: v.x
+  of 1: v.y
+  else: v.z
+
+proc misuraTra(ha, hb: Intersezione; finale: bool): string =
+  ## La misura trascinata da ha a hb. Se il trascinamento va quasi lungo un asse
+  ## (orizzontale, verticale o in profondità) si misura solo lungo quell'asse, dritta;
+  ## alla fine gli estremi si agganciano ai bordi vicini.
+  cancellaMisure()
+  var (a, b) = (ha.point.clone(), hb.point.clone())
+  # la direzione del trascinamento sul piano della faccia da cui parte (senza la
+  # profondità: si può finire su una superficie più indietro, come il muro nella nicchia)
+  let n0 = normaleAsse(ha)
+  let grezzo = b.clone().sub(a)
+  grezzo.addScaledVector(n0, -grezzo.dot(n0))
+  var lungo = -1
+  for i in 0 .. 2:
+    if abs(componente(grezzo, i)) >= 0.92 * grezzo.length: lungo = i
+  if finale:
+    let ss = solidi()
+    a = aggancia(ss, ha, lungo); b = aggancia(ss, hb, lungo)
+  let fuori = normaleAsse(ha).multiplyScalar(0.25)
+  let nomeAsse = ["in orizzontale", "in verticale", "in profondità"]
+  var testo, dettaglio: string
+  if lungo >= 0:
+    let l = componente(b.clone().sub(a), lungo)
+    let fine = a.clone().addScaledVector(versore(lungo), l)
+    testo = numero(abs(l))
+    dettaglio = nomeAsse[if lungo == 2 and asse(normaleAsse(ha)) != 1: 2
+                         elif lungo == 1: 1 else: 0]
+    mettiMisura(a.clone().add(fuori), fine.add(fuori), testo)
+  else:
+    let d = b.clone().sub(a)
+    testo = numero(d.length)
+    dettaglio = "in orizzontale " & numero(hypot(d.x, d.z)) & ", in verticale " & numero(abs(d.y))
+    mettiMisura(a.clone().add(fuori), b.clone().add(fuori), testo)
+  let (da, verso) = (nomeDi(ha.`object`), nomeDi(hb.`object`))
+  result = testo & " cm " & dettaglio
+  if finale and da.len > 0:
+    result.add " · da " & da & (if verso.len > 0 and verso != da: " a " & verso else: "")
+
+proc trova(prefisso: string): Object3D =
+  ## la prima mesh della scena con il nome che comincia così, o nil
+  proc giu(o: Object3D): Object3D =
+    if o.isMesh and nomeDi(o).startsWith(prefisso): return o
+    for f in o.children:
+      let r = giu(f)
+      if r != nil: return r
+  giu(group)
+
+proc misuraPresa(): string =
+  ## Le misure per chi fa la traccia: dal centro della placca alla faccia della
+  ## risega (in orizzontale) e al pavimento.
+  let placca = trova("presa: placca")
+  let risega = trova("risega")
+  if placca == nil: return ""
+  let c = newBox3().setFromObject(placca).getCenter(newVector3())
+  let fuori = newVector3(-0.5, 0, 0)
+  var testo = "presa, dal centro della placca: "
+  if risega != nil:
+    let zR = newBox3().setFromObject(risega).max.z     # la faccia della risega verso la stanza
+    let d = c.z - zR
+    mettiMisura(c.clone().add(fuori), newVector3(c.x, c.y, zR).add(fuori), numero(abs(d)))
+    testo.add numero(abs(d)) & " dalla risega, "
+  mettiMisura(c.clone().add(fuori), newVector3(c.x, 0, c.z).add(fuori), numero(c.y))
+  testo & numero(c.y) & " da terra"
+
 proc misuraAt(ev: PointerEv): string =
   ## Prende le misure dal punto toccato; dice cosa ha misurato.
   cancellaMisure()
-  mira(ev)
-  var h: Intersezione
-  for k in ray.intersectObject(group, true):
-    if visibile(k.`object`) and k.`object`.isMesh: h = k; break
+  let h = colpito(ev)
   if h == nil: return "Tocca una superficie per misurarla"
+  if nomeDi(h.`object`).startsWith("presa"): return misuraPresa()
   let ss = solidi()
-  let ax = asse(normaleMondo(h))
-  var n = versore(ax)
-  if normaleMondo(h).dot(n) < 0: n.negate()
+  let n = normaleAsse(h)
+  let ax = asse(n)
   # sul piano della faccia: orizzontale e verticale; su un piano steso, larghezza e profondità
-  let assi = case ax
-             of 0: @[2, 1]
-             of 2: @[0, 1]
-             else: @[0, 2]
+  let assi = assiFaccia(ax)
   let nomiAssi = if ax == 1: @["larghezza", "profondità"] else: @["larghezza", "altezza"]
   let p = h.point.clone()
   var parti: seq[string]
@@ -796,13 +908,9 @@ proc misuraAt(ev: PointerEv): string =
     let a = p.clone().addScaledVector(d, -meno).addScaledVector(n, fuori)
     let b = p.clone().addScaledVector(d, piu).addScaledVector(n, fuori)
     let testo = numero(piu + meno)
-    let lab = document.createElement("div")
-    lab.setAttribute("class", "quota")
-    lab.textContent = cstring(testo)
-    stage.appendChild(lab)
-    misure.add Misura(a: a, b: b, testo: testo, etichetta: lab)
+    mettiMisura(a, b, testo)
     parti.add nomiAssi[j] & " " & testo
-  let nome = if h.`object`.userData.hasOwnProperty("nome"): $h.`object`.userData["nome"].to(cstring) else: ""
+  let nome = nomeDi(h.`object`)
   (if nome.len > 0: nome & ": " else: "") & parti.join(" · ") & " cm"
 
 proc posaEtichette() =
@@ -918,19 +1026,32 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   ndc = newVector2()
   ray.params["Line"]["threshold"] = 0.5
   var down: tuple[attivo: bool, x, y, t: float]
+  var inizio: Intersezione      # misurando: dove è cominciato il trascinamento
+  var dita = 0                  # quante dita sono sullo schermo (con due si zooma)
+  proc misurando(): bool = premuto(el("t-misura"))
   canvas.addEventListener("pointerdown", proc (e: Event) =
     let ev = cast[PointerEv](e)
-    down = (true, ev.clientX, ev.clientY, adesso()))
+    inc dita
+    down = (dita == 1, ev.clientX, ev.clientY, adesso())
+    inizio = if misurando() and dita == 1: colpito(ev) else: nil)
+  canvas.addEventListener("pointercancel", proc (e: Event) =
+    dita = max(0, dita - 1); down.attivo = false; inizio = nil)
   canvas.addEventListener("pointerup", proc (e: Event) =
     let ev = cast[PointerEv](e)
+    dita = max(0, dita - 1)
     if not down.attivo: return
     let moved = hypot(ev.clientX - down.x, ev.clientY - down.y)
     let dt = adesso() - down.t
     down.attivo = false
-    if moved > 6 or dt > 600: return
-    if premuto(el("t-misura")):     # si misura invece di aprire
-      status.textContent = cstring(misuraAt(ev))
+    if misurando():                 # si misura invece di aprire
+      if moved > 6 and inizio != nil:   # trascinato: da un punto all'altro
+        let fine = colpito(ev)
+        if fine != nil: status.textContent = cstring(misuraTra(inizio, fine, true))
+      elif moved <= 6:
+        status.textContent = cstring(misuraAt(ev))
+      inizio = nil
       return
+    if moved > 6 or dt > 600: return
     if premuto(el("t-venatura")):   # si gira la venatura invece di aprire
       let i = legnoAt(ev)
       if i >= 0:
@@ -941,6 +1062,13 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     if u != nil: setOpen(u, u.target < 0.5))
   canvas.addEventListener("pointermove", proc (e: Event) =
     let ev = cast[PointerEv](e)
+    if misurando():
+      if down.attivo and inizio != nil and dita == 1 and
+          hypot(ev.clientX - down.x, ev.clientY - down.y) > 6:
+        let qui = colpito(ev)
+        if qui != nil: status.textContent = cstring(misuraTra(inizio, qui, false))
+      if ev.pointerType == "mouse": canvas.cursore("crosshair")
+      return
     if ev.pointerType != "mouse" or ev.buttons != 0: return
     canvas.cursore(if unitAt(ev) != nil: cstring"pointer" else: cstring""))
 
@@ -948,11 +1076,16 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   let tFront = el("t-fronte")
   let tCarta = el("t-carta")
   tCarta.nascosto(carta.src.len == 0)
+  let tPresa = el("t-presa")
   proc applyToggles() =
     for f in frontPanel: f.visible = not premuto(tFront)
+    proc presa(o: Object3D) =
+      if o.isMesh and nomeDi(o).startsWith("presa"): o.parent.visible = not premuto(tPresa)
+      for f in o.children: presa(f)
+    presa(group)
     let on = carta.src.len > 0 and not premuto(tCarta)
     for w in walls: w.material = if on: cartaMat else: mats[kWall]
-  for btn in [tFront, tCarta]:
+  for btn in [tFront, tCarta, tPresa]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let btn = btn
       btn.addEventListener("click", proc (ev: Event) = btn.premi(not premuto(btn)); applyToggles())
@@ -964,13 +1097,16 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   # cosa fa un tocco sulla scena: apre e chiude, gira la venatura o misura
   const modi = [("t-tocca", "Tocca le parti mobili per aprirle o chiuderle"),
                 ("t-venatura", "Tocca un pannello per girarne la venatura"),
-                ("t-misura", "Tocca un punto: le misure fino ai bordi più vicini")]
+                ("t-misura", "Tocca un punto per le misure fino ai bordi più vicini, o trascina da un bordo all'altro (la vista è ferma: si può solo zoomare)")]
   for (id, aiuto) in modi:
     closureScope:
       let (id, aiuto) = (id, aiuto)
       el(id).addEventListener("click", proc (ev: Event) =
         for (b, _) in modi: el(b).premi(b == id)
-        if id != "t-misura": cancellaMisure()
+        # misurando la scena sta ferma: niente rotazione né spostamento, solo lo zoom
+        controls.enableRotate = id != "t-misura"
+        controls.enablePan = id != "t-misura"
+        if id != "t-misura": cancellaMisure(); canvas.cursore("")
         status.textContent = cstring(aiuto))
   el("t-chiudi").addEventListener("click", proc (ev: Event) =
     for u in units: setOpen(u, false))

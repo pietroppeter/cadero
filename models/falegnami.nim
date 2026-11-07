@@ -165,6 +165,18 @@ proc scalinoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.fondoVani -
   ## 7.5: di quanto il dentro dei vani alti sta sotto il bordo dell'apertura
 proc pianoComodino*(f: Falegnami): float = f.hBassi + f.gavone + f.sMulti
   ## 142.8: la cima del piano sopra il gavone
+const
+  placcaL* = 12.0     ## la placca della presa: 3 moduli, 12 × 8.2 (le misure di serie)
+  placcaH* = 8.2
+  marginePresa* = 5.0 ## dal bordo della placca al piano del comodino e al fianco davanti
+
+proc centroPresa*(f: Falegnami): tuple[y, z: float] =
+  ## Il centro della presa sulla schiena della libreria (dietro c'è la scatola nel
+  ## muro, con la traccia): guardando il comodino in basso a destra, 5 sopra il piano
+  ## del comodino e 5 dal fianco davanti. Segue la testata e la libreria.
+  (f.yMobili + f.sMulti + marginePresa + placcaL / 2,
+   f.pianoComodino + marginePresa + placcaH / 2)
+
 proc nicchiaX*(f: Falegnami): float =
   ## il bordo sinistro dell'apertura della nicchia: allineato all'anta A, o dove dice `nicchiaSx`
   if f.nicchiaSx > 0: f.nicchiaSx else: f.colonne[0]
@@ -248,6 +260,10 @@ proc pannelloRisega*(f: Falegnami): float = f.profondita - (f.yMobili + f.profLi
   ## 15.8: il pannello che copre la risega, dal fianco dietro della libreria al dietro del mobile
 proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
   ## dove si disegna il muro: i mobili arrivano a 81.1, oltre gli 80 della stanza
+proc presaDallaRisega*(f: Falegnami): float =
+  ## dal centro della presa alla faccia della risega, in orizzontale
+  f.yMuro - f.muro.risegaProf - f.centroPresa.y
+
 
 # --- le modifiche che vorremmo (Pietro, 4 novembre 2026) --------------------------
 const larghezzaPannelloRisega* = 10.0
@@ -288,14 +304,14 @@ proc rivisto*(f: Falegnami): Falegnami =
 
 proc nicchiaAperta*(f: Falegnami; on = true): Falegnami =
   ## Le misure della nicchia decise con i falegnami: vista da dietro il fronte sporge
-  ## un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 55
+  ## un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 50
   ## prima di quello di destra, il bordo alto sta 10 sotto il cielo del cassone e quello
   ## basso 10 sopra un materasso da 18 (invece di 17).
   result = f
   if not on: return
   result.materasso.altezza = 18
   result.nicchiaSx = 15
-  result.nicchiaL = f.larghezza - 55 - 15
+  result.nicchiaL = f.larghezza - 50 - 15
   result.nicchiaZ = f.pianoLetto + 18 + 10
   result.nicchiaH = f.cieloNicchia - 10 - result.nicchiaZ
 
@@ -559,6 +575,21 @@ proc modello*(f: Falegnami): Model =
   for q in lib.mitems:
     if q.name.startsWith("fianco"): q.hiddenFront = true
   result.aggiungi(lib, "libreria")
+  # la presa sulla schiena, verso il comodino; dietro, nel muro, la scatola da 3 moduli
+  let (yP, zP) = f.centroPresa
+  let xS = L - sm                      # la faccia della schiena verso il letto
+  var placca = part("presa: placca 3 moduli", kAccessory, xS - 0.9, yP - placcaL / 2,
+                    zP - placcaH / 2, 0.9, placcaL, placcaH)
+  placca.hiddenFront = true
+  result.add placca
+  for k in 0..2:
+    var m = part("presa: modulo " & $(k + 1), kAccessory, xS - 1.2, yP - 3.3 + float(k) * 2.2,
+                 zP - 2.2, 0.3, 2.0, 4.4)
+    m.hiddenFront = true
+    result.add m
+  var scatolaPresa = part("presa: scatola nel muro", kAccessory, L, yP - 5.3, zP - 3.5, 5, 10.6, 7)
+  scatolaPresa.hiddenFront = true
+  result.add scatolaPresa
   for k in 0..1:
     var cop = part("coperchio gavone", kPanel, xG + 0.2, yG + 0.2 + float(k) * dG / 2,
                    zc - 1, wG - 0.4, dG / 2 - 0.4, 1, r = 4)

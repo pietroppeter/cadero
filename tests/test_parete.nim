@@ -374,10 +374,23 @@ suite "pannello a L in testa al letto":
 
 suite "nicchia con le misure decise":
   let f = falegnami()
-  test "15 a sinistra, 55 a destra, 10 sotto il cielo, 10 sopra il materasso da 18":
+  test "15 a sinistra, 50 a destra, 10 sotto il cielo, 10 sopra il materasso da 18":
     let g = f.nicchiaAperta
-    check near(g.nicchiaX, 15) and near(g.larghezza - g.nicchiaX - g.nicchiaL, 55)
+    check near(g.nicchiaX, 15) and near(g.larghezza - g.nicchiaX - g.nicchiaL, 50)
     check near(g.cieloNicchia - (g.nicchiaZ + g.nicchiaH), 10)
     check g.materasso.altezza == 18 and near(g.bordo, 10)
     check near(f.nicchiaX, f.colonne[0])   # senza: allineata all'anta A
     check controlli(g, modello(g)).len > 0
+
+suite "la presa dietro la libreria":
+  let f = falegnami()
+  test "sulla schiena, sopra il comodino; segue la testata":
+    let m = modello(f)
+    let pl = m.find("presa: placca 3 moduli")
+    let (y, z) = f.centroPresa
+    check near(pl.pos.y + pl.size.y / 2, y) and near(pl.pos.z + pl.size.z / 2, z)
+    check near(pl.pos.z, f.pianoComodino + marginePresa)
+    check f.presaDallaRisega > 0
+    let t = f.testataAlta
+    check t.centroPresa.z > f.centroPresa.z
+    echo "presa: centro a ", f.presaDallaRisega, " dalla risega e ", z, " da terra"

@@ -87,11 +87,15 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   `conPannelloAL`) usa `contornoLato`: poligono nel piano y, z, estruso per `size.x`.
   Sta dove c'è il pannello della risega, davanti ai bordi dei fianchi. Nella chiave del visore "PannelloL" viene dopo le modifiche (`chiaveModifiche(..., pal)`).
 - `nicchiaAperta` (pulsante "Nicchia", chiave "Nicchia" dopo "PannelloL"): le misure della
-  nicchia decise con i falegnami (15 a sinistra, 55 a destra, 10 sotto il cielo, 10 sopra un
+  nicchia decise con i falegnami (15 a sinistra, 50 a destra, 10 sotto il cielo, 10 sopra un
   materasso da 18). Il bordo sinistro dell'apertura è `nicchiaX` (0 in `nicchiaSx` = anta A).
 - Nel visore "Tocca per" sceglie cosa fa un tocco: aprire, misurare (`misuraAt`: dal punto
   toccato, lungo i due assi della faccia, fino a dove la faccia finisce o qualcosa le sta
   davanti; linee e numeri in un SVG sopra la scena, `posaEtichette`) o girare la venatura.
+- La presa dei falegnami (`centroPresa`, `presaDallaRisega`): placca sulla schiena della libreria
+  5 sopra il comodino e 5 dal fianco davanti, scatola nel muro dietro. Le parti si chiamano
+  "presa: …": il visore le nasconde con "Senza presa" e, misurando, un tocco sulla presa dà
+  centro-risega e centro-pavimento (`misuraPresa`).
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,
