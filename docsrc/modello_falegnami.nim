@@ -401,8 +401,9 @@ Poi ci sono tre richieste (Pietro, 4 novembre):
 
 Sono modifiche indipendenti, come il pannellino: in `falegnami.nim` sono
 `testataAlta`, `risegaStretta` e `vaniAlti`, e `conModifiche` le accende una per una.
-Nel [visore](visore3d.html) ci sono quattro pulsanti, tutti spenti all'inizio:
-*Tavolino* (il pannellino estraibile), *Testata alta*, *Risega stretta*, *Vani alti*.
+Nel [visore](visore3d.html) ci sono i pulsanti *Tavolino* (il pannellino estraibile),
+*Testata alta* e *Vani alti*; la risega stretta l'abbiamo scartata (7 novembre: la
+risega resta 15.8), quindi il suo pulsante non c'è più.
 Qui sotto il **modello rivisto** è quello con le prime due accese e senza pannellino
 (`rivisto`); la terza si aggiunge sopra.
 """

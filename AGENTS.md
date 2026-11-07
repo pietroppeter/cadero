@@ -104,7 +104,10 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   3 orizzontali, testata alta, vani alti, pannello a L, nicchia, lampada (Pietro, 7/11).
   `docsrc/visore3d.nim` genera tutte le tavole dei tagli anche per questa combinazione.
 - Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e
-  cambiando modello.
+  cambiando modello. Quelle trascinate sono arancioni (`trascinata`, classe CSS).
+- Betulla: colori come nei disegni dei falegnami e un po' di luce propria (`lucePropria`,
+  emissive con la stessa texture), spenta di sera. La risega stretta non è più nel visore
+  (Pietro: la risega resta 15.8); `risegaStretta` resta nel modello.
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,

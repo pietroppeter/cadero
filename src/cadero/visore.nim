@@ -226,6 +226,8 @@ proc fbm(x, y: float; gx, gy, seme, ottave: int): float =
     tot += amp; amp *= 0.5
   result /= tot
 
+const lucePropria = 0.4   ## la luce propria della betulla, di giorno
+
 proc texBetulla(): Texture =
   ## La faccia: betulla sfogliata, come nei disegni dei falegnami. Fibre fitte lungo
   ## u che si piegano in archi larghi, fasce morbide e qualche nuvola più chiara o
@@ -243,7 +245,9 @@ proc texBetulla(): Texture =
       let nuvole = fbm(u, v, 3, 6, 20, 4)
       let fasce = fbm(u, vv, 1, 14, 30, 2)
       let t = clamp(0.45 + 0.66 * (fasce - 0.5) + 0.56 * (fibre - 0.5) + 0.5 * (nuvole - 0.5), 0.0, 1.0)
-      img.metti(j * w + i, int(250 - 20 * t), int(236 - 38 * t), int(204 - 58 * t))
+      # i colori dei disegni dei falegnami (Pietro: "la loro era perfetta"): giallo
+      # caldo e chiaro, venatura leggera
+      img.metti(j * w + i, int(248 - 12 * t), int(230 - 22 * t), int(192 - 30 * t))
   x.disegna(img)
   result = newCanvasTexture(cv.toJs)
   result.wrapS = RepeatWrapping(); result.wrapT = RepeatWrapping(); result.colorSpace = SRGBColorSpace()
@@ -267,8 +271,12 @@ proc texStrati(): Texture =
 
 proc materialiBetulla() =
   let faccia = texBetulla()
-  matFaccia = newMeshStandardMaterial(js{map: faccia, roughness: 0.75})
-  matFacciaFrontali = newMeshStandardMaterial(js{map: faccia, color: 0xfff8ee, roughness: 0.7})
+  # un po' di luce propria (emissive con la stessa texture): anche le facce in ombra
+  # restano chiare e calde come nei disegni dei falegnami; di sera si spegne (`luci`)
+  matFaccia = newMeshStandardMaterial(js{map: faccia, roughness: 0.75, emissive: 0xffffff,
+                                         emissiveMap: faccia, emissiveIntensity: lucePropria})
+  matFacciaFrontali = newMeshStandardMaterial(js{map: faccia, color: 0xfff8ee, roughness: 0.7,
+    emissive: 0xffffff, emissiveMap: faccia, emissiveIntensity: lucePropria})
   matBordo = newMeshStandardMaterial(js{map: texStrati(), roughness: 0.85})
 
 proc diLegno(p: Part): bool =
@@ -718,6 +726,7 @@ type Misura = object
   etichetta: Element   ## il numero, sopra la scena
   gruppo: int          ## le misure di un trascinamento (l'anteprima) vanno via insieme
   id: int              ## toccando il numero o la linea si toglie solo questa misura
+  trascinata: bool     ## presa trascinando da un punto all'altro: arancione, non blu
 var
   misure: seq[Misura]
   prossimaMisura = 0
@@ -852,18 +861,18 @@ proc nuovoGruppo(): int =
   inc prossimoGruppo
   prossimoGruppo
 
-proc mettiMisura(a, b: Vector3; testo: string) =
+proc mettiMisura(a, b: Vector3; testo: string; trascinata = false) =
   ## una misura nel gruppo corrente; toccando il numero si toglie lei sola
   let g = prossimoGruppo
   let id = prossimaMisura
   inc prossimaMisura
   let lab = document.createElement("div")
-  lab.setAttribute("class", "quota")
+  lab.setAttribute("class", if trascinata: cstring"quota trascinata" else: cstring"quota")
   lab.setAttribute("title", "Tocca per togliere questa misura")
   lab.textContent = cstring(testo)
   lab.addEventListener("click", proc (ev: Event) = togliMisura(id))
   stage.appendChild(lab)
-  misure.add Misura(a: a, b: b, testo: testo, etichetta: lab, gruppo: g, id: id)
+  misure.add Misura(a: a, b: b, testo: testo, etichetta: lab, gruppo: g, id: id, trascinata: trascinata)
   el("t-cancella").nascosto(false)
 
 proc componente(v: Vector3; i: int): float =
@@ -900,12 +909,12 @@ proc misuraTra(ha, hb: Intersezione; finale: bool): string =
     testo = numero(abs(l))
     dettaglio = nomeAsse[if lungo == 2 and asse(normaleAsse(ha)) != 1: 2
                          elif lungo == 1: 1 else: 0]
-    mettiMisura(a.clone().add(fuori), fine.add(fuori), testo)
+    mettiMisura(a.clone().add(fuori), fine.add(fuori), testo, true)
   else:
     let d = b.clone().sub(a)
     testo = numero(d.length)
     dettaglio = "in orizzontale " & numero(hypot(d.x, d.z)) & ", in verticale " & numero(abs(d.y))
-    mettiMisura(a.clone().add(fuori), b.clone().add(fuori), testo)
+    mettiMisura(a.clone().add(fuori), b.clone().add(fuori), testo, true)
   let (da, verso) = (nomeDi(ha.`object`), nomeDi(hb.`object`))
   result = testo & " cm " & dettaglio
   if finale and da.len > 0:
@@ -1002,7 +1011,7 @@ proc posaEtichette() =
         stanghette.add "M" & $(pt[0] + ox) & " " & $(pt[1] + oy) & "L" & $(pt[0] - ox) & " " & $(pt[1] - oy)
     let g = " data-m=\"" & $m.id & "\""
     disegno.add "<path class=\"alone\"" & g & " d=\"" & linea & stanghette & "\"/>"
-    disegno.add "<path class=\"tratto\"" & g & " d=\"" & linea & stanghette & "\"/>"
+    disegno.add "<path class=\"tratto" & (if m.trascinata: " trascinata" else: "") & "\"" & g & " d=\"" & linea & stanghette & "\"/>"
     var (x, y) = ((primo[0] + ultimo[0]) / 2, (primo[1] + ultimo[1]) / 2)
     for (px, py) in posti:
       if abs(px - x) < 50 and abs(py - y) < 22: y += 26
@@ -1022,6 +1031,8 @@ proc luci() =
   lucina.intensity = if not accesa: 0.0 elif sera: 6000.0 else: 1500.0
   matVetro.emissiveIntensity = if accesa: (if sera: 1.6 else: 0.75) else: 0.04
   if cartaMat != nil: cartaMat.emissiveIntensity = if sera: 0.02 else: 0.3
+  for m in [matFaccia, matFacciaFrontali]:
+    if m != nil: m.emissiveIntensity = if sera: 0.0 else: lucePropria
   let s = cssVar("--stage")
   scene.background = newColor(if sera: cstring"#14171b" elif s.len > 0: s else: cstring"#dfe3e6")
 

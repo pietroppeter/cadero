@@ -30,7 +30,7 @@ proc tavolaVariante(f: Falegnami; chiave: string; nascosta: bool): string =
 var tavole = ""
 for tav in [false, true]:
   for tes in [false, true]:
-    for ris in [false, true]:
+    for ris in [false]:     # risega: resta 15.8 (Pietro, 7 novembre), niente pulsante
       for van in [false, true]:
         for pal in [false, true]:
          for nic in [false, true]:
@@ -80,7 +80,7 @@ nbJsFromCode(cartaSrc):
   var varianti: Table[string, Model]
   for tav in [false, true]:
     for tes in [false, true]:
-      for ris in [false, true]:
+      for ris in [false]:     # risega: resta 15.8 (Pietro, 7 novembre)
         for van in [false, true]:
           for pal in [false, true]:
            for nic in [false, true]:
