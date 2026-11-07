@@ -75,6 +75,8 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   `Part.venatura` (`venLunga` di default = lungo il lato più lungo, `verso(p)` dà quella
   vera); nel modello dei falegnami si sceglie per nome in `f.venature`, nel visore con
   "Gira venatura" (non resta salvata). Anche la venatura di base si mette nel modello.
+  La texture (`texBetulla`) è disegnata pixel per pixel con rumore periodico (`fbm`):
+  piastrella 1024 × 512 per 120 × 60 cm, ispirata ai disegni dei falegnami.
 - Il pannello frontale dei falegnami si divide secondo `f.taglio` (`pezziFronte`):
   `tCroce` (il loro, 4 pannelli + fascia, venatura verticale) o `tTre` (3 pezzi
   orizzontali, taglio a 109 e due pezzi uguali sopra, venatura orizzontale); `f.cornice`
@@ -84,6 +86,28 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
 - Un pannello sottile in x con una sagoma (il pannello a L della libreria,
   `conPannelloAL`) usa `contornoLato`: poligono nel piano y, z, estruso per `size.x`.
   Sta dove c'è il pannello della risega, davanti ai bordi dei fianchi. Nella chiave del visore "PannelloL" viene dopo le modifiche (`chiaveModifiche(..., pal)`).
+- `nicchiaAperta` (pulsante "Nicchia", chiave "Nicchia" dopo "PannelloL"): le misure della
+  nicchia decise con i falegnami (15 a sinistra, 50 a destra, 10 sotto il cielo, 10 sopra un
+  materasso da 18). Il bordo sinistro dell'apertura è `nicchiaX` (0 in `nicchiaSx` = anta A).
+- Nel visore "Tocca per" sceglie cosa fa un tocco: aprire, misurare (`misuraAt`: dal punto
+  toccato, lungo i due assi della faccia, fino a dove la faccia finisce o qualcosa le sta
+  davanti; linee e numeri in un SVG sopra la scena, `posaEtichette`) o girare la venatura.
+- La presa dei falegnami (`centroPresa`, `presaDallaRisega`): placca sulla schiena della libreria
+  5 sopra il comodino e 5 dal fianco davanti, scatola nel muro dietro. Le parti si chiamano
+  "presa: …": il visore le nasconde con "Senza presa" e, misurando, un tocco sulla presa dà
+  centro-risega e centro-pavimento (`misuraPresa`).
+- La lampada (`centroLampada`, `sferaLampada`): "lampada: base" e "lampada: sfera" sulla striscia
+  della risega, la sfera 1 sotto il primo scaffale della testata alta (anche con la testata
+  bassa). Il visore le disegna per nome come capsula e sfera (`geometria`), le mostra con
+  "Lampada"; "Sera" abbassa le luci (`luci`), un tocco sulla lampada la accende o spegne.
+- Il visore parte dai pulsanti premuti nella pagina (`tools/visore3d.tpl.html`): per i falegnami
+  3 orizzontali, testata alta, vani alti, pannello a L, nicchia, lampada (Pietro, 7/11).
+  `docsrc/visore3d.nim` genera tutte le tavole dei tagli anche per questa combinazione.
+- Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e
+  cambiando modello. Quelle trascinate sono arancioni (`trascinata`, classe CSS).
+- Betulla: colori come nei disegni dei falegnami e un po' di luce propria (`lucePropria`,
+  emissive con la stessa texture), spenta di sera. La risega stretta non è più nel visore
+  (Pietro: la risega resta 15.8); `risegaStretta` resta nel modello.
 - Un pannello orizzontale con un'apertura (il comodino) usa `holesPiano`: rettangoli
   nel piano x, y (nel `RRect`, `z` e `h` valgono come y e profondità). Solo il 3D li disegna.
 - La carta da parati del visore è `tools/carta-da-parati.jpg` (una piastrella del motivo,

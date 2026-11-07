@@ -370,3 +370,37 @@ suite "pannello a L in testa al letto":
     check near(pa.pos.x, pr.pos.x) and near(pa.pos.y, m0.find("fianco libreria").pos.y) and near(pa.pos.y + pa.size.y, f.profondita)
     check m.parts.filterIt(it.name == "fianco libreria") == m0.parts.filterIt(it.name == "fianco libreria")
     check pa.pos.x + pa.size.x <= f.xRisega   # non tocca la risega
+    check pa.contornoLato[^1][1] == m.find("piano comodino").pos.z + f.sMulti   # copre il bordo del comodino
+
+suite "nicchia con le misure decise":
+  let f = falegnami()
+  test "15 a sinistra, 50 a destra, 10 sotto il cielo, 10 sopra il materasso da 18":
+    let g = f.nicchiaAperta
+    check near(g.nicchiaX, 15) and near(g.larghezza - g.nicchiaX - g.nicchiaL, 50)
+    check near(g.cieloNicchia - (g.nicchiaZ + g.nicchiaH), 10)
+    check g.materasso.altezza == 18 and near(g.bordo, 10)
+    check near(f.nicchiaX, f.colonne[0])   # senza: allineata all'anta A
+    check controlli(g, modello(g)).len > 0
+
+suite "la presa dietro la libreria":
+  let f = falegnami()
+  test "sulla schiena, sopra il comodino; segue la testata":
+    let m = modello(f)
+    let pl = m.find("presa: placca 3 moduli")
+    let (y, z) = f.centroPresa
+    check near(pl.pos.y + pl.size.y / 2, y) and near(pl.pos.z + pl.size.z / 2, z)
+    check near(pl.pos.z, f.pianoComodino + marginePresa)
+    check f.presaDallaRisega > 0
+    let t = f.testataAlta
+    check t.centroPresa.z > f.centroPresa.z
+    echo "presa: centro a ", f.presaDallaRisega, " dalla risega e ", z, " da terra"
+
+suite "la lampada in testa al letto":
+  test "sulla striscia della risega, subito sotto il primo scaffale della testata alta":
+    let f = falegnami()
+    let b = modello(f).find("lampada: base")
+    check near(b.pos.x + b.size.x, f.xLibreria - f.sMulti)
+    let t = f.testataAlta
+    let s = modello(f).find("lampada: sfera")
+    check near(s.pos.z + s.size.z, t.zScaffali[0] - 1)
+    check near(t.centroLampada.z, f.centroLampada.z)   # la testata non la sposta

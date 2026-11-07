@@ -74,7 +74,7 @@ proc tavola1(f: Falegnami; m: Model): TavolaRifatta =
     nota: "il pannello frontale con le aperture: quelle dei vani, la nicchia, le ante, i gradini, i cassetti",
     svg: foglio([(v, fr)], [
       (v, catena(vFront, false, H + 12, H, su, suL)),
-      (v, catena(vFront, false, H + 26, H, @[0.0, c[0], c[0] + f.nicchiaL, L], @[no, 156.7, no])),
+      (v, catena(vFront, false, H + 26, H, @[0.0, f.nicchiaX, f.nicchiaX + f.nicchiaL, L], @[no, 156.7, no])),
       (v, catena(vFront, false, -12, 0, giu, @[no, 71.5, no, 25.0, no, 46.2, no, 46.2, no])),
       (v, catena(vFront, true, -14, 0, @[0.0, alto, alto + f.ribaltaH - 2 * so, H], @[no, 32.6, no])),
       (v, catena(vFront, true, -28, 0, @[0.0, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, H], @[no, 122.0, no])),
@@ -128,7 +128,7 @@ proc tavola3(f: Falegnami; m: Model): TavolaRifatta =
     nota: "il fronte com'è chiuso, con le ante (è anche la tavola 2, in prospettiva)",
     svg: foglio([(v, m)], [
       (v, catena(vFront, false, H + 12, H, su, @[no, 15.0, 53.0, no, 68.3, no, 68.3, no])),
-      (v, catena(vFront, false, H + 26, H, @[0.0, c[0], c[0] + f.nicchiaL, L], @[no, 156.7, no])),
+      (v, catena(vFront, false, H + 26, H, @[0.0, f.nicchiaX, f.nicchiaX + f.nicchiaL, L], @[no, 156.7, no])),
       (v, catena(vFront, false, -12, 0, giu, @[no, 75.5, no, no, no, 50.2, no, 50.2, no])),
       (v, catena(vFront, false, -26, -12, @[0.0, f.spalla, f.spalla + f.pannelloL, L - f.spalla, L],
                  @[5.9, 112.5, 112.5, 5.9])),
@@ -280,7 +280,7 @@ proc disegnoNicchia*(f: Falegnami): string =
   let xl = f.xLibreria
   foglio([(v, mf), (vs, m)], [
     (v, catena(vFront, false, f.altezza + 12, f.altezza,
-      @[0.0, c0, c0 + f.nicchiaL, xl - sm, xl, L], @[no, 156.7, no, no, no])),
+      @[0.0, f.nicchiaX, f.nicchiaX + f.nicchiaL, xl - sm, xl, L], @[no, 156.7, no, no, no])),
     (v, catena(vFront, true, -14, 0,
       @[0.0, f.hBassi, pl, mat, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, zc + sm, 2 * f.pannelloH],
       @[109.0, no, no, no, 121.9, no, no])),

@@ -57,7 +57,12 @@ proc scarica*(testo, nomeFile: cstring) {.importjs: """((t, n) => {
   ## Fa scaricare un file SVG con questo testo.
 
 proc nuovoCanvas*(lato: int): Element {.importjs: "(l => Object.assign(document.createElement('canvas'), {width: l, height: l}))(#)".}
+proc nuovoCanvas*(w, h: int): Element {.importjs: "((w, h) => Object.assign(document.createElement('canvas'), {width: w, height: h}))(@)".}
 proc ctx2d*(c: Element): Ctx2D {.importjs: "#.getContext('2d')".}
+proc pixel*(x: Ctx2D; w, h: int): JsRoot {.importjs: "#.createImageData(@)".}
+  ## un'immagine vuota w × h da riempire con `metti` e disegnare con `disegna`
+proc metti*(img: JsRoot; i, r, g, b: int) {.importjs: "((d, i, r, g, b) => (d.data[4*i] = r, d.data[4*i+1] = g, d.data[4*i+2] = b, d.data[4*i+3] = 255))(@)".}
+proc disegna*(x: Ctx2D; img: JsRoot) {.importjs: "#.putImageData(#, 0, 0)".}
 proc fillRect*(x: Ctx2D; a, b, w, h: float) {.importjs: "#.fillRect(@)".}
 proc beginPath*(x: Ctx2D) {.importjs: "#.beginPath()".}
 proc moveTo*(x: Ctx2D; a, b: float) {.importjs: "#.moveTo(@)".}

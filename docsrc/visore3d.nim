@@ -4,7 +4,8 @@
 ## vani alti. Una pagina
 ## nimib con un solo blocco di codice Nim compilato in JavaScript (`nbJsFromCode`).
 ##
-## Si parte con tutte le modifiche spente (Pietro); la tavola sotto il visore
+## Si parte (Pietro, 7 novembre) con 3 orizzontali, testata alta, vani alti, pannello
+## a L, nicchia e lampada accesi; la tavola sotto il visore
 ## cambia con i pulsanti.
 ##
 ##   nim r docsrc/visore3d.nim      (o `nimble docs`, che genera tutti i documenti)
@@ -25,32 +26,35 @@ proc tavolaVariante(f: Falegnami; chiave: string; nascosta: bool): string =
   ## una tavola per variante: il visore mostra quella del modello scelto
   "<div data-chiave=\"" & chiave & "\"" & (if nascosta: " hidden" else: "") & ">" &
     tavola(f, modello(f)) & "</div>"
-# una tavola per ogni combinazione delle quattro modifiche proposte (tutte spente
-# all'inizio): il visore mostra quella del modello scelto
+# una tavola per ogni combinazione delle modifiche proposte: il visore mostra quella del modello scelto
 var tavole = ""
 for tav in [false, true]:
   for tes in [false, true]:
-    for ris in [false, true]:
+    for ris in [false]:     # risega: resta 15.8 (Pietro, 7 novembre), niente pulsante
       for van in [false, true]:
         for pal in [false, true]:
-          let base = f0.conModifiche(tav, tes, ris, van).conPannelloAL(pal)
-          let chiave = chiaveModifiche(tav, tes, ris, van, pal)
-          let spento = not (tav or tes or ris or van or pal)
-          # le tavole dei tagli e della cornice solo con le modifiche spente (le
-          # altre combinazioni tengono la tavola che c'è): la pagina resta leggera
+         for nic in [false, true]:
+          let base = f0.conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic)
+          let chiave = chiaveModifiche(tav, tes, ris, van, pal, nic)
+          let spento = not (tav or tes or ris or van or pal or nic)
+          let partenza = not tav and tes and not ris and van and pal and nic
+          # le tavole dei tagli e della cornice solo con le modifiche spente e con
+          # quelle di partenza (le altre combinazioni tengono la tavola che c'è): la
+          # pagina resta leggera
           for t in TaglioFronte:
             for cor in [false, true]:
-              if spento or (t == tCroce and not cor):
+              if spento or partenza or (t == tCroce and not cor):
                 tavole.add tavolaVariante(base.conTaglio(t).conCornice(cor),
-                  chiave & chiaveTaglio(t, cor), not spento or t != tCroce or cor)
+                  chiave & chiaveTaglio(t, cor), not (partenza and t == tTre and not cor))
 nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"L <b>{f0.larghezza:g}</b> × H <b>{f0.altezza:g}</b> × P <b>{f0.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",
   tavola: tavole,
   didascalia: &"prospetto frontale, sezione laterale nella libreria (x = {f0.xSezione:g}) e pianta sopra il piano letto (z = 130), con le quote; cambia con le modifiche accese",
   nota: "<strong>Tocca cassetti, ante, ribalte e le altre parti mobili per aprirle o chiuderle.</strong> " &
-    "<em>Taglio</em> cambia come è diviso il pannello frontale (a croce o in 3 orizzontali), <em>Cornice</em> rimette le spalle ai lati; con <em>Gira venatura</em> premuto, " &
-    "toccare un pannello gira la sua venatura (orizzontale o verticale). " &
+    "Con <em>Tocca per: Misurare</em> un tocco prende le misure in orizzontale e in verticale fino ai bordi più vicini " &
+    "(il bordo di un pannello, un foro, un muro, il materasso); con <em>Girare la venatura</em> un tocco gira la venatura di un pannello. " &
+    "<em>Fronte</em> cambia come è diviso il pannello frontale (a croce o in 3 orizzontali), <em>Cornice</em> rimette le spalle ai lati. " &
     "Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. " &
     "Il modello è generato dal codice Nim di Caderò a partire dalle tavole dei falegnami; misure rilevate e ipotesi " &
     "sono nel <a href=\"modello_falegnami.html\">documento del modello</a>. La nostra idea di partenza: " &
@@ -76,14 +80,15 @@ nbJsFromCode(cartaSrc):
   var varianti: Table[string, Model]
   for tav in [false, true]:
     for tes in [false, true]:
-      for ris in [false, true]:
+      for ris in [false]:     # risega: resta 15.8 (Pietro, 7 novembre)
         for van in [false, true]:
           for pal in [false, true]:
+           for nic in [false, true]:
             for t in TaglioFronte:
               for cor in [false, true]:
-                varianti[chiaveModifiche(tav, tes, ris, van, pal) &
+                varianti[chiaveModifiche(tav, tes, ris, van, pal, nic) &
                          chiaveTaglio(t, cor)] =
-                  modello(falegnami().conModifiche(tav, tes, ris, van).conPannelloAL(pal).conTaglio(t).conCornice(cor))
+                  modello(falegnami().conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic).conTaglio(t).conCornice(cor))
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
   quandoThreePronto(proc () = avviaVisore(varianti, carta))
 

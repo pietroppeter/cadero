@@ -66,6 +66,7 @@ type
   LineSegments* = ref object of Object3D
     material*: Material
   Light* = ref object of Object3D
+    intensity*: float
   PerspectiveCamera* = ref object of Object3D
     fov*, aspect*: float
 
@@ -83,10 +84,11 @@ type
     distance*: float
   Raycaster* = ref object of JsRoot
     params*: JsObject
+    near*, far*: float
 
   OrbitControls* = ref object of JsRoot
     target*: Vector3
-    enabled*, enableDamping*: bool
+    enabled*, enableDamping*, enableRotate*, enablePan*: bool
     minDistance*, maxDistance*: float
     zoomSpeed*: float
 {.pop.}
@@ -141,10 +143,12 @@ proc render*(r: WebGLRenderer; s: Scene; c: PerspectiveCamera) {.importjs: "#.re
 
 proc newHemisphereLight*(cielo, terra: int; intensita: float): Light {.importjs: "new THREE.HemisphereLight(@)".}
 proc newDirectionalLight*(colore: int; intensita: float): Light {.importjs: "new THREE.DirectionalLight(@)".}
+proc newPointLight*(colore: int; intensita, distanza, decadimento: float): Light {.importjs: "new THREE.PointLight(@)".}
 
 # --- materiali e texture -----------------------------------------------------
 proc newMeshStandardMaterial*(params: JsObject): Material {.importjs: "new THREE.MeshStandardMaterial(@)".}
 proc newMeshBasicMaterial*(params: JsObject): Material {.importjs: "new THREE.MeshBasicMaterial(@)".}
+proc `emissiveIntensity=`*(m: Material; v: float) {.importjs: "#.emissiveIntensity = #".}
 proc newLineBasicMaterial*(params: JsObject): Material {.importjs: "new THREE.LineBasicMaterial(@)".}
 proc newCanvasTexture*(canvas: JsObject): Texture {.importjs: "new THREE.CanvasTexture(@)".}
 proc caricaTexture*(src: cstring): Texture {.importjs: "new THREE.TextureLoader().load(@)".}
@@ -153,12 +157,15 @@ proc caricaTexture*(src: cstring): Texture {.importjs: "new THREE.TextureLoader(
 proc newBoxGeometry*(w, h, d: float): BufferGeometry {.importjs: "new THREE.BoxGeometry(@)".}
 proc newCylinderGeometry*(r1, r2, h: float; segmenti: int): BufferGeometry {.importjs: "new THREE.CylinderGeometry(@)".}
 proc newPlaneGeometry*(w, h: float): BufferGeometry {.importjs: "new THREE.PlaneGeometry(@)".}
+proc newSphereGeometry*(r: float; segW, segH: int): BufferGeometry {.importjs: "new THREE.SphereGeometry(@)".}
+proc newCapsuleGeometry*(r, lunghezza: float; segCap, segGiro: int): BufferGeometry {.importjs: "new THREE.CapsuleGeometry(@)".}
 proc newExtrudeGeometry*(s: Shape; params: JsObject): BufferGeometry {.importjs: "new THREE.ExtrudeGeometry(@)".}
 proc newEdgesGeometry*(g: BufferGeometry; soglia = 1.0): BufferGeometry {.importjs: "new THREE.EdgesGeometry(@)".}
 proc dispose*(g: BufferGeometry) {.importjs: "#.dispose()".}
   ## libera la memoria della scheda video (quando la scena si ricostruisce)
 proc translate*(g: BufferGeometry; x, y, z: float): BufferGeometry {.importjs: "#.translate(@)", discardable.}
 proc rotateX*(g: BufferGeometry; a: float): BufferGeometry {.importjs: "#.rotateX(@)", discardable.}
+proc scale*(g: BufferGeometry; x, y, z: float): BufferGeometry {.importjs: "#.scale(@)", discardable.}
 proc rotateY*(g: BufferGeometry; a: float): BufferGeometry {.importjs: "#.rotateY(@)", discardable.}
 proc computeBoundingBox*(g: BufferGeometry) {.importjs: "#.computeBoundingBox()".}
 proc getX*(a: BufferAttribute; i: int): float {.importjs: "#.getX(@)".}
@@ -185,6 +192,16 @@ proc newRaycaster*(): Raycaster {.importjs: "new THREE.Raycaster()".}
 proc setFromCamera*(r: Raycaster; ndc: Vector2; c: PerspectiveCamera) {.importjs: "#.setFromCamera(@)".}
 proc intersectObject*(r: Raycaster; o: Object3D; ricorsivo: bool): seq[Intersezione] {.importjs: "#.intersectObject(@)".}
 proc intersectObjects*(r: Raycaster; o: seq[Object3D]; ricorsivo: bool): seq[Intersezione] {.importjs: "#.intersectObjects(@)".}
+proc set*(r: Raycaster; origine, direzione: Vector3) {.importjs: "#.set(@)".}
+  ## il raggio da `origine` lungo `direzione` (lunga 1)
+proc normaleMondo*(h: Intersezione): Vector3 {.importjs: "((h) => h.face.normal.clone().transformDirection(h.object.matrixWorld))(#)".}
+  ## la normale della faccia toccata, nelle coordinate della scena
+proc isMesh*(o: Object3D): bool {.importjs: "(#.isMesh === true)".}
+proc newLinee*(punti: seq[Vector3]; m: Material): LineSegments {.importjs: "new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(#), #)".}
+  ## segmenti a coppie di punti (0-1, 2-3, …)
+proc smaltisci*(l: LineSegments) {.importjs: "#.geometry.dispose()".}
+proc dot*(v, w: Vector3): float {.importjs: "#.dot(@)".}
+proc addScaledVector*(v, w: Vector3; s: float): Vector3 {.importjs: "#.addScaledVector(@)", discardable.}
 
 proc newOrbitControls*(c: PerspectiveCamera; el: JsObject): OrbitControls {.importjs: "new THREE.OrbitControls(@)".}
 proc update*(c: OrbitControls) {.importjs: "#.update()".}

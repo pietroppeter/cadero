@@ -54,6 +54,8 @@ type
                              ## perché il bordo alto sia a filo del cielo del cassone
                              ## (in scala sul prospetto si legge circa 137)
     nicchiaL*, nicchiaH*: float     ## 156.7 × 121.9 (disegno)
+    nicchiaSx*: float        ## il bordo sinistro dell'apertura, dal muro; 0 = allineata
+                             ## all'anta A (disegno; vedi `nicchiaX` e `nicchiaAperta`)
     # --- la zona bassa del fronte
     zBassi*: float           ## fondo di ante, cassetti e gradini, da terra: 12 (disegno: 120)
     altezzaAnte*: float      ## 95 (disegno)
@@ -163,6 +165,21 @@ proc scalinoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.fondoVani -
   ## 7.5: di quanto il dentro dei vani alti sta sotto il bordo dell'apertura
 proc pianoComodino*(f: Falegnami): float = f.hBassi + f.gavone + f.sMulti
   ## 142.8: la cima del piano sopra il gavone
+const
+  placcaL* = 12.0     ## la placca della presa: 3 moduli, 12 × 8.2 (le misure di serie)
+  placcaH* = 8.2
+  marginePresa* = 5.0 ## dal bordo della placca al piano del comodino e al fianco davanti
+
+proc centroPresa*(f: Falegnami): tuple[y, z: float] =
+  ## Il centro della presa sulla schiena della libreria (dietro c'è la scatola nel
+  ## muro, con la traccia): guardando il comodino in basso a destra, 5 sopra il piano
+  ## del comodino e 5 dal fianco davanti. Segue la testata e la libreria.
+  (f.yMobili + f.sMulti + marginePresa + placcaL / 2,
+   f.pianoComodino + marginePresa + placcaH / 2)
+
+proc nicchiaX*(f: Falegnami): float =
+  ## il bordo sinistro dell'apertura della nicchia: allineato all'anta A, o dove dice `nicchiaSx`
+  if f.nicchiaSx > 0: f.nicchiaSx else: f.colonne[0]
 proc bordo*(f: Falegnami): float = f.nicchiaZ - f.pianoLetto - f.materasso.altezza
   ## 9.2: il fronte sopra il materasso
 proc schienale*(f: Falegnami): float = f.pianoComodino - f.pianoLetto - f.materasso.altezza
@@ -243,6 +260,23 @@ proc pannelloRisega*(f: Falegnami): float = f.profondita - (f.yMobili + f.profLi
   ## 15.8: il pannello che copre la risega, dal fianco dietro della libreria al dietro del mobile
 proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
   ## dove si disegna il muro: i mobili arrivano a 81.1, oltre gli 80 della stanza
+const sferaLampada* = 12.0
+  ## il diametro della sfera di vetro della lampada
+proc centroLampada*(f: Falegnami): tuple[y, z: float] =
+  ## La lampada da lettura: al centro della striscia che copre la risega (dal fianco
+  ## dietro della libreria al muro), subito sotto il primo scaffale della testata
+  ## alta (Pietro): il centro della sfera, che finisce 1 sotto lo scaffale. Resta a
+  ## quell'altezza anche con la testata bassa.
+  let yd = f.yMobili + f.profLibreria
+  var alta = f                 # come in `testataAlta` (più sotto)
+  alta.gavone = 58
+  alta.nScaffali = 2
+  ((yd + f.yMuro) / 2, alta.zScaffali[0] - 1 - sferaLampada / 2)
+
+proc presaDallaRisega*(f: Falegnami): float =
+  ## dal centro della presa alla faccia della risega, in orizzontale
+  f.yMuro - f.muro.risegaProf - f.centroPresa.y
+
 
 # --- le modifiche che vorremmo (Pietro, 4 novembre 2026) --------------------------
 const larghezzaPannelloRisega* = 10.0
@@ -281,6 +315,19 @@ proc rivisto*(f: Falegnami): Falegnami =
   ## testata alta e il pannello della risega stretto.
   f.senzaPannello.testataAlta.risegaStretta
 
+proc nicchiaAperta*(f: Falegnami; on = true): Falegnami =
+  ## Le misure della nicchia decise con i falegnami: vista da dietro il fronte sporge
+  ## un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 50
+  ## prima di quello di destra, il bordo alto sta 10 sotto il cielo del cassone e quello
+  ## basso 10 sopra un materasso da 18 (invece di 17).
+  result = f
+  if not on: return
+  result.materasso.altezza = 18
+  result.nicchiaSx = 15
+  result.nicchiaL = f.larghezza - 50 - 15
+  result.nicchiaZ = f.pianoLetto + 18 + 10
+  result.nicchiaH = f.cieloNicchia - 10 - result.nicchiaZ
+
 proc conModifiche*(f: Falegnami; tavolino, testata, risega, vani: bool): Falegnami =
   ## Le modifiche proposte sono indipendenti: si accendono una per una. Il
   ## "tavolino" è il pannellino estraibile dei falegnami.
@@ -298,7 +345,8 @@ proc conPannelloAL*(f: Falegnami; on = true): Falegnami =
   result = f
   result.pannelloAL = on
 
-proc chiaveModifiche*(tavolino, testata, risega, vani: bool; pannelloL = false): string =
+proc chiaveModifiche*(tavolino, testata, risega, vani: bool; pannelloL = false;
+                      nicchia = false): string =
   ## la chiave del visore: "falegnami" e le modifiche accese, sempre in quest'ordine
   result = "falegnami"
   if tavolino: result.add "Tavolino"
@@ -306,6 +354,7 @@ proc chiaveModifiche*(tavolino, testata, risega, vani: bool; pannelloL = false):
   if risega: result.add "Risega"
   if vani: result.add "Vani"
   if pannelloL: result.add "PannelloL"
+  if nicchia: result.add "Nicchia"
 
 # --- le aperture del fronte -----------------------------------------------------------
 proc aperture*(f: Falegnami): seq[RRect] =
@@ -315,7 +364,7 @@ proc aperture*(f: Falegnami): seq[RRect] =
   let zA = f.zBassi + so
   let hA = f.altezzaAnte - 2 * so
   # la nicchia, allineata a sinistra con l'anta A e la prima ribalta
-  result.add rrect(c[0], f.nicchiaZ, f.nicchiaL, f.nicchiaH, f.raggioNicchia)
+  result.add rrect(f.nicchiaX, f.nicchiaZ, f.nicchiaL, f.nicchiaH, f.raggioNicchia)
   # in basso: anta A, i gradini (e la fessura), i cassetti, l'anta D
   result.add rrect(c[0] + so, zA, f.antaA - 2 * so, hA, ra)
   for i, z in f.zGradini:
@@ -514,12 +563,12 @@ proc modello*(f: Falegnami): Model =
   if f.pannelloAL:
     # testata e pannello della risega in un solo pezzo a L, dove oggi c'è il
     # pannello della risega (x = xl - sm), davanti ai bordi dei due fianchi: il braccio
-    # basso, alto quanto il gavone, va dal davanti al muro; quello alto, alto quanto la
+    # basso, alto fino alla cima del piano del comodino (ne copre il bordo), va dal davanti al muro; quello alto, alto quanto la
     # libreria, dal fianco dietro al muro. Il fondo del gavone arriva fino alla L.
     let (ya, yd, yb) = (y0, y0 + pl - sm, f.profondita)
     var pa = part("pannello a L", kPanel, xl - sm, ya, zl, sm, yb - ya, f.hLibreria)
     pa.contornoLato = @[(ya, zl), (yb, zl), (yb, zl + f.hLibreria), (yd, zl + f.hLibreria),
-                        (yd, zl + f.gavone), (ya, zl + f.gavone)]
+                        (yd, zc), (ya, zc)]
     lib.add pa
     for q in lib.mitems:
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
@@ -539,6 +588,34 @@ proc modello*(f: Falegnami): Model =
   for q in lib.mitems:
     if q.name.startsWith("fianco"): q.hiddenFront = true
   result.aggiungi(lib, "libreria")
+  # la presa sulla schiena, verso il comodino; dietro, nel muro, la scatola da 3 moduli
+  let (yP, zP) = f.centroPresa
+  let xS = L - sm                      # la faccia della schiena verso il letto
+  var placca = part("presa: placca 3 moduli", kAccessory, xS - 0.9, yP - placcaL / 2,
+                    zP - placcaH / 2, 0.9, placcaL, placcaH)
+  placca.hiddenFront = true
+  result.add placca
+  for k in 0..2:
+    var m = part("presa: modulo " & $(k + 1), kAccessory, xS - 1.2, yP - 3.3 + float(k) * 2.2,
+                 zP - 2.2, 0.3, 2.0, 4.4)
+    m.hiddenFront = true
+    result.add m
+  var scatolaPresa = part("presa: scatola nel muro", kAccessory, L, yP - 5.3, zP - 3.5, 5, 10.6, 7)
+  scatolaPresa.hiddenFront = true
+  result.add scatolaPresa
+  # la lampada da lettura (facoltativa nel visore): un'applique sulla striscia che
+  # copre la risega, verso il letto (altezza in `centroLampada`), come nella foto di
+  # Pietro: una base a capsula, gialla e lucida, e sopra una sfera di vetro bianco.
+  # Nel visore la base è una capsula (metà nella striscia) e la sfera una sfera.
+  let (yLa, zLa) = f.centroLampada
+  let xLa = xl - sm                      # la faccia della striscia verso il letto
+  let rS = sferaLampada / 2
+  for (nome, x, y, z, w, d, h) in [
+      ("lampada: base", xLa - 3.5, yLa - 3.5, zLa - rS - 9, 3.5, 7.0, 14.0),
+      ("lampada: sfera", xLa - 4.5 - rS, yLa - rS, zLa - rS, sferaLampada, sferaLampada, sferaLampada)]:
+    var q = part(nome, kAccessory, x, y, z, w, d, h)
+    q.hiddenFront = true
+    result.add q
   for k in 0..1:
     var cop = part("coperchio gavone", kPanel, xG + 0.2, yG + 0.2 + float(k) * dG / 2,
                    zc - 1, wG - 0.4, dG / 2 - 0.4, 1, r = 4)
@@ -667,7 +744,7 @@ proc quote*(f: Falegnami): seq[DimChain] =
     DimChain(view: vFront, vertical: true, at: -52, ext: -22, stops: @[0.0, f.pannelloH, 2 * f.pannelloH, H]),
     DimChain(view: vFront, vertical: false, at: H + 12, ext: H, stops: alto),
     DimChain(view: vFront, vertical: false, at: H + 28, ext: H,
-             stops: @[0.0, c[0], c[0] + f.nicchiaL, L]),
+             stops: @[0.0, f.nicchiaX, f.nicchiaX + f.nicchiaL, L]),
     DimChain(view: vFront, vertical: false, at: -12, ext: 0, stops: basso),
     DimChain(view: vFront, vertical: false, at: -28, ext: -12,
              stops: (if f.cornice: @[0.0, f.spalla, f.spalla + f.pannelloL, L - f.spalla, L]
