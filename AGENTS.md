@@ -97,7 +97,7 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   "presa: …": il visore le nasconde con "Senza presa" e, misurando, un tocco sulla presa dà
   centro-risega e centro-pavimento (`misuraPresa`).
 - La lampada (`centroLampada`, `sferaLampada`): "lampada: base" e "lampada: sfera" sulla striscia
-  della risega, la sfera 1 sotto il primo scaffale della testata alta (anche con la testata
+  della risega, la sfera 1 sotto il primo scaffale della testata alta più `alzataLampada` (20) (anche con la testata
   bassa). Il visore le disegna per nome come capsula e sfera (`geometria`), le mostra con
   "Lampada"; "Sera" abbassa le luci (`luci`), un tocco sulla lampada la accende o spegne.
 - Il visore parte dai pulsanti premuti nella pagina (`tools/visore3d.tpl.html`): per i falegnami

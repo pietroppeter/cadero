@@ -262,16 +262,18 @@ proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
   ## dove si disegna il muro: i mobili arrivano a 81.1, oltre gli 80 della stanza
 const sferaLampada* = 12.0
   ## il diametro della sfera di vetro della lampada
+const alzataLampada* = 20.0
+  ## quanto Pietro ha alzato la lampada (misurata nel visore, 7 novembre)
 proc centroLampada*(f: Falegnami): tuple[y, z: float] =
   ## La lampada da lettura: al centro della striscia che copre la risega (dal fianco
-  ## dietro della libreria al muro), subito sotto il primo scaffale della testata
-  ## alta (Pietro): il centro della sfera, che finisce 1 sotto lo scaffale. Resta a
+  ## dietro della libreria al muro). Prima la sfera finiva 1 sotto il primo scaffale
+  ## della testata alta; poi Pietro l'ha alzata di 20 (`alzataLampada`). Resta a
   ## quell'altezza anche con la testata bassa.
   let yd = f.yMobili + f.profLibreria
   var alta = f                 # come in `testataAlta` (più sotto)
   alta.gavone = 58
   alta.nScaffali = 2
-  ((yd + f.yMuro) / 2, alta.zScaffali[0] - 1 - sferaLampada / 2)
+  ((yd + f.yMuro) / 2, alta.zScaffali[0] - 1 + alzataLampada - sferaLampada / 2)
 
 proc presaDallaRisega*(f: Falegnami): float =
   ## dal centro della presa alla faccia della risega, in orizzontale
