@@ -176,6 +176,9 @@ proc larghezzeBasse*(f: Falegnami): LarghezzeBasse =
   LarghezzeBasse(bordo: f.bordoBassi, antaSx: f.antaA, gradini: f.aperturaGradini,
                  cassetti: f.cassetti, antaDx: f.antaD)
 
+const larghezzeNuove* = LarghezzeBasse(bordo: 12, antaSx: 70, gradini: 30, cassetti: 50, antaDx: 40)
+  ## le larghezze in basso scelte da Pietro nel visore (8 novembre): spazi tra i frontali 7.6
+
 proc conLarghezzeBasse*(f: Falegnami; l: LarghezzeBasse): Falegnami =
   ## Le larghezze della zona bassa scelte a mano. I mobili dietro seguono il loro
   ## frontale come nel disegno: A, C e D 0.2 più stretti dell'anta o del cassetto,

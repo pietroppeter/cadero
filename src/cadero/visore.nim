@@ -81,6 +81,7 @@ type
     nome*: string
     valore*: float       ## quella di partenza
     passo*: float        ## di quanto cambiano i pulsanti − e +
+    vecchio*: float      ## quella di prima (0 = nessuna): il pulsante "Larghezze vecchie" la rimette
   Ricalcolo* = proc (chiave: string; valori: seq[float]): tuple[modello: Model, nota, tavola: string]
     ## il modello della variante `chiave` con le misure scelte (nell'ordine delle
     ## regolazioni), una nota (gli spazi calcolati, cosa non torna) e la sua tavola
@@ -1343,7 +1344,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
         "<button type=\"button\" id=\"rg-piu-" & $i & "\" aria-label=\"più " & p & "\">+" & p & "</button>" &
         "<span class=\"cm\">cm</span>"
     righe.add "</div><p class=\"nota-regola\"></p>" &
-      "<button type=\"button\" id=\"rg-partenza\">Come nel disegno</button>"
+      "<button type=\"button\" id=\"rg-partenza\">Come all'inizio</button>"
     regola.html = cstring(righe)
     proc scrivi() =
       for i in 0 ..< regolazioni.len: el("rg-" & $i).valore = round(valori[i] * 100) / 100
@@ -1361,9 +1362,20 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
           let v = el("rg-" & $i).valore
           if v == v and v > 0: valori[i] = v   # v == v: non è NaN (campo vuoto)
           scrivi(); rifai())
-    el("rg-partenza").addEventListener("click", proc (ev: Event) =
-      for i, r in regolazioni: valori[i] = r.valore
-      scrivi(); rifai())
+    # "Larghezze vecchie" (spento all'inizio): le misure di prima al posto di quelle di partenza
+    let tVecchie = el("p-vecchie")
+    proc partenza() =
+      let vecchie = tVecchie != nil and premuto(tVecchie)
+      for i, r in regolazioni: valori[i] = (if vecchie and r.vecchio > 0: r.vecchio else: r.valore)
+      scrivi(); rifai()
+    el("rg-partenza").addEventListener("click", proc (ev: Event) = partenza())
+    var conVecchie = false
+    for r in regolazioni:
+      if r.vecchio > 0: conVecchie = true
+    if tVecchie != nil:
+      tVecchie.nascosto(not conVecchie or not falegnami)
+      tVecchie.addEventListener("click", proc (ev: Event) =
+        tVecchie.premi(not premuto(tVecchie)); partenza())
     tRegola.addEventListener("click", proc (ev: Event) =
       let on = not premuto(tRegola)
       tRegola.premi(on)

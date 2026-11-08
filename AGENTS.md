@@ -103,6 +103,10 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
 - Il visore parte dai pulsanti premuti nella pagina (`tools/visore3d.tpl.html`): per i falegnami
   3 orizzontali, testata alta, vani alti, pannello a L, nicchia, lampada (Pietro, 7/11).
   `docsrc/visore3d.nim` genera tutte le tavole dei tagli anche per questa combinazione.
+- Visore dei falegnami semplificato (Pietro, 8/11): sempre testata alta, niente vani alti, niente
+  tavolino, sempre betulla, lampada e presa (i pulsanti restano nel template, nascosti, con lo stato
+  fisso); le larghezze in basso partono da `larghezzeNuove` (12, 70, 30, 50, 40: spazi 7.6), il
+  pulsante "Larghezze vecchie" (spento) rimette quelle del disegno (`Regolazione.vecchio`).
 - Larghezze in basso (Pietro, 8/11): `conLarghezzeBasse(f, LarghezzeBasse(bordo, antaSx, gradini,
   cassetti, antaDx))` (gradini = misura dentro, l'apertura); i mobili dietro seguono il loro frontale e
   `spazioBassi` divide il resto in tre spazi uguali (`spazioBasso`). Nel visore il pulsante
