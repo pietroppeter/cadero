@@ -78,8 +78,9 @@ type
     hBassi*: float           ## i quattro mobili bassi: alti 109 (disegno)
     zoccolo*: float          ## sotto il fondo dei mobili bassi: 11.8 (rilevato: 118)
     mobileA*, mobileB*, mobileC*, mobileD*: float   ## larghezze: 75.3, 28.6, 50, 50 (disegno)
-    profGradini*: float      ## il mobile B dei gradini è profondo solo 30 (disegno: 300, confermato
-                             ## da Pietro): dietro resta spazio libero sotto il cassone
+    profGradini*: float      ## il mobile B dei gradini: 18.3, così il gradino (dal fronte alla
+                             ## schiena) è profondo 17.5 (Pietro, 7 novembre; nel disegno 30):
+                             ## dietro resta spazio libero sotto il cassone
     prof*: float             ## profondità dei mobili: 77.5 (disegno: 775)
     profRisega*: float       ## quelli davanti alla risega: 62.2 (disegno: 622)
     interno*: float          ## il cassone del letto dentro: 193 (disegno: 1930)
@@ -117,7 +118,7 @@ proc falegnami*(): Falegnami =
     pannello: true, fessura: 3, lungPannello: 67,
     zRibalte: 263.3, ribaltaL: 68.3, ribaltaH: 36.6, parteFissa: 15,
     hBassi: 109, zoccolo: 11.8, mobileA: 75.3, mobileB: 28.6, mobileC: 50, mobileD: 50,
-    profGradini: 30,
+    profGradini: 17.5 + 0.8,   # il gradino 17.5 più la schiena
     prof: 77.5, profRisega: 62.2, interno: 193, hNicchia: 150,
     profLibreria: 63.5, hLibreria: 150, gavone: 32, comodino: 38, scaffali: 27, nScaffali: 3,
     vanoL: 68.1, vanoH: 40.9, cornice: true)
@@ -262,16 +263,18 @@ proc yMuro*(f: Falegnami): float = max(f.muro.profondita, f.profondita)
   ## dove si disegna il muro: i mobili arrivano a 81.1, oltre gli 80 della stanza
 const sferaLampada* = 12.0
   ## il diametro della sfera di vetro della lampada
+const alzataLampada* = 20.0
+  ## quanto Pietro ha alzato la lampada (misurata nel visore, 7 novembre)
 proc centroLampada*(f: Falegnami): tuple[y, z: float] =
   ## La lampada da lettura: al centro della striscia che copre la risega (dal fianco
-  ## dietro della libreria al muro), subito sotto il primo scaffale della testata
-  ## alta (Pietro): il centro della sfera, che finisce 1 sotto lo scaffale. Resta a
+  ## dietro della libreria al muro). Prima la sfera finiva 1 sotto il primo scaffale
+  ## della testata alta; poi Pietro l'ha alzata di 20 (`alzataLampada`). Resta a
   ## quell'altezza anche con la testata bassa.
   let yd = f.yMobili + f.profLibreria
   var alta = f                 # come in `testataAlta` (più sotto)
   alta.gavone = 58
   alta.nScaffali = 2
-  ((yd + f.yMuro) / 2, alta.zScaffali[0] - 1 - sferaLampada / 2)
+  ((yd + f.yMuro) / 2, alta.zScaffali[0] - 1 + alzataLampada - sferaLampada / 2)
 
 proc presaDallaRisega*(f: Falegnami): float =
   ## dal centro della presa alla faccia della risega, in orizzontale
@@ -317,14 +320,15 @@ proc rivisto*(f: Falegnami): Falegnami =
 
 proc nicchiaAperta*(f: Falegnami; on = true): Falegnami =
   ## Le misure della nicchia decise con i falegnami: vista da dietro il fronte sporge
-  ## un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 50
-  ## prima di quello di destra, il bordo alto sta 10 sotto il cielo del cassone e quello
+  ## un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 52
+  ## prima di quello di destra (Pietro, 7 novembre: 52 invece di 50, così dentro i due
+  ## lati sono quasi simmetrici), il bordo alto sta 10 sotto il cielo del cassone e quello
   ## basso 10 sopra un materasso da 18 (invece di 17).
   result = f
   if not on: return
   result.materasso.altezza = 18
   result.nicchiaSx = 15
-  result.nicchiaL = f.larghezza - 50 - 15
+  result.nicchiaL = f.larghezza - 52 - 15
   result.nicchiaZ = f.pianoLetto + 18 + 10
   result.nicchiaH = f.cieloNicchia - 10 - result.nicchiaZ
 

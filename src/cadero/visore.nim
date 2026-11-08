@@ -800,10 +800,12 @@ proc numero(v: float): string =
   if abs(r - round(r)) < 0.05: $int(round(r)) else: formatFloat(r, ffDecimal, 1)
 
 proc colpito(ev: PointerEv): Intersezione =
-  ## la prima superficie visibile sotto il dito, o nil
+  ## la prima superficie visibile sotto il dito, o nil; i muri trasparenti (senza
+  ## carta da parati) si attraversano, così si misura il mobile anche da dietro
   mira(ev)
   for k in ray.intersectObject(group, true):
-    if visibile(k.`object`) and k.`object`.isMesh: return k
+    if visibile(k.`object`) and k.`object`.isMesh and
+        not cast[Mesh](k.`object`).material.transparent: return k
   nil
 
 proc normaleAsse(h: Intersezione): Vector3 =
@@ -881,40 +883,48 @@ proc componente(v: Vector3; i: int): float =
   of 1: v.y
   else: v.z
 
+var
+  partenza: Intersezione   ## il tocco da cui parte il trascinamento
+  puntoPartenza: Vector3   ## lo stesso, agganciato al punto notevole più vicino
+
+proc schermo(p: Vector3): (float, float) =
+  ## dove cade p sullo schermo, in pixel
+  let q = p.clone().project(camera)
+  ((q.x + 1) / 2 * stage.larghezza, (1 - q.y) / 2 * stage.altezza)
+
 proc misuraTra(ha, hb: Intersezione; finale: bool): string =
-  ## La misura trascinata da ha a hb. Se il trascinamento va quasi lungo un asse
-  ## (orizzontale, verticale o in profondità) si misura solo lungo quell'asse, dritta;
-  ## alla fine gli estremi si agganciano ai bordi vicini.
+  ## La misura trascinata da ha a hb, sempre dritta (Pietro): orizzontale o verticale
+  ## sul piano della faccia da cui parte (su un piano steso: larghezza o profondità),
+  ## quella che sullo schermo va più come il dito. Parte dal punto notevole più vicino
+  ## al tocco (un bordo o un angolo, entro 14 pixel) e arriva dove si lascia il dito,
+  ## alla fine agganciata a un bordo se ce n'è uno a pochi pixel.
   if anteprima >= 0: togliGruppo(anteprima)
   anteprima = if finale: -1 else: nuovoGruppo()
   if finale: discard nuovoGruppo()
-  var (a, b) = (ha.point.clone(), hb.point.clone())
-  # la direzione del trascinamento sul piano della faccia da cui parte (senza la
-  # profondità: si può finire su una superficie più indietro, come il muro nella nicchia)
+  if partenza != ha:
+    partenza = ha
+    puntoPartenza = aggancia(solidi(), ha)
+  let a = puntoPartenza.clone()
+  var b = hb.point.clone()
   let n0 = normaleAsse(ha)
-  let grezzo = b.clone().sub(a)
-  grezzo.addScaledVector(n0, -grezzo.dot(n0))
-  var lungo = -1
-  for i in 0 .. 2:
-    if abs(componente(grezzo, i)) >= 0.92 * grezzo.length: lungo = i
-  if finale:
-    let ss = solidi()
-    a = aggancia(ss, ha, lungo); b = aggancia(ss, hb, lungo)
-  let fuori = normaleAsse(ha).multiplyScalar(0.25)
+  # l'asse: quello della faccia che sullo schermo va più come il trascinamento
+  let (ax, ay) = schermo(a)
+  let (bx, by) = schermo(b)
+  let (dx, dy) = (bx - ax, by - ay)
+  var (lungo, meglio) = (-1, -1.0)
+  for i in assiFaccia(asse(n0)):
+    let (px, py) = schermo(a.clone().addScaledVector(versore(i), 10))
+    let (ex, ey) = (px - ax, py - ay)
+    let c = abs(ex * dx + ey * dy) / max(hypot(ex, ey) * hypot(dx, dy), 1e-9)
+    if c > meglio: (lungo, meglio) = (i, c)
+  if finale: b = aggancia(solidi(), hb, lungo)
+  let fuori = n0.clone().multiplyScalar(0.25)
   let nomeAsse = ["in orizzontale", "in verticale", "in profondità"]
-  var testo, dettaglio: string
-  if lungo >= 0:
-    let l = componente(b.clone().sub(a), lungo)
-    let fine = a.clone().addScaledVector(versore(lungo), l)
-    testo = numero(abs(l))
-    dettaglio = nomeAsse[if lungo == 2 and asse(normaleAsse(ha)) != 1: 2
-                         elif lungo == 1: 1 else: 0]
-    mettiMisura(a.clone().add(fuori), fine.add(fuori), testo, true)
-  else:
-    let d = b.clone().sub(a)
-    testo = numero(d.length)
-    dettaglio = "in orizzontale " & numero(hypot(d.x, d.z)) & ", in verticale " & numero(abs(d.y))
-    mettiMisura(a.clone().add(fuori), b.clone().add(fuori), testo, true)
+  let l = componente(b.clone().sub(a), lungo)
+  let fine = a.clone().addScaledVector(versore(lungo), l)
+  let testo = numero(abs(l))
+  let dettaglio = nomeAsse[lungo]
+  mettiMisura(a.clone().add(fuori), fine.add(fuori), testo, true)
   let (da, verso) = (nomeDi(ha.`object`), nomeDi(hb.`object`))
   result = testo & " cm " & dettaglio
   if finale and da.len > 0:
@@ -1114,13 +1124,15 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   ray.params["Line"]["threshold"] = 0.5
   var down: tuple[attivo: bool, x, y, t: float]
   var inizio: Intersezione      # misurando: dove è cominciato il trascinamento
+  var ultimoPunto: Intersezione # e l'ultimo punto su una superficie, trascinando
   var dita = 0                  # quante dita sono sullo schermo (con due si zooma)
   proc misurando(): bool = premuto(el("t-misura"))
   canvas.addEventListener("pointerdown", proc (e: Event) =
     let ev = cast[PointerEv](e)
     inc dita
     down = (dita == 1, ev.clientX, ev.clientY, adesso())
-    inizio = if misurando() and dita == 1: colpito(ev) else: nil)
+    inizio = if misurando() and dita == 1: colpito(ev) else: nil
+    ultimoPunto = nil)
   canvas.addEventListener("pointercancel", proc (e: Event) =
     dita = max(0, dita - 1); down.attivo = false; inizio = nil)
   canvas.addEventListener("pointerup", proc (e: Event) =
@@ -1132,8 +1144,13 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     down.attivo = false
     if misurando():                 # si misura invece di aprire
       if moved > 6 and inizio != nil:   # trascinato: da un punto all'altro
-        let fine = colpito(ev)
+        # se il dito si lascia fuori da ogni superficie, vale l'ultimo punto toccato
+        var fine = colpito(ev)
+        if fine == nil: fine = ultimoPunto
         if fine != nil: status.textContent = cstring(misuraTra(inizio, fine, true))
+        elif anteprima >= 0:
+          togliGruppo(anteprima)
+          anteprima = -1
       elif moved <= 6:
         status.textContent = cstring(misuraAt(ev))
       inizio = nil
@@ -1159,7 +1176,9 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       if down.attivo and inizio != nil and dita == 1 and
           hypot(ev.clientX - down.x, ev.clientY - down.y) > 6:
         let qui = colpito(ev)
-        if qui != nil: status.textContent = cstring(misuraTra(inizio, qui, false))
+        if qui != nil:
+          ultimoPunto = qui
+          status.textContent = cstring(misuraTra(inizio, qui, false))
       if ev.pointerType == "mouse": canvas.cursore("crosshair")
       return
     if ev.pointerType != "mouse" or ev.buttons != 0: return

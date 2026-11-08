@@ -45,6 +45,7 @@ type
     wrapS*, wrapT*, anisotropy*: int
     colorSpace*: cstring
   Material* = ref object of JsRoot
+    transparent*: bool
     color*: Color
     opacity*: float
 

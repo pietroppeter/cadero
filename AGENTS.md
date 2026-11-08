@@ -87,7 +87,7 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   `conPannelloAL`) usa `contornoLato`: poligono nel piano y, z, estruso per `size.x`.
   Sta dove c'è il pannello della risega, davanti ai bordi dei fianchi. Nella chiave del visore "PannelloL" viene dopo le modifiche (`chiaveModifiche(..., pal)`).
 - `nicchiaAperta` (pulsante "Nicchia", chiave "Nicchia" dopo "PannelloL"): le misure della
-  nicchia decise con i falegnami (15 a sinistra, 50 a destra, 10 sotto il cielo, 10 sopra un
+  nicchia decise con i falegnami (15 a sinistra, 52 a destra, 10 sotto il cielo, 10 sopra un
   materasso da 18). Il bordo sinistro dell'apertura è `nicchiaX` (0 in `nicchiaSx` = anta A).
 - Nel visore "Tocca per" sceglie cosa fa un tocco: aprire, misurare (`misuraAt`: dal punto
   toccato, lungo i due assi della faccia, fino a dove la faccia finisce o qualcosa le sta
@@ -97,14 +97,16 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   "presa: …": il visore le nasconde con "Senza presa" e, misurando, un tocco sulla presa dà
   centro-risega e centro-pavimento (`misuraPresa`).
 - La lampada (`centroLampada`, `sferaLampada`): "lampada: base" e "lampada: sfera" sulla striscia
-  della risega, la sfera 1 sotto il primo scaffale della testata alta (anche con la testata
+  della risega, la sfera 1 sotto il primo scaffale della testata alta più `alzataLampada` (20) (anche con la testata
   bassa). Il visore le disegna per nome come capsula e sfera (`geometria`), le mostra con
   "Lampada"; "Sera" abbassa le luci (`luci`), un tocco sulla lampada la accende o spegne.
 - Il visore parte dai pulsanti premuti nella pagina (`tools/visore3d.tpl.html`): per i falegnami
   3 orizzontali, testata alta, vani alti, pannello a L, nicchia, lampada (Pietro, 7/11).
   `docsrc/visore3d.nim` genera tutte le tavole dei tagli anche per questa combinazione.
 - Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e
-  cambiando modello. Quelle trascinate sono arancioni (`trascinata`, classe CSS).
+  cambiando modello. Quelle trascinate sono arancioni (`trascinata`, classe CSS) e sempre
+  dritte (`misuraTra`): l'asse della faccia che sullo schermo va più come il dito, dal punto
+  notevole più vicino al tocco.
 - Betulla: colori come nei disegni dei falegnami e un po' di luce propria (`lucePropria`,
   emissive con la stessa texture), spenta di sera. La risega stretta non è più nel visore
   (Pietro: la risega resta 15.8); `risegaStretta` resta nel modello.
