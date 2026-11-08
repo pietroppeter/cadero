@@ -75,6 +75,8 @@ type
   Model* = object
     name*: string
     parts*: seq[Part]
+    guide*: seq[float]   ## linee guida verticali sul fronte, per allineare (le x): nel
+                         ## visore tratteggiate su tutta l'altezza (pulsante "Guide")
 
 proc v3*(x, y, z: float): Vec3 = Vec3(x: x, y: y, z: z)
 

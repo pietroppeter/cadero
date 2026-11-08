@@ -73,6 +73,19 @@ proc preparato(m: Model): Model =
   result = m
   for p in result.parts.mitems: p.holes = foriVisti(m, p)
 
+# --- le misure che si regolano a mano --------------------------------------------
+type
+  Regolazione* = object
+    ## Una misura che si sceglie nel visore (es. la larghezza dell'anta di sinistra):
+    ## pulsanti − e + di `passo` e un campo per scrivere il numero.
+    nome*: string
+    valore*: float       ## quella di partenza
+    passo*: float        ## di quanto cambiano i pulsanti − e +
+    vecchio*: float      ## quella di prima (0 = nessuna): il pulsante "Larghezze vecchie" la rimette
+  Ricalcolo* = proc (chiave: string; valori: seq[float]): tuple[modello: Model, nota, tavola: string]
+    ## il modello della variante `chiave` con le misure scelte (nell'ordine delle
+    ## regolazioni), una nota (gli spazi calcolati, cosa non torna) e la sua tavola
+
 # --- stato del visore ---------------------------------------------------------
 var
   modelli: Table[string, Model]
@@ -108,6 +121,8 @@ var
   matFaccia, matFacciaFrontali, matBordo: Material   ## betulla: faccia, faccia dei frontali, bordo
   legni: seq[(Mesh, Part)]         ## le parti in multistrato della scena di ora
   sceltaVenatura: Table[string, Venatura]   ## le venature girate a mano nel visore, per parte
+  guideAccese = false    ## il pulsante "Guide": le linee guida del modello, tratteggiate
+  matGuida: Material
 
 # --- materiali ------------------------------------------------------------------
 proc tessuto(disegna: proc (x: Ctx2D)): Material =
@@ -498,6 +513,23 @@ proc costruisci(m: Model) =
       obj.userData["unit"] = u.toJs
     else: wrapOf(p).add(obj)
     if p.isFronte: frontPanel.add obj
+
+  # le linee guida (es. i bordi e il centro della nicchia): tratteggiate su tutta
+  # l'altezza, appena davanti ai frontali; non si muovono nell'esploso
+  if guideAccese and m.guide.len > 0:
+    let tutto = newBox3().setFromObject(group)
+    if matGuida == nil:
+      matGuida = newLineDashedMaterial(js{color: 0x7d8790, dashSize: 6, gapSize: 4,
+                                          transparent: true, opacity: 0.85})
+    var punti: seq[Vector3]
+    for x in m.guide:
+      punti.add newVector3(x, 0, 0.4)
+      punti.add newVector3(x, tutto.max.y, 0.4)
+    let linee = newLinee(punti, matGuida)
+    linee.distanzeTratteggio()
+    linee.userData["nome"] = cstring"guida"
+    geometrie.add cast[Mesh](linee).geometry
+    group.add(linee)
 
   # il perno di ogni gruppo: lo spigolo della cerniera, sul piano del fronte
   for u in units:
@@ -1061,7 +1093,8 @@ proc mostraTavola(chiave: string) =
   if not c: return
   for t in tavole: t.nascosto(t.getAttribute("data-chiave") != chiave.cstring)
 
-proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
+proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
+                  regolazioni: seq[Regolazione] = @[]; ricalcola: Ricalcolo = nil) =
   ## Avvia il visore nella pagina. `varianti` ha un modello per ogni combinazione
   ## delle opzioni. Per la nostra idea la chiave è "base" o "tavolino" seguita da
   ## "Scoperta" (risega), "Antina" (solo con il tavolino), "Comodino" (prese sul
@@ -1069,6 +1102,8 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
   ## "falegnami" seguita dalle modifiche proposte accese, sempre in quest'ordine:
   ## "Tavolino", "Testata", "Risega", "Vani" (es. "falegnamiTestataVani"). Si parte da "base" se c'è, se no
   ## dai falegnami; i pulsanti dei modelli che la pagina non ha restano nascosti.
+  ## Con `regolazioni` e `ricalcola` il pulsante "Larghezze in basso" apre un pannello
+  ## dove si scelgono quelle misure: il modello si ricalcola a ogni cambio.
   for k, m in varianti: modelli[k] = preparato(m)
   carta = cartaDaParati
   let idea = "base" in modelli
@@ -1274,6 +1309,87 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
     tAntina.nascosto(variante != "tavolino")
     for b in [tRisega, tPrese]: b.nascosto(fal)
   pulsanti()
+  # le misure regolate a mano (le larghezze della zona bassa): un pannello che si
+  # apre con il suo pulsante, una riga per misura con − e + e il numero
+  let tRegola = el("p-larghezze")
+  let regola = el("regola")
+  var valori: seq[float]
+  for r in regolazioni: valori.add r.valore
+  # (una pagina senza il pannello, come quella dei parametri, non ha niente da regolare)
+  let conRegola = tRegola != nil and regola != nil and regolazioni.len > 0 and ricalcola != nil
+  if tRegola != nil: tRegola.nascosto(not conRegola or not falegnami)
+  proc regolate(): bool =
+    if ricalcola == nil: return false
+    for i, r in regolazioni:
+      if abs(valori[i] - r.valore) > 1e-6: return true
+    false
+  var notaPartenza = ""
+  proc tavolaRegolata(svg: string) =
+    var t = document.querySelector(".tavola [data-chiave=\"regolata\"]")
+    if t == nil:
+      let prima = document.querySelector(".tavola [data-chiave]")
+      if prima == nil: return
+      t = nuovoDiv()
+      t.setAttribute("data-chiave", "regolata")
+      prima.parentNode.Element.aggiungi(t)
+    t.html = cstring(svg)
+  var rifai: proc ()   ## `cambiaModello`, definito più sotto
+  if conRegola:
+    var righe = "<div class=\"righe-regola\">"
+    for i, r in regolazioni:
+      let p = (if r.passo == round(r.passo): $int(r.passo) else: $r.passo)
+      righe.add "<label for=\"rg-" & $i & "\">" & r.nome & "</label>" &
+        "<button type=\"button\" id=\"rg-meno-" & $i & "\" aria-label=\"meno " & p & "\">−" & p & "</button>" &
+        "<input id=\"rg-" & $i & "\" type=\"number\" step=\"0.1\" inputmode=\"decimal\">" &
+        "<button type=\"button\" id=\"rg-piu-" & $i & "\" aria-label=\"più " & p & "\">+" & p & "</button>" &
+        "<span class=\"cm\">cm</span>"
+    righe.add "</div><p class=\"nota-regola\"></p>" &
+      "<button type=\"button\" id=\"rg-partenza\">Come all'inizio</button>"
+    regola.html = cstring(righe)
+    proc scrivi() =
+      for i in 0 ..< regolazioni.len: el("rg-" & $i).valore = round(valori[i] * 100) / 100
+    scrivi()
+    notaPartenza = ricalcola("", valori)[1]
+    for i in 0 ..< regolazioni.len:
+      closureScope:   # ogni giro ha le sue variabili, anche nelle closure
+        let i = i
+        let passo = regolazioni[i].passo
+        el("rg-meno-" & $i).addEventListener("click", proc (ev: Event) =
+          valori[i] -= passo; scrivi(); rifai())
+        el("rg-piu-" & $i).addEventListener("click", proc (ev: Event) =
+          valori[i] += passo; scrivi(); rifai())
+        el("rg-" & $i).addEventListener("change", proc (ev: Event) =
+          let v = el("rg-" & $i).valore
+          if v == v and v > 0: valori[i] = v   # v == v: non è NaN (campo vuoto)
+          scrivi(); rifai())
+    # "Larghezze vecchie" (spento all'inizio): le misure di prima al posto di quelle di partenza
+    let tVecchie = el("p-vecchie")
+    proc partenza() =
+      let vecchie = tVecchie != nil and premuto(tVecchie)
+      for i, r in regolazioni: valori[i] = (if vecchie and r.vecchio > 0: r.vecchio else: r.valore)
+      scrivi(); rifai()
+    el("rg-partenza").addEventListener("click", proc (ev: Event) = partenza())
+    var conVecchie = false
+    for r in regolazioni:
+      if r.vecchio > 0: conVecchie = true
+    if tVecchie != nil:
+      tVecchie.nascosto(not conVecchie or not falegnami)
+      tVecchie.addEventListener("click", proc (ev: Event) =
+        tVecchie.premi(not premuto(tVecchie)); partenza())
+    tRegola.addEventListener("click", proc (ev: Event) =
+      let on = not premuto(tRegola)
+      tRegola.premi(on)
+      regola.nascosto(not on))
+  elif regola != nil:
+    regola.html = cstring("<p class=\"nota-regola\"></p>")
+  # le linee guida: si ricostruisce la scena con o senza
+  let tGuide = el("t-guide")
+  if tGuide != nil:
+    tGuide.nascosto(modelli[chiave0].guide.len == 0)
+    tGuide.addEventListener("click", proc (ev: Event) =
+      guideAccese = not premuto(tGuide)
+      tGuide.premi(guideAccese)
+      rifai())
   proc cambiaModello() =
     pulsanti()
     let fal = variante == "falegnami"
@@ -1288,12 +1404,30 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta) =
       chiave.add (if premuto(tRisega): "Scoperta" else: "") &
                    (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &
                    (if premuto(tPrese): "Comodino" else: "")
-    if chiave in modelli: modello = modelli[chiave]
-    mostraTavola(chiave)
+    var nota = ""
+    if regolate() and fal:
+      # le misure scelte a mano: il modello si calcola adesso, con la sua tavola
+      let r = ricalcola(chiave, valori)
+      modello = preparato(r.modello)
+      nota = r.nota
+      tavolaRegolata(r.tavola)
+      mostraTavola("regolata")
+    else:
+      if chiave in modelli: modello = modelli[chiave]
+      mostraTavola(chiave)
+      if regolazioni.len > 0: nota = notaPartenza
+    if regola != nil: regola.querySelector(".nota-regola").html = cstring(nota)
     for n in ["base", "tavolino", "falegnami"]: el("m-" & n).premi(n == variante)
-    # le misure restano anche cambiando modello: si tolgono a mano
+    # le misure restano anche cambiando modello: si tolgono a mano; quello che era
+    # aperto resta aperto
+    var aperti: Table[string, float]
+    for u in units: aperti[u.nome] = u.target
     costruisci(modello); applyToggles(); applyEsploso()
+    for u in units:
+      if u.nome in aperti and not u.disegnataAperta:
+        u.target = aperti[u.nome]; u.k = u.target; posa(u)
     status.textContent = cstring($modello.parts.len & " parti")
+  rifai = cambiaModello
   const tagli = [("f-croce", ""), ("f-tre", "Tre")]
   for (id, t) in tagli:
     closureScope:   # ogni giro ha le sue variabili
