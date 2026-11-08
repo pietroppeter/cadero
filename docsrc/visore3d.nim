@@ -67,7 +67,7 @@ let cartaSrc = cartaDaParati()
 # JSON (è una variabile "catturata"). Il file da compilare nimib lo scrive nella
 # cartella dei documenti (docs/), per questo gli import partono da `../`.
 nbJsFromCode(cartaSrc):
-  import ../src/cadero/visore, ../models/falegnami
+  import ../src/cadero/visore, ../src/cadero/drawing, ../models/falegnami
 
   # nel visore tutto parte chiuso: cassetti, ante e ribalte si aprono toccandoli.
   # Una variante per ogni combinazione delle quattro modifiche proposte, che sono
@@ -78,6 +78,7 @@ nbJsFromCode(cartaSrc):
   # che è il punto di partenza). I modelli si
   # calcolano qui, nel browser, con lo stesso codice Nim delle tavole.
   var varianti: Table[string, Model]
+  var parametri: Table[string, Falegnami]   # per ricalcolare con le larghezze scelte
   for tav in [false, true]:
     for tes in [false, true]:
       for ris in [false]:     # risega: resta 15.8 (Pietro, 7 novembre)
@@ -86,11 +87,38 @@ nbJsFromCode(cartaSrc):
            for nic in [false, true]:
             for t in TaglioFronte:
               for cor in [false, true]:
-                varianti[chiaveModifiche(tav, tes, ris, van, pal, nic) &
-                         chiaveTaglio(t, cor)] =
-                  modello(falegnami().conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic).conTaglio(t).conCornice(cor))
+                let k = chiaveModifiche(tav, tes, ris, van, pal, nic) & chiaveTaglio(t, cor)
+                parametri[k] = falegnami().conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic).conTaglio(t).conCornice(cor)
+                varianti[k] = modello(parametri[k])
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
-  quandoThreePronto(proc () = avviaVisore(varianti, carta))
+  # le larghezze della zona bassa (Pietro, 8 novembre): bordo ai lati, anta di
+  # sinistra, gradini (dentro), cassetti, anta di destra; gli spazi tra i frontali
+  # si calcolano uguali. I pulsanti − e + vanno di 5.
+  let l0 = falegnami().larghezzeBasse
+  let regolazioni = @[
+    Regolazione(nome: "Bordo laterale", valore: l0.bordo, passo: 5),
+    Regolazione(nome: "Anta di sinistra", valore: l0.antaSx, passo: 5),
+    Regolazione(nome: "Gradini (dentro)", valore: l0.gradini, passo: 5),
+    Regolazione(nome: "Cassetti", valore: l0.cassetti, passo: 5),
+    Regolazione(nome: "Anta di destra", valore: l0.antaDx, passo: 5)]
+  proc ricalcola(chiave: string; v: seq[float]): tuple[modello: Model, nota, tavola: string] =
+    let f0 = parametri.getOrDefault(chiave, falegnami())
+    let f = f0.conLarghezzeBasse(LarghezzeBasse(bordo: v[0], antaSx: v[1], gradini: v[2],
+                                                cassetti: v[3], antaDx: v[4]))
+    result.modello = modello(f)
+    result.nota = "Spazi uguali tra i frontali: <b>" & fmtNum(f.spazioBasso) & "</b> cm"
+    # cosa non torna in più rispetto alle larghezze del disegno
+    # (lo stesso avviso con altri numeri non conta: si confronta il testo fino al primo numero)
+    proc testa(s: string): string =
+      for ch in s:
+        if ch in {'0'..'9'}: break
+        result.add ch
+    var prima: seq[string]
+    for c in controlli(f0, modello(f0)): prima.add testa(c)
+    for c in controlli(f, result.modello):
+      if testa(c) notin prima: result.nota.add "<br><span class=\"male\">" & c & "</span>"
+    if chiave.len > 0: result.tavola = tavola(f, result.modello)
+  quandoThreePronto(proc () = avviaVisore(varianti, carta, regolazioni, ricalcola))
 
 copiaThree($nb.doc.homeDir)   # three.js accanto alla pagina, in three/
 nbSave

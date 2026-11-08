@@ -30,6 +30,9 @@ proc `max=`*(e: Element; v: float) {.importjs: "#.max = #".}
 proc maxValore*(e: Element): float {.importjs: "(+#.max)".}
 proc prepend*(e, figlio: Element) {.importjs: "#.prepend(#)".}
 proc svuota*(e: Element) {.importjs: "#.replaceChildren()".}
+proc `html=`*(e: Element; s: cstring) {.importjs: "#.innerHTML = #".}
+proc nuovoDiv*(): Element {.importjs: "document.createElement('div')".}
+proc aggiungi*(e, figlio: Element) {.importjs: "#.append(#)".}
 proc toggleClass*(e: Element; c: cstring; on: bool) {.importjs: "#.classList.toggle(@)".}
 proc larghezza*(e: Element): float {.importjs: "#.clientWidth".}
 proc altezza*(e: Element): float {.importjs: "#.clientHeight".}

@@ -103,6 +103,14 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
 - Il visore parte dai pulsanti premuti nella pagina (`tools/visore3d.tpl.html`): per i falegnami
   3 orizzontali, testata alta, vani alti, pannello a L, nicchia, lampada (Pietro, 7/11).
   `docsrc/visore3d.nim` genera tutte le tavole dei tagli anche per questa combinazione.
+- Larghezze in basso (Pietro, 8/11): `conLarghezzeBasse(f, LarghezzeBasse(bordo, antaSx, gradini,
+  cassetti, antaDx))` (gradini = misura dentro, l'apertura); i mobili dietro seguono il loro frontale e
+  `spazioBassi` divide il resto in tre spazi uguali (`spazioBasso`). Nel visore il pulsante
+  "Larghezze in basso" apre un pannello (`Regolazione`, −5/+5 e numero): `avviaVisore` riceve le
+  regolazioni e una proc `ricalcola` (modello, nota, tavola) e, se le misure non sono quelle di
+  partenza, calcola il modello e la tavola nel browser (tavola con `data-chiave="regolata"`).
+- `Model.guide`: linee guida verticali sul fronte (le x). Il pulsante "Guide nicchia" le disegna
+  tratteggiate su tutta l'altezza; i falegnami mettono bordo sinistro, centro e bordo destro della nicchia.
 - Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e
   cambiando modello. Quelle trascinate sono arancioni (`trascinata`, classe CSS) e sempre
   dritte (`misuraTra`): l'asse della faccia che sullo schermo va più come il dito, dal punto

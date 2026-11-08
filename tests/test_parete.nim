@@ -291,6 +291,22 @@ suite "modello dei falegnami":
     check near(f.spazioCassetti, 4)
     let c = f.colonne
     check near(c[3] + f.antaD + f.margine, f.spalla + 2 * f.pannelloL)
+  test "le larghezze in basso scelte a mano: bordi uguali, tre spazi uguali":
+    let l = f.larghezzeBasse
+    check near(l.bordo, 11.95) and near(l.gradini, 25)
+    # le stesse del disegno non cambiano niente
+    let g0 = f.conLarghezzeBasse(l)
+    check near(g0.spazioBasso, 4) and near(g0.mobileB, f.mobileB) and near(g0.mobileA, f.mobileA)
+    var n = l
+    n.bordo = 12; n.antaSx = 80.5; n.gradini = 30; n.antaDx = 52
+    let g = f.conLarghezzeBasse(n)
+    let c = g.colonne
+    check near(c[0], 12)
+    check near(g.larghezza - (c[3] + g.antaD), 12)
+    check near(c[1] - (c[0] + g.antaA), c[2] - (c[1] + g.aperturaGradini))
+    check near(c[2] - (c[1] + g.aperturaGradini), c[3] - (c[2] + g.cassetti))
+    check near(g.aperturaGradini, 30) and near(g.mobileD, 51.8)
+    check modello(g).guide.len == 3
   test "i gradini arrivano in cima alle ante, con e senza pannellino":
     for g in [f, f.senzaPannello]:
       let z = g.zGradini

@@ -44,6 +44,8 @@ type
     pannelloL*, pannelloH*: float   ## i quattro pannelli: 112.5 × 156.8 (disegno)
     fascia*: float           ## la fascia in alto, sopra i pannelli: 6 (disegno: 60)
     spazio*: float           ## tra due frontali vicini: 4 (rilevato; torna con tutte le larghezze)
+    spazioBassi*: float      ## tra i frontali in basso, se diverso da `spazio` (0 = `spazio`):
+                             ## lo calcola `conLarghezzeBasse` dal bordo laterale scelto
     sormonto*: float         ## quanto ante e ribalte coprono l'apertura, per lato: 2
                              ## (disegno: ante 755, aperture 715)
     sormontoCassetti*: float ## sopra e sotto i cassetti: 1 (frontali 290, aperture 270)
@@ -142,9 +144,12 @@ proc profondita*(f: Falegnami): float = f.yMobili + f.prof
 proc xFronte*(f: Falegnami): float = f.spalla
 proc aperturaGradini*(f: Falegnami): float = f.mobileB - 2 * f.sMulti
   ## 25: le aperture dei gradini sono larghe quanto il mobile B dentro
+proc spazioBasso*(f: Falegnami): float =
+  ## 4: tra anta A e gradini, gradini e cassetti, cassetti e anta D (tre spazi uguali)
+  if f.spazioBassi != 0: f.spazioBassi else: f.spazio
 proc margine*(f: Falegnami): float =
   ## 6.05: ai lati dei frontali in basso (e in alto), quello che resta
-  (2 * f.pannelloL - f.antaA - f.aperturaGradini - f.cassetti - f.antaD - 3 * f.spazio) / 2
+  (2 * f.pannelloL - f.antaA - f.aperturaGradini - f.cassetti - f.antaD - 3 * f.spazioBasso) / 2
 proc margineAlto*(f: Falegnami): float = (2 * f.pannelloL - 3 * f.ribaltaL - 2 * f.spazio) / 2
   ## 6.05: ai lati delle ribalte
 proc spazioCassetti*(f: Falegnami): float =
@@ -153,9 +158,40 @@ proc spazioCassetti*(f: Falegnami): float =
 proc colonne*(f: Falegnami): array[4, float] =
   ## dove cominciano i frontali in basso, da sinistra: anta A, gradini, cassetti, anta D
   result[0] = f.xFronte + f.margine
-  result[1] = result[0] + f.antaA + f.spazio
-  result[2] = result[1] + f.aperturaGradini + f.spazio
-  result[3] = result[2] + f.cassetti + f.spazio
+  result[1] = result[0] + f.antaA + f.spazioBasso
+  result[2] = result[1] + f.aperturaGradini + f.spazioBasso
+  result[3] = result[2] + f.cassetti + f.spazioBasso
+proc bordoBassi*(f: Falegnami): float = f.colonne[0]
+  ## 11.95: dal bordo del mobile (il muro di sinistra) all'anta A; uguale a destra
+
+type LarghezzeBasse* = object
+  ## Le cinque larghezze della zona bassa che Pietro sceglie nel visore (8 novembre):
+  ## il bordo laterale (uguale a sinistra e a destra), l'anta di sinistra (A), i gradini
+  ## (la misura dentro, cioè l'apertura), i cassetti, l'anta di destra (D). Quello che
+  ## resta si divide in tre spazi uguali tra i frontali.
+  bordo*, antaSx*, gradini*, cassetti*, antaDx*: float
+
+proc larghezzeBasse*(f: Falegnami): LarghezzeBasse =
+  ## 11.95, 75.5, 25, 50.2, 50.2 nel disegno dei falegnami
+  LarghezzeBasse(bordo: f.bordoBassi, antaSx: f.antaA, gradini: f.aperturaGradini,
+                 cassetti: f.cassetti, antaDx: f.antaD)
+
+proc conLarghezzeBasse*(f: Falegnami; l: LarghezzeBasse): Falegnami =
+  ## Le larghezze della zona bassa scelte a mano. I mobili dietro seguono il loro
+  ## frontale come nel disegno: A, C e D 0.2 più stretti dell'anta o del cassetto,
+  ## B largo quanto i gradini più i due fianchi. Gli spazi tra i frontali restano
+  ## uguali tra loro: (fronte − 2 bordi − le quattro larghezze) / 3.
+  result = f
+  result.antaA = l.antaSx
+  result.cassetti = l.cassetti
+  result.antaD = l.antaDx
+  result.mobileA = l.antaSx - (f.antaA - f.mobileA)
+  result.mobileB = l.gradini + 2 * f.sMulti
+  result.mobileC = l.cassetti - (f.cassetti - f.mobileC)
+  result.mobileD = l.antaDx - (f.antaD - f.mobileD)
+  result.spazioBassi = (f.larghezza - 2 * l.bordo - l.antaSx - l.gradini - l.cassetti - l.antaDx) / 3
+  if result.spazioBassi == 0: result.spazioBassi = 1e-9   # 0 vorrebbe dire `spazio`
+
 proc pianoLetto*(f: Falegnami): float = f.hBassi + f.sMulti
   ## 110.8: il cassone appoggia sui mobili bassi
 proc cieloNicchia*(f: Falegnami): float = f.hBassi + f.hNicchia - f.sMulti
@@ -392,6 +428,8 @@ proc modello*(f: Falegnami): Model =
   let y0 = f.yMobili
   let c = f.colonne
   result.name = "Parete dei falegnami" & (if f.pannello: "" else: " (senza pannellino)")
+  # le guide del visore: i bordi sinistro e destro della nicchia e il suo centro
+  result.guide = @[f.nicchiaX, f.nicchiaX + f.nicchiaL / 2, f.nicchiaX + f.nicchiaL]
   proc aggiungi(m: var Model; parti: var seq[Part]; blocco: string; mel = false) =
     ## le parti di un mobile: nell'esploso restano insieme
     for q in parti.mitems:
@@ -709,6 +747,21 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
       " cm, nello spazio libero; lì serve una guida che lo regga"
   if f.margine < 0:
     result.add "i frontali in basso non ci stanno nei pannelli"
+  if f.spazioBasso < 0:
+    result.add "in basso le larghezze non ci stanno: gli spazi tra i frontali sarebbero " &
+      fmtNum(f.spazioBasso) & " cm"
+  else:
+    # i mobili dietro i frontali non devono toccarsi (B ha i fianchi fuori dall'apertura)
+    let c = f.colonne
+    let mobili = [("A", c[0] + (f.antaA - f.mobileA) / 2, f.mobileA), ("B", c[1] - f.sMulti, f.mobileB),
+                  ("C", c[2] + (f.cassetti - f.mobileC) / 2, f.mobileC),
+                  ("D", c[3] + (f.antaD - f.mobileD) / 2, f.mobileD)]
+    for i in 0 ..< 3:
+      let sovra = mobili[i][1] + mobili[i][2] - mobili[i + 1][1]
+      if sovra > 0.01:
+        result.add "il mobile " & mobili[i][0] & " e il mobile " & mobili[i + 1][0] &
+          " si sovrappongono di " & fmtNum(sovra) & " cm: lo spazio tra i frontali (" &
+          fmtNum(f.spazioBasso) & ") è troppo piccolo"
   if f.scalinoVani > 0.5:
     result.add "il fondo dei vani alti sta " & fmtNum(f.scalinoVani) &
       " cm sotto il bordo dell'apertura delle ribalte: dentro c'è uno scalino"
