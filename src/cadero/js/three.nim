@@ -200,6 +200,9 @@ proc normaleMondo*(h: Intersezione): Vector3 {.importjs: "((h) => h.face.normal.
 proc isMesh*(o: Object3D): bool {.importjs: "(#.isMesh === true)".}
 proc newLinee*(punti: seq[Vector3]; m: Material): LineSegments {.importjs: "new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(#), #)".}
   ## segmenti a coppie di punti (0-1, 2-3, …)
+proc newLineDashedMaterial*(params: JsObject): Material {.importjs: "new THREE.LineDashedMaterial(@)".}
+proc distanzeTratteggio*(l: LineSegments) {.importjs: "#.computeLineDistances()".}
+  ## serve alle linee tratteggiate (LineDashedMaterial): dove cadono i tratti
 proc smaltisci*(l: LineSegments) {.importjs: "#.geometry.dispose()".}
 proc dot*(v, w: Vector3): float {.importjs: "#.dot(@)".}
 proc addScaledVector*(v, w: Vector3; s: float): Vector3 {.importjs: "#.addScaledVector(@)", discardable.}

@@ -28,24 +28,19 @@ proc tavolaVariante(f: Falegnami; chiave: string; nascosta: bool): string =
     tavola(f, modello(f)) & "</div>"
 # una tavola per ogni combinazione delle modifiche proposte: il visore mostra quella del modello scelto
 var tavole = ""
-for tav in [false, true]:
-  for tes in [false, true]:
-    for ris in [false]:     # risega: resta 15.8 (Pietro, 7 novembre), niente pulsante
-      for van in [false, true]:
-        for pal in [false, true]:
-         for nic in [false, true]:
-          let base = f0.conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic)
-          let chiave = chiaveModifiche(tav, tes, ris, van, pal, nic)
-          let spento = not (tav or tes or ris or van or pal or nic)
-          let partenza = not tav and tes and not ris and van and pal and nic
-          # le tavole dei tagli e della cornice solo con le modifiche spente e con
-          # quelle di partenza (le altre combinazioni tengono la tavola che c'è): la
-          # pagina resta leggera
-          for t in TaglioFronte:
-            for cor in [false, true]:
-              if spento or partenza or (t == tCroce and not cor):
-                tavole.add tavolaVariante(base.conTaglio(t).conCornice(cor),
-                  chiave & chiaveTaglio(t, cor), not (partenza and t == tTre and not cor))
+# Pietro, 8 novembre: si semplifica. Restano sempre la testata alta, niente vani alti e
+# niente tavolino, e le larghezze nuove in basso (`larghezzeNuove`); si scelgono
+# solo pannello a L, nicchia, taglio del fronte e cornice.
+for pal in [false, true]:
+  for nic in [false, true]:
+    let base = f0.conModifiche(false, true, false, false).conPannelloAL(pal).nicchiaAperta(nic)
+                 .conLarghezzeBasse(larghezzeNuove)
+    let chiave = chiaveModifiche(false, true, false, false, pal, nic)
+    let partenza = pal and nic
+    for t in TaglioFronte:
+      for cor in [false, true]:
+        tavole.add tavolaVariante(base.conTaglio(t).conCornice(cor),
+          chiave & chiaveTaglio(t, cor), not (partenza and t == tTre and not cor))
 nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"L <b>{f0.larghezza:g}</b> × H <b>{f0.altezza:g}</b> × P <b>{f0.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",
@@ -67,7 +62,7 @@ let cartaSrc = cartaDaParati()
 # JSON (è una variabile "catturata"). Il file da compilare nimib lo scrive nella
 # cartella dei documenti (docs/), per questo gli import partono da `../`.
 nbJsFromCode(cartaSrc):
-  import ../src/cadero/visore, ../models/falegnami
+  import ../src/cadero/visore, ../src/cadero/drawing, ../models/falegnami
 
   # nel visore tutto parte chiuso: cassetti, ante e ribalte si aprono toccandoli.
   # Una variante per ogni combinazione delle quattro modifiche proposte, che sono
@@ -78,19 +73,48 @@ nbJsFromCode(cartaSrc):
   # che è il punto di partenza). I modelli si
   # calcolano qui, nel browser, con lo stesso codice Nim delle tavole.
   var varianti: Table[string, Model]
-  for tav in [false, true]:
-    for tes in [false, true]:
-      for ris in [false]:     # risega: resta 15.8 (Pietro, 7 novembre)
-        for van in [false, true]:
-          for pal in [false, true]:
-           for nic in [false, true]:
-            for t in TaglioFronte:
-              for cor in [false, true]:
-                varianti[chiaveModifiche(tav, tes, ris, van, pal, nic) &
-                         chiaveTaglio(t, cor)] =
-                  modello(falegnami().conModifiche(tav, tes, ris, van).conPannelloAL(pal).nicchiaAperta(nic).conTaglio(t).conCornice(cor))
+  var parametri: Table[string, Falegnami]   # per ricalcolare con le larghezze scelte
+  for pal in [false, true]:
+    for nic in [false, true]:
+      for t in TaglioFronte:
+        for cor in [false, true]:
+          let k = chiaveModifiche(false, true, false, false, pal, nic) & chiaveTaglio(t, cor)
+          parametri[k] = falegnami().conModifiche(false, true, false, false).conPannelloAL(pal)
+                           .nicchiaAperta(nic).conTaglio(t).conCornice(cor)
+          varianti[k] = modello(parametri[k].conLarghezzeBasse(larghezzeNuove))
+  # il visore riconosce il modello dei falegnami dalla chiave "falegnami" (e parte da lì)
+  varianti["falegnami"] = varianti[chiaveModifiche(false, true, false, false)]
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)
-  quandoThreePronto(proc () = avviaVisore(varianti, carta))
+  # le larghezze della zona bassa (Pietro, 8 novembre): bordo ai lati, anta di
+  # sinistra, gradini (dentro), cassetti, anta di destra; gli spazi tra i frontali
+  # si calcolano uguali. I pulsanti − e + vanno di 5.
+  # Si parte da quelle scelte (`larghezzeNuove`); "Larghezze vecchie" rimette quelle
+  # del disegno dei falegnami.
+  let (l0, lv) = (larghezzeNuove, falegnami().larghezzeBasse)
+  let regolazioni = @[
+    Regolazione(nome: "Bordo laterale", valore: l0.bordo, vecchio: lv.bordo, passo: 5),
+    Regolazione(nome: "Anta di sinistra", valore: l0.antaSx, vecchio: lv.antaSx, passo: 5),
+    Regolazione(nome: "Gradini (dentro)", valore: l0.gradini, vecchio: lv.gradini, passo: 5),
+    Regolazione(nome: "Cassetti", valore: l0.cassetti, vecchio: lv.cassetti, passo: 5),
+    Regolazione(nome: "Anta di destra", valore: l0.antaDx, vecchio: lv.antaDx, passo: 5)]
+  proc ricalcola(chiave: string; v: seq[float]): tuple[modello: Model, nota, tavola: string] =
+    let f0 = parametri.getOrDefault(chiave, falegnami().conModifiche(false, true, false, false))
+    let f = f0.conLarghezzeBasse(LarghezzeBasse(bordo: v[0], antaSx: v[1], gradini: v[2],
+                                                cassetti: v[3], antaDx: v[4]))
+    result.modello = modello(f)
+    result.nota = "Spazi uguali tra i frontali: <b>" & fmtNum(f.spazioBasso) & "</b> cm"
+    # cosa non torna in più rispetto alle larghezze del disegno
+    # (lo stesso avviso con altri numeri non conta: si confronta il testo fino al primo numero)
+    proc testa(s: string): string =
+      for ch in s:
+        if ch in {'0'..'9'}: break
+        result.add ch
+    var prima: seq[string]
+    for c in controlli(f0, modello(f0)): prima.add testa(c)
+    for c in controlli(f, result.modello):
+      if testa(c) notin prima: result.nota.add "<br><span class=\"male\">" & c & "</span>"
+    if chiave.len > 0: result.tavola = tavola(f, result.modello)
+  quandoThreePronto(proc () = avviaVisore(varianti, carta, regolazioni, ricalcola))
 
 copiaThree($nb.doc.homeDir)   # three.js accanto alla pagina, in three/
 nbSave
