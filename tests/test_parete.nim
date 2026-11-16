@@ -420,3 +420,33 @@ suite "la lampada in testa al letto":
     let s = modello(f).find("lampada: sfera")
     check near(s.pos.z + s.size.z, t.zScaffali[0] - 1 + alzataLampada)
     check near(t.centroLampada.z, f.centroLampada.z)   # la testata non la sposta
+
+suite "falegnami, versione 2 (16 novembre)":
+  let v = falegnamiV2()
+  let m = modello(v)
+  test "le misure scritte sul PDF":
+    check near(v.larghezza, 234.8) and near(v.altezza, 317.6)
+    let pezzi = v.pezziFronte
+    check pezzi.len == 3
+    check near(pezzi[0][1].h, 118) and near(pezzi[1][1].h, 97.8) and near(pezzi[2][1].h, 101.8)
+    # in basso: bordo 12, spazi 4
+    check near(v.margine, 12) and near(v.spazioBasso, 4) and near(v.aperturaGradini, 30)
+    check near(v.spazioCassetti, 4)
+    # nicchia 15 / 167.8 / 52, da 132 a 254
+    check near(v.nicchiaX, 15) and near(v.larghezza - v.nicchiaX - v.nicchiaL, 52)
+    check near(v.nicchiaZ, 132) and near(v.nicchiaZ + v.nicchiaH, 254)
+    # ribalte 6 sotto la cima, cima a filo delle scatole
+    check near(v.zRibalte + v.ribaltaH, v.altezza - 6)
+    check abs(v.fondoVani + v.vanoH - (v.zRibalte + v.ribaltaH)) < 0.15   # 311.5 e 311.6
+    # libreria: la L con il braccio basso a 58 dal fondo, scaffali a passo 30.7
+    check near(v.pianoComodino - v.hBassi, 58)
+    check abs(v.zScaffali[0] - v.pianoComodino - 30.7) < 0.1
+  test "la L arriva al cassone, niente si sovrappone":
+    let l = m.find("pannello a L")
+    check near(l.pos.x, v.sMulti + v.interno)
+  test "le spalle sono fuori dal fronte":
+    let s = modello(v.conSpalleV2).find("fronte spalla dx")
+    check near(s.pos.x, v.larghezza)
+    check controlli(v.conSpalleV2, m).anyIt("255.8" in it)
+  test "la v1 resta com'era":
+    check near(falegnami().altezza, 319.6) and near(falegnami().fondoVani, 259)

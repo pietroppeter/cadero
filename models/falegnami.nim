@@ -104,6 +104,13 @@ type
     venature*: seq[(string, Venatura)]
                              ## la venatura scelta per un pannello, per nome (es.
                              ## ("fronte spalla sx", venOrizzontale)); gli altri lungo il lato lungo
+    # --- la versione 2 (il PDF "mobile letto" del 16 novembre 2026, vedi `falegnamiV2`)
+    versione*: int           ## 1 (le tavole del 3 novembre) o 2 (16 novembre)
+    tagliTre*: seq[float]    ## nel taglio in 3 orizzontali, dove sono i due tagli (da terra);
+                             ## vuoto = il nostro (109 e due pezzi uguali sopra)
+    rialzoVani*: float       ## un listello sul cielo del cassone sotto i vani alti (v2: 5, dedotto)
+    spalleFuori*: float      ## v2: le spalle del disegno (10.5, rilevate) fuori dal fronte da 234.8;
+                             ## 0 = senza (vedi `conSpalleV2`)
 
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
@@ -124,6 +131,68 @@ proc falegnami*(): Falegnami =
     prof: 77.5, profRisega: 62.2, interno: 193, hNicchia: 150,
     profLibreria: 63.5, hLibreria: 150, gavone: 32, comodino: 38, scaffali: 27, nScaffali: 3,
     vanoL: 68.1, vanoH: 40.9, cornice: true)
+
+proc falegnamiV2*(): Falegnami =
+  ## La versione 2 dei falegnami (PDF "mobile letto", 16 novembre 2026, 7 tavole).
+  ## Hanno messo nel disegno quasi tutte le nostre decisioni: fronte in 3 pezzi
+  ## orizzontali, nicchia 15 / 52, testata alta con il pannello a L, niente
+  ## pannellino, niente vani alti grandi. Le misure scritte sono "disegno", quelle
+  ## lette in scala sul prospetto "rilevato", le altre "dedotto" o "ipotesi".
+  result = falegnami()
+  result.versione = 2
+  result.materasso.altezza = 18          # come deciso per la nicchia
+  # il fronte: 234.8 × 317.6 (disegno), in 3 pezzi orizzontali 118, 97.8, 101.8
+  result.spalla = 0                      # le spalle sono fuori (vedi `spalleFuori`)
+  result.pannelloL = 234.8 / 2
+  result.pannelloH = (317.6 - 6) / 2     # così `altezza` = 317.6 (la fascia non c'è più)
+  result.taglio = tTre
+  result.tagliTre = @[118.0, 118.0 + 97.8]
+  result.cornice = false
+  result.pannelloAL = true
+  # la nicchia: 15 da sinistra, 167.8 × 122, 52 a destra; 31 sopra le ante (disegno)
+  result.nicchiaSx = 15
+  result.nicchiaL = 167.8
+  result.nicchiaH = 122
+  result.nicchiaZ = 6 + 95 + 31          # 132
+  result.raggioNicchia = 10              # rilevato: gli angoli sono molto più tondi
+  # in basso: ante e gradini da 6 a 101 (disegno: 60 da terra, ante 950)
+  result.zBassi = 6
+  result.antaA = 75.5
+  result.cassetti = 50.2
+  result.antaD = 43.1                    # disegno: 431 (era 502)
+  result.gradini = @[15.8, 15.8, 15.8, 15.8, 15.8]   # 5 aperture 300 × 158, spazi 4
+  result.pannello = false
+  result.hBassi = 102.8                  # disegno: 1028
+  result.zoccolo = 6.1                   # disegno: 61
+  result.mobileA = 75.3
+  result.mobileB = 30 + 2 * 1.8          # 33.6 (disegno: 336, dentro 300)
+  result.mobileC = 50
+  result.mobileD = 42.9                  # dentro 39.1 (disegno: 391)
+  result.profGradini = 17 + 0.8          # gradini profondi 17 (disegno: 170) più la schiena
+  # il cassone: dentro 193.4 × 155.7 (disegno; i 1557 li leggo dentro, dal piano al cielo)
+  result.interno = 193.4
+  result.hNicchia = 155.7 + 2 * 1.8      # fuori: 159.3
+  result.rialzoVani = 5                  # dedotto: le scatole (cima 311.5 come le ribalte)
+                                         # partono da 267.1, il cielo del cassone finisce a 262.1
+  # la libreria: alta 155.7, la L larga 77.5 con il braccio basso alto 58 (disegno:
+  # 580 dal fondo della libreria = la cima del comodino), striscia 15.8, 2 scaffali
+  result.hLibreria = 155.7
+  result.gavone = 58 - 1.8               # 56.2: sopra c'è il piano del comodino
+  result.nScaffali = 2                   # passo 30.7 (disegno: 307)
+  result.comodino = 35.8                 # dedotto da cassone 193.4 e L (sulla tavola 370 fuori)
+  # in alto: tre scatole 67.4 × 44.4 (dentro 63.6 × 40.6), ribalte 67.3 × 45.6
+  result.vanoL = 67.4
+  result.vanoH = 44.4
+  result.ribaltaL = 67.3
+  result.ribaltaH = 45.6
+  result.parteFissa = 16                 # disegno: 160 fissi + 510 che si aprono
+  result.zRibalte = 317.6 - 6 - 45.6     # 266: 6 sotto la cima del fronte (disegno: 60)
+
+proc conSpalleV2*(f: Falegnami; on = true): Falegnami =
+  ## Le due spalle che il PDF della v2 disegna ai lati del fronte da 234.8 (larghe
+  ## 10.5, rilevate): con loro si arriva a 255.8, ma la parete è 237. Di base no.
+  result = f
+  result.spalleFuori = if on: 10.5 else: 0
 
 proc senzaPannello*(f: Falegnami): Falegnami =
   ## La variante senza il pannellino: niente fessura, i gradini si ridistribuiscono.
@@ -199,8 +268,9 @@ proc pianoLetto*(f: Falegnami): float = f.hBassi + f.sMulti
   ## 110.8: il cassone appoggia sui mobili bassi
 proc cieloNicchia*(f: Falegnami): float = f.hBassi + f.hNicchia - f.sMulti
   ## 257.2: il sotto del cielo del cassone; la cima (259) è a filo della libreria
-proc fondoVani*(f: Falegnami): float = f.cieloNicchia + f.sMulti
-  ## 262.6: i vani alti sono scatole appoggiate sul cielo del cassone (Pietro)
+proc fondoVani*(f: Falegnami): float = f.cieloNicchia + f.sMulti + f.rialzoVani
+  ## 259: i vani alti sono scatole appoggiate sul cielo del cassone (Pietro);
+  ## nella v2 su un listello alto 5 (267.1)
 proc scalinoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.fondoVani - f.sMel
   ## 7.5: di quanto il dentro dei vani alti sta sotto il bordo dell'apertura
 proc pianoComodino*(f: Falegnami): float = f.hBassi + f.gavone + f.sMulti
@@ -258,16 +328,16 @@ proc pezziFronte*(f: Falegnami): seq[(string, RRect)] =
   let H = f.altezza
   let (x0, L) = if f.cornice: (f.xFronte, 2 * f.pannelloL) else: (0.0, f.larghezza)
   case f.taglio
+  of tTre:
+    let (zb, za) = if f.tagliTre.len == 2: (f.tagliTre[0], f.tagliTre[1])
+                   else: (f.zTaglioTre, (f.zTaglioTre + H) / 2)
+    result.add ("sotto", rrect(x0, 0, L, zb))
+    result.add ("mezzo", rrect(x0, zb, L, za - zb))
+    result.add ("sopra", rrect(x0, za, L, H - za))
   of tCroce:
     for (nome, i, j) in [("basso sx", 0, 0), ("basso dx", 1, 0), ("alto sx", 0, 1), ("alto dx", 1, 1)]:
       result.add (nome, rrect(x0 + float(i) * L / 2, float(j) * f.pannelloH, L / 2, f.pannelloH))
     result.add ("fascia", rrect(x0, 2 * f.pannelloH, L, f.fascia))
-  of tTre:
-    let zb = f.zTaglioTre
-    let za = (zb + H) / 2
-    result.add ("sotto", rrect(x0, 0, L, zb))
-    result.add ("mezzo", rrect(x0, zb, L, za - zb))
-    result.add ("sopra", rrect(x0, za, L, H - za))
 
 proc venaturaFronte*(f: Falegnami): Venatura =
   ## la venatura di base dei pezzi del fronte: verticale a croce, orizzontale in 3
@@ -275,8 +345,10 @@ proc venaturaFronte*(f: Falegnami): Venatura =
 
 proc catenaFronte*(f: Falegnami): seq[float] =
   ## le quote verticali del prospetto
-  @[0.0, f.zBassi, f.zBassi + f.altezzaAnte, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, f.zRibalte,
-    f.zRibalte + f.ribaltaH, 2 * f.pannelloH, f.altezza]
+  result = @[0.0, f.zBassi, f.zBassi + f.altezzaAnte, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, f.zRibalte,
+    f.zRibalte + f.ribaltaH]
+  if f.versione < 2: result.add 2 * f.pannelloH   # la fascia (nella v2 non c'è)
+  result.add f.altezza
 
 proc zScaffali*(f: Falegnami): seq[float] =
   ## il sotto di ogni scaffale della libreria: passo uguale tra il piano del
@@ -311,8 +383,9 @@ proc centroLampada*(f: Falegnami): tuple[y, z: float] =
   ## quell'altezza anche con la testata bassa.
   let yd = f.yMobili + f.profLibreria
   var alta = f                 # come in `testataAlta` (più sotto)
-  alta.gavone = 58
-  alta.nScaffali = 2
+  if f.versione < 2:           # la v2 ha già la sua testata alta (58 con la L)
+    alta.gavone = 58
+    alta.nScaffali = 2
   ((yd + f.yMuro) / 2, alta.zScaffali[0] - 1 + alzataLampada - sferaLampada / 2)
 
 proc presaDallaRisega*(f: Falegnami): float =
@@ -430,7 +503,7 @@ proc modello*(f: Falegnami): Model =
   let H = f.altezza
   let y0 = f.yMobili
   let c = f.colonne
-  result.name = "Parete dei falegnami" & (if f.pannello: "" else: " (senza pannellino)")
+  result.name = "Parete dei falegnami" & (if f.versione == 2: " v2" elif f.pannello: "" else: " (senza pannellino)")
   # le guide del visore: i bordi sinistro e destro della nicchia e il suo centro
   result.guide = @[f.nicchiaX, f.nicchiaX + f.nicchiaL / 2, f.nicchiaX + f.nicchiaL]
   proc aggiungi(m: var Model; parti: var seq[Part]; blocco: string; mel = false) =
@@ -455,6 +528,13 @@ proc modello*(f: Falegnami): Model =
     q.contorno = @[(q.pos.x, q.pos.z), (q.x1, q.pos.z), (q.x1, q.z1), (q.pos.x, q.z1)]   # per le viste
     q.venatura = venVerticale
     result.add q
+  if f.spalleFuori > 0:
+    # v2: le spalle del disegno, fuori dal fronte (oltre la larghezza della parete)
+    for (nome, x) in [("fronte spalla sx", -f.spalleFuori), ("fronte spalla dx", L)]:
+      var q = part(nome, kPanel, x, f.yFronte, 0, f.spalleFuori, sm, H)
+      q.contorno = @[(q.pos.x, q.pos.z), (q.x1, q.pos.z), (q.x1, q.z1), (q.pos.x, q.z1)]
+      q.venatura = venVerticale
+      result.add q
 
   # --- frontali: ante, cassetti, ribalte --------------------------------------
   let d = f.diamForo
@@ -671,6 +751,14 @@ proc modello*(f: Falegnami): Model =
   # --- i tre vani alti ------------------------------------------------------------
   # scatole aperte davanti, appoggiate sul cielo del cassone (solo scatole, come
   # nella tavola 6); quella sopra la risega è meno profonda
+  if f.rialzoVani > 0:
+    # v2: sotto le scatole, un listello davanti e uno dietro sul cielo del cassone
+    let (x0, x1) = (f.xRibalte[0], f.xRibalte[2] + f.ribaltaL)
+    var ri = @[
+      part("listello vani alti", kPanel, x0, y0 + 2, f.fondoVani - f.rialzoVani, x1 - x0, sm, f.rialzoVani),
+      part("listello vani alti", kPanel, x0, y0 + f.profRisega - 2 - sm, f.fondoVani - f.rialzoVani,
+           x1 - x0, sm, f.rialzoVani)]
+    result.aggiungi(ri, "listello vani alti")
   for i in 0..2:
     let x = f.xFronte + f.margineAlto + float(i) * (f.ribaltaL + f.spazio) + (f.ribaltaL - f.vanoL) / 2
     let p = if x + f.vanoL > f.xRisega: f.profRisega else: f.prof
@@ -700,6 +788,10 @@ proc conCornice*(f: Falegnami; cornice: bool): Falegnami =
   result = f
   result.cornice = cornice
 
+proc chiaveV2*(spalle = false): string =
+  ## la chiave del visore per la versione 2: "falegnamiV2", poi "Cornice" con le spalle
+  "falegnamiV2" & (if spalle: "Cornice" else: "")
+
 proc chiaveTaglio*(t: TaglioFronte; cornice: bool): string =
   ## il pezzo di chiave del visore per il fronte: "Tre" per il taglio in 3 (niente
   ## per quello a croce), poi "Cornice" se ci sono le spalle
@@ -710,10 +802,14 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
   ## Le cose che non tornano con la stanza o con le nostre decisioni.
   let mu = f.muro
   if f.altezza > mu.altezza + 0.01:
-    result.add "il fronte è alto " & fmtNum(f.altezza) & " (2 × " & fmtNum(f.pannelloH) & " + " &
-      fmtNum(f.fascia) & "): la stanza è alta " & fmtNum(mu.altezza)
+    result.add "il fronte è alto " & fmtNum(f.altezza) &
+      (if f.versione == 2: "" else: " (2 × " & fmtNum(f.pannelloH) & " + " & fmtNum(f.fascia) & ")") &
+      ": la stanza è alta " & fmtNum(mu.altezza)
   if abs(f.larghezza - mu.larghezza) > 0.5:
     result.add "il fronte è largo " & fmtNum(f.larghezza) & ", la parete " & fmtNum(mu.larghezza)
+  if f.spalleFuori > 0:
+    result.add "con le due spalle da " & fmtNum(f.spalleFuori) & " il fronte arriva a " &
+      fmtNum(f.larghezza + 2 * f.spalleFuori) & ": la parete è " & fmtNum(mu.larghezza)
   if f.profondita > mu.profondita + 0.01:
     result.add "ante, fronte e mobili profondi " & fmtNum(f.prof) & " fanno " & fmtNum(f.profondita) &
       " cm: oltre gli " & fmtNum(mu.profondita) & " della stanza (a 80 c'è la cornice della porta)"
@@ -801,7 +897,9 @@ proc quote*(f: Falegnami): seq[DimChain] =
   libreria.add f.hBassi + f.hLibreria
   @[
     DimChain(view: vFront, vertical: true, at: -22, ext: 0, stops: f.catenaFronte),
-    DimChain(view: vFront, vertical: true, at: -52, ext: -22, stops: @[0.0, f.pannelloH, 2 * f.pannelloH, H]),
+    DimChain(view: vFront, vertical: true, at: -52, ext: -22,
+             stops: (if f.taglio == tTre and f.tagliTre.len == 2: @[0.0, f.tagliTre[0], f.tagliTre[1], H]
+                     else: @[0.0, f.pannelloH, 2 * f.pannelloH, H])),
     DimChain(view: vFront, vertical: false, at: H + 12, ext: H, stops: alto),
     DimChain(view: vFront, vertical: false, at: H + 28, ext: H,
              stops: @[0.0, f.nicchiaX, f.nicchiaX + f.nicchiaL, L]),
