@@ -109,8 +109,9 @@ type
     tagliTre*: seq[float]    ## nel taglio in 3 orizzontali, dove sono i due tagli (da terra);
                              ## vuoto = il nostro (109 e due pezzi uguali sopra)
     rialzoVani*: float       ## un listello sul cielo del cassone sotto i vani alti (v2: 5, dedotto)
-    spalleFuori*: float      ## v2: le spalle del disegno (10.5, rilevate) fuori dal fronte da 234.8;
-                             ## 0 = senza (vedi `conSpalleV2`)
+    pannelliLibreria*: bool  ## v2: al posto della L due pannelli nello stesso piano, davanti ai bordi
+                             ## dei fianchi: la striscia sulla colonna (alta quanto la libreria,
+                             ## sagomata sul posto contro il muro) e il frontale del gavone
 
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
@@ -141,20 +142,23 @@ proc falegnamiV2*(): Falegnami =
   result = falegnami()
   result.versione = 2
   result.materasso.altezza = 18          # come deciso per la nicchia
-  # il fronte: 234.8 × 317.6 (disegno), in 3 pezzi orizzontali 118, 97.8, 101.8
-  result.spalla = 0                      # le spalle sono fuori (vedi `spalleFuori`)
+  # il fronte: 234.8 × 317.6 (disegno), in 3 pezzi orizzontali 118, 97.8, 101.8; ai
+  # lati e in alto 1.5 di luce verso i muri: le "spalle" del prospetto sono i muri,
+  # la cornice di 12 per lato è il bordo del fronte stesso
+  result.spalla = 0
   result.pannelloL = 234.8 / 2
   result.pannelloH = (317.6 - 6) / 2     # così `altezza` = 317.6 (la fascia non c'è più)
   result.taglio = tTre
   result.tagliTre = @[118.0, 118.0 + 97.8]
   result.cornice = false
-  result.pannelloAL = true
+  result.pannelloAL = false              # niente L: due pannelli (`pannelliLibreria`)
+  result.pannelliLibreria = true
   # la nicchia: 15 da sinistra, 167.8 × 122, 52 a destra; 31 sopra le ante (disegno)
   result.nicchiaSx = 15
   result.nicchiaL = 167.8
   result.nicchiaH = 122
   result.nicchiaZ = 6 + 95 + 31          # 132
-  result.raggioNicchia = 10              # rilevato: gli angoli sono molto più tondi
+  result.raggioNicchia = 9               # falegnami: raggio 9 (prima 5)
   # in basso: ante e gradini da 6 a 101 (disegno: 60 da terra, ante 950)
   result.zBassi = 6
   result.antaA = 75.5
@@ -174,8 +178,9 @@ proc falegnamiV2*(): Falegnami =
   result.hNicchia = 155.7 + 2 * 1.8      # fuori: 159.3
   result.rialzoVani = 5                  # dedotto: le scatole (cima 311.5 come le ribalte)
                                          # partono da 267.1, il cielo del cassone finisce a 262.1
-  # la libreria: alta 155.7, la L larga 77.5 con il braccio basso alto 58 (disegno:
-  # 580 dal fondo della libreria = la cima del comodino), striscia 15.8, 2 scaffali
+  # la libreria: alta 155.7, verso il letto la striscia sulla colonna (15.8) e il
+  # frontale del gavone alto 58 (disegno: 580 dal fondo della libreria = la cima del
+  # comodino), larghi insieme 77.5; 2 scaffali
   result.hLibreria = 155.7
   result.gavone = 58 - 1.8               # 56.2: sopra c'è il piano del comodino
   result.nScaffali = 2                   # passo 30.7 (disegno: 307)
@@ -187,12 +192,6 @@ proc falegnamiV2*(): Falegnami =
   result.ribaltaH = 45.6
   result.parteFissa = 16                 # disegno: 160 fissi + 510 che si aprono
   result.zRibalte = 317.6 - 6 - 45.6     # 266: 6 sotto la cima del fronte (disegno: 60)
-
-proc conSpalleV2*(f: Falegnami; on = true): Falegnami =
-  ## Le due spalle che il PDF della v2 disegna ai lati del fronte da 234.8 (larghe
-  ## 10.5, rilevate): con loro si arriva a 255.8, ma la parete è 237. Di base no.
-  result = f
-  result.spalleFuori = if on: 10.5 else: 0
 
 proc senzaPannello*(f: Falegnami): Falegnami =
   ## La variante senza il pannellino: niente fessura, i gradini si ridistribuiscono.
@@ -528,13 +527,6 @@ proc modello*(f: Falegnami): Model =
     q.contorno = @[(q.pos.x, q.pos.z), (q.x1, q.pos.z), (q.x1, q.z1), (q.pos.x, q.z1)]   # per le viste
     q.venatura = venVerticale
     result.add q
-  if f.spalleFuori > 0:
-    # v2: le spalle del disegno, fuori dal fronte (oltre la larghezza della parete)
-    for (nome, x) in [("fronte spalla sx", -f.spalleFuori), ("fronte spalla dx", L)]:
-      var q = part(nome, kPanel, x, f.yFronte, 0, f.spalleFuori, sm, H)
-      q.contorno = @[(q.pos.x, q.pos.z), (q.x1, q.pos.z), (q.x1, q.z1), (q.pos.x, q.z1)]
-      q.venatura = venVerticale
-      result.add q
 
   # --- frontali: ante, cassetti, ribalte --------------------------------------
   let d = f.diamForo
@@ -697,6 +689,13 @@ proc modello*(f: Falegnami): Model =
     lib.add pa
     for q in lib.mitems:
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
+  elif f.pannelliLibreria:
+    # v2: gli stessi due bracci della L, ma due pezzi; il pannello vince sui fianchi
+    lib.add part("frontale gavone", kPanel, xl - sm, y0, zl, sm, pl - sm, zc - zl)
+    lib.add part("pannello colonna", kPanel, xl - sm, y0 + pl - sm, zl, sm,
+                 f.profondita - (y0 + pl - sm), f.hLibreria)
+    for q in lib.mitems:
+      if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
   else:
     lib.add part("frontale gavone", kPanel, xl, y0 + sm, zl, sm, pl - 2 * sm, f.gavone)
     # il pannello che copre la risega, a sinistra della libreria guardandola dal
@@ -788,9 +787,8 @@ proc conCornice*(f: Falegnami; cornice: bool): Falegnami =
   result = f
   result.cornice = cornice
 
-proc chiaveV2*(spalle = false): string =
-  ## la chiave del visore per la versione 2: "falegnamiV2", poi "Cornice" con le spalle
-  "falegnamiV2" & (if spalle: "Cornice" else: "")
+const chiaveV2* = "falegnamiV2"
+  ## la chiave del visore per la versione 2
 
 proc chiaveTaglio*(t: TaglioFronte; cornice: bool): string =
   ## il pezzo di chiave del visore per il fronte: "Tre" per il taglio in 3 (niente
@@ -807,9 +805,6 @@ proc controlli*(f: Falegnami; m: Model): seq[string] =
       ": la stanza è alta " & fmtNum(mu.altezza)
   if abs(f.larghezza - mu.larghezza) > 0.5:
     result.add "il fronte è largo " & fmtNum(f.larghezza) & ", la parete " & fmtNum(mu.larghezza)
-  if f.spalleFuori > 0:
-    result.add "con le due spalle da " & fmtNum(f.spalleFuori) & " il fronte arriva a " &
-      fmtNum(f.larghezza + 2 * f.spalleFuori) & ": la parete è " & fmtNum(mu.larghezza)
   if f.profondita > mu.profondita + 0.01:
     result.add "ante, fronte e mobili profondi " & fmtNum(f.prof) & " fanno " & fmtNum(f.profondita) &
       " cm: oltre gli " & fmtNum(mu.profondita) & " della stanza (a 80 c'è la cornice della porta)"

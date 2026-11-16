@@ -42,10 +42,9 @@ for pal in [false, true]:
       for cor in [false, true]:
         tavole.add tavolaVariante(base.conTaglio(t).conCornice(cor),
           chiave & chiaveTaglio(t, cor), true)
-# la versione 2 dei falegnami (16 novembre), il punto di partenza: con o senza le spalle
+# la versione 2 dei falegnami (16 novembre), il punto di partenza
 let v2 = falegnamiV2()
-for sp in [false, true]:
-  tavole.add tavolaVariante(v2.conSpalleV2(sp), chiaveV2(sp), sp)
+tavole.add tavolaVariante(v2, chiaveV2, false)
 nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"v2: L <b>{v2.larghezza:g}</b> × H <b>{v2.altezza:g}</b> × P <b>{v2.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",
@@ -56,8 +55,7 @@ nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
     "(il bordo di un pannello, un foro, un muro, il materasso); con <em>Girare la venatura</em> un tocco gira la venatura di un pannello. " &
     "<em>Versione</em> passa dal progetto aggiornato dei falegnami (<b>v2</b>, 16 novembre, il punto di partenza) alle loro prime tavole " &
     "con le nostre modifiche (<b>v1</b>, 3 novembre). " &
-    "<em>Fronte</em> cambia come è diviso il pannello frontale (a croce o in 3 orizzontali, solo v1), <em>Cornice</em> rimette le spalle ai lati " &
-    "(nella v2 sono fuori dal fronte da 234.8: con loro si arriva a 255.8, più della parete). " &
+    "Nella v1 <em>Fronte</em> cambia come è diviso il pannello frontale (a croce o in 3 orizzontali) e <em>Cornice</em> rimette le spalle ai lati. " &
     "Trascina per ruotare, pizzica o usa la rotella per lo zoom, trascina con due dita (o tasto destro) per spostarti. " &
     "Il modello è generato dal codice Nim di Caderò a partire dalle tavole dei falegnami; misure rilevate e ipotesi " &
     "sono nel <a href=\"modello_falegnami.html\">documento del modello</a>. La nostra idea di partenza: " &
@@ -90,9 +88,8 @@ nbJsFromCode(cartaSrc):
           parametri[k] = falegnami().conModifiche(false, true, false, false).conPannelloAL(pal)
                            .nicchiaAperta(nic).conTaglio(t).conCornice(cor)
           varianti[k] = modello(parametri[k].conLarghezzeBasse(larghezzeNuove))
-  # la versione 2 (16 novembre): con o senza le spalle; il visore parte da qui
-  for sp in [false, true]:
-    varianti[chiaveV2(sp)] = modello(falegnamiV2().conSpalleV2(sp))
+  # la versione 2 (16 novembre): il visore parte da qui
+  varianti[chiaveV2] = modello(falegnamiV2())
   # il visore riconosce il modello dei falegnami dalla chiave "falegnami" (e parte da lì)
   varianti["falegnami"] = varianti[chiaveModifiche(false, true, false, false)]
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)

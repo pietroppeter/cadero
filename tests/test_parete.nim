@@ -441,12 +441,12 @@ suite "falegnami, versione 2 (16 novembre)":
     # libreria: la L con il braccio basso a 58 dal fondo, scaffali a passo 30.7
     check near(v.pianoComodino - v.hBassi, 58)
     check abs(v.zScaffali[0] - v.pianoComodino - 30.7) < 0.1
-  test "la L arriva al cassone, niente si sovrappone":
-    let l = m.find("pannello a L")
-    check near(l.pos.x, v.sMulti + v.interno)
-  test "le spalle sono fuori dal fronte":
-    let s = modello(v.conSpalleV2).find("fronte spalla dx")
-    check near(s.pos.x, v.larghezza)
-    check controlli(v.conSpalleV2, m).anyIt("255.8" in it)
+  test "libreria: pannello colonna e frontale del gavone nello stesso piano, fino al cassone":
+    let c = m.find("pannello colonna")
+    let g = m.find("frontale gavone")
+    check near(c.pos.x, v.sMulti + v.interno) and near(g.pos.x, c.pos.x)
+    check near(g.pos.z + g.size.z, v.pianoComodino) and near(c.size.z, v.hLibreria)
+    check near(g.size.y + c.size.y, v.prof)   # insieme larghi 77.5
+    check near(v.raggioNicchia, 9)
   test "la v1 resta com'era":
     check near(falegnami().altezza, 319.6) and near(falegnami().fondoVani, 259)

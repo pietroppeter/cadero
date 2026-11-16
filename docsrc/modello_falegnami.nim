@@ -33,8 +33,9 @@ nbText: """
 Il 16 novembre i falegnami hanno mandato il progetto aggiornato, un PDF di sette
 tavole ("mobile letto"). **Questa è la versione di riferimento.** Hanno messo nel
 disegno quasi tutto quello che avevamo deciso con loro: il fronte in tre pezzi
-orizzontali, la nicchia più aperta (15 da sinistra, 52 da destra), la testata alta
-con il pannello a L, niente pannellino tra i gradini, niente cornice nel fronte. Le
+orizzontali, la nicchia più aperta (15 da sinistra, 52 da destra), la testata alta,
+niente pannellino tra i gradini, niente cornice nel fronte. Il pannello a L invece
+no: sono due pannelli (vedi sotto). Le
 misure nuove sono qui sotto; la [versione 1](#v1) (le prime tavole, 3 novembre, con
 le nostre modifiche) resta in fondo, non più aggiornata. Nel [visore 3D](visore3d.html)
 il pulsante **Versione** passa da una all'altra (si parte dalla v2).
@@ -45,7 +46,7 @@ let tavoleV2 = [
   ("Il prospetto", "il fronte di faccia, con tutte le misure: 2348 × 3176, tre pezzi da 1180, 978 e 1018"),
   ("Il cassone del letto", "visto da dietro: dentro 1934 × 1557, profondo 775; sopra, il listello sotto i vani alti"),
   ("I mobili senza il fronte", "vani alti, cassone con la libreria, mobili bassi"),
-  ("La libreria", "il pannello a L (775, braccio basso 580, striscia 158), due scaffali a passo 307, il taglio per i cavi"),
+  ("La libreria", "verso il letto il frontale del gavone (580) e la striscia sulla colonna (158), larghi insieme 775, due scaffali a passo 307, il taglio per i cavi"),
   ("I mobili bassi", "A con due ripiani (753), B con i gradini (336), C dei cassetti (500), D con l'appenderia (429)"),
   ("I tre vani alti", "scatole 674 × 444, dentro 636 × 406")]
 let cartellaV2 = $nb.doc.homeDir / "falegnami" / "v2"
@@ -82,15 +83,51 @@ nbCode:
   echo m2.parts.len, " parti, ", fmtNum(v2.larghezza), " × ", fmtNum(v2.altezza), " × ", fmtNum(v2.profondita), " cm"
 
 nbText: """
+### Le nostre richieste e la v2
+
+Le richieste finali che avevamo mandato dopo la chiamata, una per una, con quello che
+è diventato nella v2.
+
+| richiesta | nella v2 | |
+|---|---|---|
+| sponda del letto a 131/132 da terra, mantenendo un bordo dentro | 132: hanno abbassato i mobili bassi (102.8 invece di 109), dentro restano circa 10 sotto | ✓ |
+| moduli bassi quasi da terra, bordo stretto sopra e sotto e più largo ai lati | ante e primo gradino da 6 (prima 12), zoccolo 6.1; bordi 6 sotto, 6 sopra, 12 ai lati | ✓ |
+| fronte in 3 pezzi orizzontali, venatura orizzontale | 3 pezzi (118, 97.8, 101.8), orizzontale; ante basse verticali, cassetti e ribalte orizzontali | ✓ |
+| primo taglio appena sopra cassetti e scaletta | a 118, 17 sopra le ante | ✓ |
+| secondo taglio circa a metà della nicchia | a 215.8: la metà della nicchia è a 193, quindi 22.8 più su | ✗ da chiedere |
+| togliere la cornice piccola contro muri e soffitto | tolta: 1.5 di luce ai lati e in alto | ✓ |
+| nicchia 15 a sinistra e 52 a destra (dal fronte) | 15 e 52 | ✓ |
+| da dentro: circa 13 a sinistra, 12 a destra, 10 sotto, 9 sopra | 13.2 a sinistra (loro dicono 15), 12.4 a destra (loro 11), 9.4 sotto (loro 10), 6.3 sopra (loro 7) | ~ sopra più stretto |
+| nicchia più tonda | raggio 9 | ✓ |
+| testata 58, circa 39/40 sopra un materasso da 17/18 | 58 dal fondo della libreria, che sta 1.8 sotto il piano letto: sopra il materasso da 18 restano 38.2 | ~ |
+| pannello unico a L per testata e pilastro | no: due pannelli nello stesso piano, che coprono il bordo dei fianchi; la striscia sul pilastro (15.8) si sagoma sul posto | ✗ |
+| libreria: 3 ripiani fissi alti circa 31, i due sopra profondi 27 | piano del comodino e due scaffali a passo 30.7, scaffali 27 | ✓ |
+| sportelli in alto 68.3 × 36.6 o più alti | 67.3 × 45.6, la prima con la parte fissa da 16 | ✓ |
+| appendiabiti circa 40, allineato al bordo della nicchia | 39 dentro, anta 43.1; il bordo dell'anta è 3.1 a sinistra di quello della nicchia | ~ |
+| scaletta larga 30, profonda circa 17.5, gradini tutti alti uguali | 30, pedata 17, cinque gradini da 15.8 | ✓ |
+| cassetti circa 50, ripiani circa 70, spazi tutti uguali | cassetti 50.2, anta dei ripiani 75.5, spazi tutti 4 | ~ ripiani 75.5 |
+| scaletta tra il centro della nicchia e quello degli sportelli | centro scaletta a 106.5, tra 98.9 (nicchia) e 117.4 (sportello di mezzo) | ✓ |
+| piano letto forato o doghe? | piano pieno; per loro non serve, ma i fori si possono fare | da decidere |
+| materasso da 76.5 | il cassone dentro è profondo 77.5: entra | ✓ |
+| luce nella libreria (placca) e lampada sul pannello del pilastro | punto elettrico pronto al montaggio, il foro lo fanno sul posto; la lampada si avvita sul pannello | ✓ |
+
+**Ancora da decidere o da chiedere**: cassetti in frassino sbiancato o in betulla;
+fori nel piano letto; il secondo taglio a metà della nicchia; l'altezza del fronte
+(317.6, la stanza è 316: con 1.5 di luce in alto dovrebbe essere circa 314.5); se
+vogliamo l'anta dei ripiani più vicina a 70 e il bordo sopra la nicchia più largo.
+"""
+
+nbText: """
 ### Come è diviso (v2)
 
 - **Il fronte**: 234.8 × 317.6, in tre pezzi su tutta la larghezza, alti 118, 97.8 e
-  101.8 (dal basso). Ai lati il prospetto disegna due spalle larghe circa 10.5: con
-  loro il fronte arriverebbe a 255.8, ma la parete è 237. Le ho lasciate fuori (avevamo
-  detto niente cornice); nel visore si rimettono con **Cornice**.
+  101.8 (dal basso). Ai lati e in alto resta 1.5 di luce verso i muri: le due "spalle"
+  ai lati del prospetto sono i muri, non pezzi del mobile. La cornice attorno ai
+  frontali in basso è di 12 per lato, simmetrica. Venatura orizzontale nel fronte, nei
+  cassetti e nelle ribalte; verticale nelle due ante in basso.
 - **La nicchia**: 167.8 × 122, da 15 a sinistra a 52 da destra, da 132 a 254 da terra
-  (31 sopra le ante, 12 sotto le ribalte). Gli angoli sono molto più tondi di prima
-  (raggio 10, rilevato).
+  (31 sopra le ante, 12 sotto le ribalte), angoli con raggio 9. Visto da dentro il
+  bordo è di circa 10 sotto (sopra il materasso), 7 sopra, 11 a destra e 15 a sinistra.
 - **In basso**, da 6 a 101 da terra: anta A 75.5, cinque gradini 30 × 15.8 (spazi
   4), tre cassetti 50.2 × 29, anta D 43.1 (prima 50.2). Bordo ai lati 12, spazi 4.
 - **I mobili bassi**, alti 102.8 con lo zoccolo da 6.1: A 75.3 con due ripiani, B dei
@@ -98,9 +135,13 @@ nbText: """
   l'appenderia.
 - **Il cassone del letto**: dentro 193.4 × 155.7, profondo 77.5, appoggiato sui
   mobili bassi (piano letto a 104.6).
-- **La libreria**: alta 155.7, con il pannello a L largo 77.5: il braccio basso alto
-  58 (la testata: copre il gavone e il bordo del comodino), la striscia della risega
-  15.8. Due scaffali a passo 30.7; il taglio per il passaggio dei cavi nella schiena.
+- **La libreria**: alta 155.7. Verso il letto niente pannello unico a L, ma due pannelli
+  nello stesso piano, davanti ai bordi dei fianchi (il pannello vince sul fianco, che
+  così non si vede): il frontale del gavone alto 58 (la testata, fino alla cima del
+  comodino) e la striscia sulla colonna larga 15.8, alta quanto la libreria e sagomata
+  sul posto contro il muro. Due scaffali a passo 30.7; il taglio per il passaggio dei
+  cavi nella schiena. La presa con la placca: punto elettrico pronto al montaggio, il
+  foro lo fanno sul posto; la lampada si avvita sulla striscia.
 - **I vani alti**: tre scatole 67.4 × 44.4 (dentro 63.6 × 40.6) su un listello sopra il
   cassone; ribalte 67.3 × 45.6, 6 sotto la cima del fronte. Quella di sinistra ha
   ancora la parte fissa (16) per il condizionatore.
@@ -150,13 +191,13 @@ nbRawHtml: svgTavolaV2
 nbText: """
 ### Letture e ipotesi della v2
 
-- **Larghezza**: il fronte è 234.8 (2348 scritto, dal bordo sinistro al bordo destro
-  del pannello), 1.1 per lato meno della parete. Le spalle disegnate ai lati sono
-  larghe circa 10.5 (rilevato): con loro non ci sta. Da chiedere ai falegnami.
-- **Altezza**: 1180 + 978 + 1018 = 317.6, la stanza è 316. Meglio di prima (319.6),
-  ma ancora 1.6 di troppo: da chiedere.
+- **Larghezza**: il fronte è 234.8 (2348 scritto), con 1.5 di luce per lato verso i
+  muri: torna con la parete da 237 (confermato dai falegnami).
+- **Altezza**: 1180 + 978 + 1018 = 317.6, la stanza è 316. Con 1.5 di luce in alto il
+  fronte dovrebbe essere alto circa 314.5: da chiedere.
 - **1557 del cassone**: lo leggo dentro (dal piano letto al sotto del cielo), così il
-  cielo finisce a 262.1. La libreria, sulla sua tavola, è alta 155.7 fuori (finisce
+  cielo finisce a 262.1 e sopra la nicchia restano 6.3 di bordo visto da dentro (i
+  falegnami dicono circa 7: torna). La libreria, sulla sua tavola, è alta 155.7 fuori (finisce
   a 258.5).
 - **Listello sotto i vani alti**: le ribalte vanno da 266 a 311.6 (6 sotto la cima del
   fronte) e le aperture, sulla tavola di destra, da 269 a 309.6: le scatole stanno
@@ -166,13 +207,19 @@ nbText: """
   mobile D, e a destra restano 12 cm senza niente sotto (come prima, non è un problema).
 - **Il "200" sotto i gradini** si legge male: in scala le aperture sono larghe 30, come
   il mobile B dentro (336 − 2 × 18).
-- **Gradini**: sul mobile B 190 in cima e 170 sui gradini: li leggo come profondità
-  (gradini da 17, con la schiena 17.8).
-- **Comodino**: con il cassone da 193.4 e il pannello a L, la libreria dentro è larga
+- **Gradini**: pedata utile 17 (confermato), con la schiena 17.8; il mobile dei
+  gradini è stato allargato e l'appendiabiti stretto a 39 dentro.
+- **Comodino**: con il cassone da 193.4 e il pannello sulla colonna, la libreria dentro è larga
   35.8 (sulla tavola 370 fuori).
 - **Profondità**: come la v1, 77.5 i mobili, 81.1 con fronte e ante davanti; il mobile D
   e il vano alto sopra la risega 62.2 (non sono scritti nella v2: tenuti dalla v1).
 - **Il taglio per i cavi** nella schiena della libreria non è disegnato nel modello.
+
+**Da decidere** (domande dei falegnami):
+
+- i cassetti in frassino sbiancato (come visto in laboratorio) o in betulla come fuori;
+- se fare dei fori nel piano letto (per loro non servono: i materassi nuovi non chiedono
+  aerazione particolare).
 """
 
 nbText: """

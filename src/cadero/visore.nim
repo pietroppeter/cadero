@@ -1317,10 +1317,10 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
     let fal = variante == "falegnami"
     tAntina.nascosto(variante != "tavolino")
     for b in [tRisega, tPrese]: b.nascosto(fal)
-    # la v2 ha già dentro le modifiche e il suo taglio: resta solo "Cornice" (le spalle)
+    # la v2 ha già dentro le modifiche e il suo taglio (niente spalle: ai lati ci sono i muri)
     if conV2:
       el("g-modifiche").nascosto(not fal or v2())
-      for id in ["f-croce", "f-tre"]: el(id).nascosto(v2())
+      el("g-taglio").nascosto(not fal or v2())
   pulsanti()
   # le misure regolate a mano (le larghezze della zona bassa): un pannello che si
   # apre con il suo pulsante, una riga per misura con − e + e il numero
@@ -1416,7 +1416,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
     let fal = variante == "falegnami"
     var chiave = "falegnami"
     if fal and v2():
-      chiave = "falegnamiV2" & (if premuto(tCornice): "Cornice" else: "")
+      chiave = "falegnamiV2"
     elif fal:
       for (id, nome) in modifiche:
         if premuto(el(id)): chiave.add nome
