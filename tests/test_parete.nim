@@ -443,8 +443,9 @@ suite "falegnami, versione 2 (16 novembre)":
     check near(v.fondoVani + v.sMel, v.zRibalte + v.sormonto)
     check near(v.fondoVani + v.vanoH - v.sMel, v.zRibalte + v.ribaltaH - v.sormonto)
     # libreria: la L con il braccio basso a 58 dal fondo, scaffali a passo 30.7
-    check near(v.pianoComodino - v.hBassi, 58)
-    check abs(v.zScaffali[0] - v.pianoComodino - 30.7) < 0.1
+    check near(v.pianoComodino - v.hBassi, 58 + 1.8) and near(v.schienale, 40)
+    check abs(v.zScaffali[0] - v.pianoComodino - 31.4) < 0.1
+    check near(v.cieloNicchia - (v.nicchiaZ + v.nicchiaH), 6.3)
   test "libreria: pannello colonna e frontale del gavone nello stesso piano, fino al cassone":
     let c = m.find("pannello colonna")
     let g = m.find("frontale gavone")
