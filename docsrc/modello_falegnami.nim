@@ -11,21 +11,241 @@ nb.title = "Il modello dei falegnami"
 nbText: """
 # Il modello dei falegnami
 
-I falegnami hanno mandato sette tavole SketchUp della parete. È la stessa stanza
-e la stessa idea della [nostra parete](parete_nicchia.html), ma divisa nei mobili
-che costruiranno davvero, con molto dettaglio in più. Qui è ridisegnata da codice
-in `models/falegnami.nim`, accanto alla nostra, che resta com'è. Nel
-[visore 3D](visore3d.html) è il modello di default (la nostra idea ha il suo
-[Visore 3D - Idea](visore3d_idea.html)); il pulsante **Pannello estraibile**
-toglie il pannellino tra i gradini (senza, i gradini si ridistribuiscono).
+**Due versioni.** La **v2** (16 novembre, il PDF "mobile letto") è quella di
+riferimento e viene per prima; la **v1** (le prime tavole del 3 novembre) resta
+in fondo, segnata v1, non più aggiornata.
+
+È la stessa stanza e la stessa idea della [nostra parete](parete_nicchia.html),
+ma divisa nei mobili che i falegnami costruiranno davvero, con molto dettaglio in più.
+Qui è ridisegnata da codice in `models/falegnami.nim` (`falegnamiV2()` e
+`falegnami()`), accanto alla nostra, che resta com'è. Nel [visore 3D](visore3d.html)
+è il modello di default, con il pulsante **Versione** (v1 / v2); la nostra idea ha il
+suo [Visore 3D - Idea](visore3d_idea.html).
 
 Le loro misure sono in mm, qui in cm. Quelle scritte sulle tavole sono riportate
 così come sono; quelle che mancano le ho misurate in scala sul prospetto
-(rilevate) o ipotizzate: sono elencate in fondo.
+(rilevate) o ipotizzate: sono elencate nelle letture e ipotesi di ogni versione.
 """
 
 nbText: """
-## Le tavole dei falegnami
+## v2 · Il progetto aggiornato (16 novembre)
+
+Il progetto aggiornato del 16 novembre, un PDF di sette tavole ("mobile letto").
+**Questa è la versione di riferimento.** Contiene quasi tutte le decisioni prese
+dopo la v1: il fronte in tre pezzi
+orizzontali, la nicchia più aperta (15 da sinistra, 52 da destra), la testata alta,
+niente pannellino tra i gradini, niente cornice nel fronte. Il pannello a L invece
+no: sono due pannelli (vedi sotto). Le
+misure nuove sono qui sotto; la [versione 1](#v1) (le prime tavole, 3 novembre, con
+le nostre modifiche) resta in fondo, non più aggiornata. Nel [visore 3D](visore3d.html)
+il pulsante **Versione** passa da una all'altra (si parte dalla v2).
+"""
+
+let tavoleV2 = [
+  ("Il fronte, chiuso e aperto", "in prospettiva: a sinistra ante, cassetti e ribalte, a destra senza (si vedono i vani)"),
+  ("Il prospetto", "il fronte di faccia, con tutte le misure: 2348 × 3176, tre pezzi da 1180, 978 e 1018"),
+  ("Il cassone del letto", "visto da dietro: dentro 1934 × 1557, profondo 775; sopra, il listello sotto i vani alti"),
+  ("I mobili senza il fronte", "vani alti, cassone con la libreria, mobili bassi"),
+  ("La libreria", "verso il letto il frontale del gavone (580) e la striscia sulla colonna (158), larghi insieme 775, due scaffali a passo 307, il taglio per i cavi"),
+  ("I mobili bassi", "A con due ripiani (753), B con i gradini (336), C dei cassetti (500), D con l'appenderia (429)"),
+  ("I tre vani alti", "scatole 674 × 444, dentro 636 × 406")]
+let cartellaV2 = $nb.doc.homeDir / "falegnami" / "v2"
+createDir(cartellaV2)
+var schedeV2 = ""
+for i, (titolo, nota) in tavoleV2:
+  let f = "tavola-" & $(i + 1) & ".jpg"
+  copyFile(currentSourcePath().parentDir / "falegnami" / "v2" / f, cartellaV2 / f)
+  schedeV2.add "<figure><a href=\"falegnami/v2/" & f & "\" target=\"_blank\" draggable=\"false\"><img src=\"falegnami/v2/" & f &
+    "\" alt=\"" & titolo & "\" loading=\"lazy\" draggable=\"false\"></a><figcaption><b>" & $(i + 1) & ". " &
+    titolo & "</b><span>" & nota & "</span></figcaption></figure>\n"
+
+nbText: """
+### Le tavole della v2
+
+Si scorrono di lato (dito, rotella, frecce); toccandone una si apre a tutta grandezza.
+"""
+
+# la galleria prende stile e comportamento dal blocco della v1, più sotto
+nbRawHtml: """
+<div class="galleria">
+  <div class="striscia" tabindex="0" aria-label="Le sette tavole della versione 2">
+""" & schedeV2 & """
+  </div>
+  <button class="freccia indietro" type="button" aria-label="Tavola precedente">‹</button>
+  <button class="freccia avanti" type="button" aria-label="Tavola successiva">›</button>
+</div>
+"""
+
+nbCode:
+  import cadero, falegnami
+  let v2 = falegnamiV2()
+  let m2 = modello(v2)
+  echo m2.parts.len, " parti, ", fmtNum(v2.larghezza), " × ", fmtNum(v2.altezza), " × ", fmtNum(v2.profondita), " cm"
+
+nbText: """
+### Le decisioni e la v2
+
+Le decisioni prese dopo la v1, una per una, e come risultano nella v2.
+
+| decisione | nella v2 | |
+|---|---|---|
+| sponda del letto a 131/132 da terra, mantenendo un bordo dentro | 132: mobili bassi abbassati (102.8 invece di 109), dentro restano circa 10 sotto | ✓ |
+| moduli bassi quasi da terra, bordo stretto sopra e sotto e più largo ai lati | ante e primo gradino da 6 (prima 12), zoccolo 6.1; bordi 6 sotto, 6 sopra, 12 ai lati | ✓ |
+| fronte in 3 pezzi orizzontali, venatura orizzontale | 3 pezzi (118, 97.8, 101.8), orizzontale; ante basse verticali, cassetti e ribalte orizzontali | ✓ |
+| primo taglio appena sopra cassetti e scaletta | a 118, 17 sopra le ante | ✓ |
+| secondo taglio circa a metà della nicchia | a 215.8: la metà della nicchia è a 193, quindi 22.8 più su | ✗ da verificare |
+| togliere la cornice piccola contro muri e soffitto | tolta: 1.5 di luce ai lati e in alto | ✓ |
+| nicchia 15 a sinistra e 52 a destra (dal fronte) | 15 e 52 | ✓ |
+| da dentro: circa 13 a sinistra, 12 a destra, 10 sotto, 9 sopra | 13.2 a sinistra, 12.4 a destra, 9.4 sotto, 6.3 sopra (dal modello) | ~ sopra più stretto |
+| nicchia più tonda | raggio 9 | ✓ |
+| testata 58, circa 39/40 sopra un materasso da 17/18 | 58 dal fondo della libreria, che sta 1.8 sotto il piano letto: sopra il materasso da 18 restano 38.2 | ~ |
+| pannello unico a L per testata e pilastro | no: due pannelli nello stesso piano, che coprono il bordo dei fianchi; la striscia sul pilastro (15.8) si sagoma sul posto | ✗ |
+| libreria: 3 ripiani fissi alti circa 31, i due sopra profondi 27 | piano del comodino e due scaffali a passo 30.7, scaffali 27 | ✓ |
+| sportelli in alto 68.3 × 36.6 o più alti | 67.3 × 45.6, la prima con la parte fissa da 16 | ✓ |
+| appendiabiti circa 40, allineato al bordo della nicchia | 39 dentro, anta 43.1; il bordo dell'anta è 3.1 a sinistra di quello della nicchia | ~ |
+| scaletta larga 30, profonda circa 17.5, gradini tutti alti uguali | 30, pedata 17, cinque gradini da 15.8 | ✓ |
+| cassetti circa 50, ripiani circa 70, spazi tutti uguali | cassetti 50.2, anta dei ripiani 75.5, spazi tutti 4 | ~ ripiani 75.5 |
+| scaletta tra il centro della nicchia e quello degli sportelli | centro scaletta a 106.5, tra 98.9 (nicchia) e 117.4 (sportello di mezzo) | ✓ |
+| piano letto forato o doghe? | piano pieno; i fori si possono aggiungere | da decidere |
+| materasso da 76.5 | il cassone dentro è profondo 77.5: entra | ✓ |
+| luce nella libreria (placca) e lampada sul pannello del pilastro | punto elettrico pronto al montaggio, il foro lo fanno sul posto; la lampada si avvita sul pannello | ✓ |
+
+**Ancora da decidere o da verificare**: cassetti in frassino sbiancato o in betulla;
+fori nel piano letto; il secondo taglio a metà della nicchia; l'altezza del fronte
+(317.6, la stanza è 316: con 1.5 di luce in alto dovrebbe essere circa 314.5); se
+vogliamo l'anta dei ripiani più vicina a 70 e il bordo sopra la nicchia più largo.
+"""
+
+nbText: """
+### Come è diviso (v2)
+
+- **Il fronte**: 234.8 × 317.6, in tre pezzi su tutta la larghezza, alti 118, 97.8 e
+  101.8 (dal basso). Ai lati e in alto resta 1.5 di luce verso i muri: le due "spalle"
+  ai lati del prospetto sono i muri, non pezzi del mobile. La cornice attorno ai
+  frontali in basso è di 12 per lato, simmetrica. Venatura orizzontale nel fronte, nei
+  cassetti e nelle ribalte; verticale nelle due ante in basso.
+- **La nicchia**: 167.8 × 122, da 15 a sinistra a 52 da destra, da 132 a 254 da terra
+  (31 sopra le ante, 12 sotto le ribalte), angoli con raggio 9. Visto da dentro il
+  bordo è di circa 10 sotto (sopra il materasso), 7 sopra, 11 a destra e 15 a sinistra.
+- **In basso**, da 6 a 101 da terra: anta A 75.5, cinque gradini 30 × 15.8 (spazi
+  4), tre cassetti 50.2 × 29, anta D 43.1 (prima 50.2). Bordo ai lati 12, spazi 4.
+- **I mobili bassi**, alti 102.8 con lo zoccolo da 6.1: A 75.3 con due ripiani, B dei
+  gradini 33.6 (dentro 30, gradini profondi 17), C 50 con tre cassetti, D 42.9 con
+  l'appenderia.
+- **Il cassone del letto**: dentro 193.4 × 155.7, profondo 77.5, appoggiato sui
+  mobili bassi (piano letto a 104.6).
+- **La libreria**: alta 155.7. Verso il letto niente pannello unico a L, ma due pannelli
+  nello stesso piano, davanti ai bordi dei fianchi (il pannello vince sul fianco, che
+  così non si vede): il frontale del gavone alto 58 (la testata, fino alla cima del
+  comodino) e la striscia sulla colonna larga 15.8, alta quanto la libreria e sagomata
+  sul posto contro il muro. Due scaffali a passo 30.7; il taglio per il passaggio dei
+  cavi nella schiena. La presa con la placca: punto elettrico pronto al montaggio, il
+  foro lo fanno sul posto; la lampada si avvita sulla striscia.
+- **I vani alti**: tre scatole 67.4 × 44.4 (dentro 63.6 × 40.6) su un listello sopra il
+  cassone; ribalte 67.3 × 45.6, 6 sotto la cima del fronte. Quella di sinistra ha
+  ancora la parte fissa (16) per il condizionatore.
+"""
+
+block:
+  let v1 = falegnami().conModifiche(false, true, false, false).conPannelloAL.nicchiaAperta
+             .conTaglio(tTre).conLarghezzeBasse(larghezzeNuove)
+  let righe = @[
+    ("fronte: larghezza", v1.larghezza, v2.larghezza),
+    ("fronte: altezza", v1.altezza, v2.altezza),
+    ("pezzi del fronte: taglio basso", v1.zTaglioTre, v2.tagliTre[0]),
+    ("mobili bassi: altezza", v1.hBassi, v2.hBassi),
+    ("mobili bassi: zoccolo", v1.zoccolo, v2.zoccolo),
+    ("ante in basso: da terra", v1.zBassi, v2.zBassi),
+    ("piano letto da terra", v1.pianoLetto, v2.pianoLetto),
+    ("cassone: larghezza dentro", v1.interno, v2.interno),
+    ("cassone: cielo (sotto) da terra", v1.cieloNicchia, v2.cieloNicchia),
+    ("nicchia: larghezza", v1.nicchiaL, v2.nicchiaL),
+    ("nicchia: altezza", v1.nicchiaH, v2.nicchiaH),
+    ("nicchia: bordo basso da terra", v1.nicchiaZ, v2.nicchiaZ),
+    ("nicchia: sopra il materasso", v1.bordo, v2.bordo),
+    ("testata sopra il materasso", v1.schienale, v2.schienale),
+    ("libreria: altezza", v1.hLibreria, v2.hLibreria),
+    ("anta A", v1.antaA, v2.antaA),
+    ("gradini: larghezza", v1.aperturaGradini, v2.aperturaGradini),
+    ("cassetti", v1.cassetti, v2.cassetti),
+    ("anta D", v1.antaD, v2.antaD),
+    ("vani alti: fondo da terra", v1.fondoVani, v2.fondoVani),
+    ("vani alti: scatola", v1.vanoH, v2.vanoH),
+    ("ribalte: larghezza", v1.ribaltaL, v2.ribaltaL),
+    ("ribalte: altezza", v1.ribaltaH, v2.ribaltaH),
+    ("ribalte: da terra", v1.zRibalte, v2.zRibalte)]
+  var t = "### Cosa cambia dalla v1\n\nLa v1 è quella del visore di prima (3 orizzontali, " &
+    "testata alta, pannello a L, nicchia, larghezze nuove in basso).\n\n" &
+    "| misura | v1 | v2 |\n|---|---:|---:|\n"
+  for (nome, a, b) in righe:
+    let x = if abs(a - b) > 0.05: "**" & fmtNum(b) & "**" else: fmtNum(b)
+    t.add "| " & nome & " | " & fmtNum(a) & " | " & x & " |\n"
+  nbText(t)
+
+nbText: "### La tavola (v2)"
+nbCode:
+  let svgTavolaV2 = tavola(v2, m2)
+nbRawHtml: svgTavolaV2
+
+nbText: """
+### Letture e ipotesi della v2
+
+- **Larghezza**: il fronte è 234.8 (2348 scritto), con 1.5 di luce per lato verso i
+  muri: torna con la parete da 237.
+- **Altezza**: 1180 + 978 + 1018 = 317.6, la stanza è 316. Con 1.5 di luce in alto il
+  fronte dovrebbe essere alto circa 314.5: da verificare.
+- **1557 del cassone**: lo leggo dentro (dal piano letto al sotto del cielo), così il
+  cielo finisce a 262.1 e sopra la nicchia restano 6.3 di bordo visto da dentro (i
+  circa 7: torna). La libreria, sulla sua tavola, è alta 155.7 fuori (finisce
+  a 258.5).
+- **Listello sotto i vani alti**: le ribalte vanno da 266 a 311.6 (6 sotto la cima del
+  fronte) e le aperture, sulla tavola di destra, da 269 a 309.6: le scatole stanno
+  quindi da 267.1 a 311.5. Tra il cielo del cassone (262.1) e le scatole restano 5:
+  è il listello che si vede nella tavola 3 (dedotto; in scala sembra circa 6).
+- **Anta D 431** (prima 502) e mobile D 42.9: la libreria sopra appoggia ancora sul
+  mobile D, e a destra restano 12 cm senza niente sotto (come prima, non è un problema).
+- **Il "200" sotto i gradini** si legge male: in scala le aperture sono larghe 30, come
+  il mobile B dentro (336 − 2 × 18).
+- **Gradini**: pedata utile 17, con la schiena 17.8; il mobile dei
+  gradini è stato allargato e l'appendiabiti stretto a 39 dentro.
+- **Comodino**: con il cassone da 193.4 e il pannello sulla colonna, la libreria dentro è larga
+  35.8 (sulla tavola 370 fuori).
+- **Profondità**: come la v1, 77.5 i mobili, 81.1 con fronte e ante davanti; il mobile D
+  e il vano alto sopra la risega 62.2 (non sono scritti nella v2: tenuti dalla v1).
+- **Il taglio per i cavi** nella schiena della libreria non è disegnato nel modello.
+
+**Da decidere**:
+
+- i cassetti in frassino sbiancato (come visto in laboratorio) o in betulla come fuori;
+- se fare dei fori nel piano letto (i materassi nuovi non chiedono aerazione
+  particolare).
+"""
+
+nbText: """
+### Cose che non tornano (v2)
+
+Dai controlli del modello:
+"""
+nbCode:
+  for c in controlli(v2, m2): echo "- ", c
+
+nbText: """
+### Distinta (v2)
+"""
+nbCode:
+  for r in bom(m2):
+    if r.kind in {kPanel, kFront, kBox}:
+      echo $r.count & " × " & fmtNum(r.dims[0]) & " × " & fmtNum(r.dims[1]) & " × " &
+        fmtNum(r.dims[2]) & "  " & r.name
+
+nbRawHtml: """<h2 id="v1">v1 · Le prime tavole (3 novembre), non più aggiornata</h2>
+<p><strong>Da qui in giù è la versione 1</strong>: le sette tavole SketchUp del 3 novembre,
+il modello che ne abbiamo ricavato e le modifiche che avevamo chiesto. È superata dalla v2
+qui sopra; resta per confronto (nel visore: pulsante <b>v1</b>).</p>
+"""
+
+nbText: """
+## v1 · Le tavole dei falegnami
 
 Le sette tavole come le hanno mandate, una accanto all'altra: si scorrono di lato
 con il dito, con la rotella o trascinando, oppure con le frecce. Toccandone una si
@@ -128,7 +348,7 @@ document.querySelectorAll('.galleria').forEach(attivaGalleria);
 """
 
 nbText: """
-## Le tavole rifatte dal nostro modello
+## v1 · Le tavole rifatte dal nostro modello
 
 Le stesse sette tavole, disegnate dal modello qui sotto, in proiezione e con le
 stesse quote: servono a vedere se ci siamo persi dei pezzi e se le misure tornano.
@@ -186,7 +406,7 @@ nbCode:
   echo m.parts.len, " parti, ", fmtNum(f.larghezza), " × ", fmtNum(f.altezza), " × ", fmtNum(f.profondita), " cm"
 
 nbText: """
-## Come è diviso
+## v1 · Come è diviso
 
 - **Il fronte**: quattro pannelli da 112.5 × 156.8, una fascia alta 6 in cima e due
   spalle larghe 5.9 contro i muri. La nicchia e il vano alto di mezzo passano da
@@ -217,7 +437,7 @@ dentro), le parti color legno come multistrato da 18 (la libreria: 635 fuori,
 599 dentro). Nel visore il melaminico è grigio.
 """
 
-nbText: "## La tavola"
+nbText: "## v1 · La tavola"
 nbCode:
   let svgTavola = tavola(f, m)
 nbRawHtml: svgTavola
@@ -239,7 +459,7 @@ nbCode:
 nbRawHtml: foglio.render()
 
 nbText: """
-## L'altezza della nicchia, dalla base del letto
+## v1 · L'altezza della nicchia, dalla base del letto
 
 Sulle tavole non c'è una quota della nicchia misurata dal letto: va calcolata
 sommando le altezze dei mobili. I mobili bassi sono alti 109, il piano del
@@ -291,7 +511,7 @@ nbCode:
 nbRawHtml: "<div class=\"disegno-nicchia\">" & svgNicchia & "</div>"
 
 nbText: """
-## Confronto con la nostra parete
+## v1 · Confronto con la nostra parete
 
 Le stesse misure nei due modelli (la nostra con i parametri di oggi).
 """
@@ -329,7 +549,7 @@ deciso 58), il fronte più alto della stanza, le ribalte più basse e le ante in
 basso più larghe e su uno zoccolo più alto. La nicchia dentro è più bassa (150
 contro 159), ma l'apertura è quasi uguale.
 
-## Cose che non tornano
+## v1 · Cose che non tornano
 
 Dai controlli del modello:
 """
@@ -338,7 +558,7 @@ nbCode:
   for c in controlli(f, m): echo "- ", c
 
 nbText: """
-## Letture e ipotesi da verificare
+## v1 · Letture e ipotesi da verificare
 
 - **Altezza**: 60 + 1568 + 1568 fa 319.6, la stanza è 316. Forse hanno rimisurato;
   da chiedere.
@@ -376,7 +596,7 @@ nbText: """
   mobili (11.8), raggi (nicchia 5, aperture 3, frontali 2), fori maniglia (3) a 6
   cm dagli spigoli.
 
-## Distinta
+## v1 · Distinta
 """
 
 nbCode:
@@ -386,7 +606,7 @@ nbCode:
         fmtNum(r.dims[2]) & "  " & r.name
 
 nbText: """
-## Le modifiche che vorremmo
+## v1 · Le modifiche che vorremmo
 
 Rispetto al loro disegno torna più o meno tutto, ma alcune cose le vorremmo fatte
 in modo diverso. La prima è già decisa: non vogliamo il pannellino estraibile.
@@ -435,7 +655,7 @@ nbCode:
     echo nome.alignLeft(42), a.align(14), b.align(14), c.align(14)
 
 nbText: """
-### 1 e 2: testata e pannello della risega
+### v1 · 1 e 2: testata e pannello della risega
 
 - **Testata**: il frontale del gavone, verso il letto, sale a 58 e il piano del
   comodino va a 168.8 da terra (41 sopra il materasso, come nella nostra parete).
@@ -460,7 +680,7 @@ nbCode:
 nbRawHtml: svgRivisto
 
 nbText: """
-### 3: aprire di più i vani alti
+### v1 · 3: aprire di più i vani alti
 
 Oggi l'apertura è alta 32.6: la ribalta è alta 36.6 e copre l'apertura di 2 cm sopra
 e 2 sotto. Una scatola IKEA DRÖNA, quella dei Kallax, è larga 33, profonda 38 e
@@ -522,7 +742,7 @@ nbCode:
   for r in controlli(fv, modello(fv)): echo "- ", r
 
 nbText: """
-## Il pannello a L, in testa al letto
+## v1 · Il pannello a L, in testa al letto
 
 Una proposta da fare ai falegnami: il frontale del gavone (la testata, verso il letto)
 e il pannello che copre la risega diventano **un solo pannello a L**, dove oggi c'è il
@@ -543,7 +763,7 @@ nbCode:
   for r in controlli(fl, modello(fl)): echo "- ", r
 
 nbText: """
-## La nicchia, con le misure decise
+## v1 · La nicchia, con le misure decise
 
 Con i falegnami abbiamo deciso una nicchia più larga, e che vista da dietro il fronte
 sporga un po' su tutti i lati. L'apertura comincia 15 dal muro di sinistra e finisce 50
@@ -558,7 +778,7 @@ nbCode:
     fmtNum(fn.nicchiaZ + fn.nicchiaH), " da terra"
 
 nbText: """
-## La presa dietro la libreria
+## v1 · La presa dietro la libreria
 
 Abbiamo deciso di portare la corrente dietro la libreria: una traccia e una scatola nel
 muro (3 moduli), e la presa che esce dalla schiena della libreria. Guardando il comodino
@@ -574,7 +794,7 @@ nbCode:
       fmtNum(g.centroPresa.z), " da terra"
 
 nbText: """
-## Il taglio del pannello frontale, in multistrato di betulla
+## v1 · Il taglio del pannello frontale, in multistrato di betulla
 
 Il pannello frontale è largo 236.8 e alto 319.6: non sta in una lastra di
 multistrato (300 × 150, ipotesi: il formato grande più comune), va diviso. Due modi,

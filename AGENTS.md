@@ -113,6 +113,15 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   "Larghezze in basso" apre un pannello (`Regolazione`, −5/+5 e numero): `avviaVisore` riceve le
   regolazioni e una proc `ricalcola` (modello, nota, tavola) e, se le misure non sono quelle di
   partenza, calcola il modello e la tavola nel browser (tavola con `data-chiave="regolata"`).
+- Due versioni dei falegnami (Pietro, 16 novembre): `falegnamiV2()` (il PDF "mobile letto",
+  7 tavole in `docsrc/falegnami/v2/`, la versione di riferimento) e `falegnami()` (la v1, le
+  tavole del 3 novembre). La v2 è la stessa `Falegnami` con altre misure (`versione = 2`): fronte
+  234.8 × 317.6 in 3 pezzi (`tagliTre`), 1.5 di luce verso i muri (niente spalle), listello sotto i
+  vani alti (`rialzoVani`), niente L ma due pannelli nello stesso piano (`pannelliLibreria`:
+  "pannello colonna" e "frontale gavone"). Chiave del visore `chiaveV2` ("falegnamiV2"). Nel
+  visore il gruppo "Versione" (v1 / v2, si parte dalla v2): nella v2 restano nascosti modifiche,
+  taglio, cornice e larghezze in basso. Nel documento la v2 viene prima; tutto quello
+  della v1 ha i titoli "v1 · ...". Le novità vanno nella v2.
 - `Model.guide`: linee guida verticali sul fronte (le x). Il pulsante "Guide nicchia" le disegna
   tratteggiate su tutta l'altezza; i falegnami mettono bordo sinistro, centro e bordo destro della nicchia.
 - Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e

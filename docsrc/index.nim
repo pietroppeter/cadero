@@ -24,12 +24,14 @@ nbRawHtml: """
     <b>Il modello dei falegnami</b>
     <span>La parete come l'hanno disegnata i falegnami, divisa nei mobili da
     costruire: tavola, calcoli della nicchia, confronto con la nostra, cose da
-    chiedere e distinta. È il modello del visore 3D.</span>
+    chiedere e distinta. Due versioni: la v2 (16 novembre, di riferimento) e la
+    v1 (3 novembre). È il modello del visore 3D.</span>
   </a>
   <a class="scheda" href="visore3d.html">
     <b>Visore 3D</b>
     <span>La parete dei falegnami a tutto schermo da ruotare e zoomare, con le
-    parti che si aprono toccandole, esploso e la tavola.</span>
+    parti che si aprono toccandole, esploso e la tavola; si passa dalla v2 alla v1
+    con il pulsante Versione.</span>
   </a>
   <a class="scheda" href="visore3d_idea.html">
     <b>Visore 3D - Idea</b>

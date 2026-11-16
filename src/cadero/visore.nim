@@ -1296,6 +1296,15 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
                    ("p-nicchia", "Nicchia")]
   el("g-modifiche").nascosto(not falegnami)
   el("g-taglio").nascosto(not falegnami)
+  # la versione del modello dei falegnami (16 novembre): v1 (le tavole del 3 novembre,
+  # con le nostre modifiche) o v2 (il PDF nuovo, il default); il gruppo compare solo
+  # se la pagina ha anche la v2 ("falegnamiV2")
+  let conV2 = "falegnamiV2" in modelli
+  let tV1 = el("ver-1")
+  let tV2 = el("ver-2")
+  let gVersione = el("g-versione")
+  if gVersione != nil: gVersione.nascosto(not (falegnami and conV2))
+  proc v2(): bool = conV2 and tV2 != nil and premuto(tV2)
   # il taglio del pannello frontale dei falegnami: "" a croce, "Tre" in 3 orizzontali;
   # "Cornice" (pulsante) rimette le due spalle ai lati
   var taglio = if premuto(el("f-tre")): "Tre" else: ""
@@ -1304,10 +1313,14 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
   # il pulsante di un modello compare solo se la pagina ha anche l'altro
   for n in ["base", "tavolino"]: el("m-" & n).nascosto(not idea)
   el("m-falegnami").nascosto(not (idea and falegnami))
-  proc pulsanti() =
+  var pulsanti: proc () = proc () =
     let fal = variante == "falegnami"
     tAntina.nascosto(variante != "tavolino")
     for b in [tRisega, tPrese]: b.nascosto(fal)
+    # la v2 ha già dentro le modifiche e il suo taglio (niente spalle: ai lati ci sono i muri)
+    if conV2:
+      el("g-modifiche").nascosto(not fal or v2())
+      el("g-taglio").nascosto(not fal or v2())
   pulsanti()
   # le misure regolate a mano (le larghezze della zona bassa): un pannello che si
   # apre con il suo pulsante, una riga per misura con − e + e il numero
@@ -1318,6 +1331,14 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
   # (una pagina senza il pannello, come quella dei parametri, non ha niente da regolare)
   let conRegola = tRegola != nil and regola != nil and regolazioni.len > 0 and ricalcola != nil
   if tRegola != nil: tRegola.nascosto(not conRegola or not falegnami)
+  if tRegola != nil and regola != nil and conV2:
+    # le larghezze in basso si regolano solo nella v1
+    let pulsantiPrima = pulsanti
+    pulsanti = proc () =
+      pulsantiPrima()
+      tRegola.nascosto(not conRegola or not falegnami or v2())
+      if v2(): regola.nascosto(true)
+      elif premuto(tRegola): regola.nascosto(false)
   proc regolate(): bool =
     if ricalcola == nil: return false
     for i, r in regolazioni:
@@ -1394,7 +1415,9 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
     pulsanti()
     let fal = variante == "falegnami"
     var chiave = "falegnami"
-    if fal:
+    if fal and v2():
+      chiave = "falegnamiV2"
+    elif fal:
       for (id, nome) in modifiche:
         if premuto(el(id)): chiave.add nome
       chiave.add taglio
@@ -1405,7 +1428,7 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
                    (if variante == "tavolino" and premuto(tAntina): "Antina" else: "") &
                    (if premuto(tPrese): "Comodino" else: "")
     var nota = ""
-    if regolate() and fal:
+    if regolate() and fal and not v2():
       # le misure scelte a mano: il modello si calcola adesso, con la sua tavola
       let r = ricalcola(chiave, valori)
       modello = preparato(r.modello)
@@ -1436,6 +1459,12 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
         taglio = t
         for (b, _) in tagli: el(b).premi(b == id)
         cambiaModello())
+  if conV2 and tV1 != nil and tV2 != nil:
+    for (b, altro) in [(tV1, tV2), (tV2, tV1)]:
+      closureScope:   # ogni giro ha le sue variabili
+        let (b, altro) = (b, altro)
+        b.addEventListener("click", proc (ev: Event) =
+          b.premi(true); altro.premi(false); cambiaModello())
   for name in ["base", "tavolino", "falegnami"]:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let name = name
