@@ -96,7 +96,7 @@ Le decisioni prese dopo la v1, una per una, e come risultano nella v2.
 | secondo taglio circa a metà della nicchia | a 215.8: la metà della nicchia è a 193, quindi 22.8 più su | ✗ da verificare |
 | togliere la cornice piccola contro muri e soffitto | tolta: 1.5 di luce ai lati e in alto | ✓ |
 | nicchia 15 a sinistra e 52 a destra (dal fronte) | 15 e 52 | ✓ |
-| da dentro: circa 13 a sinistra, 12 a destra, 10 sotto, 9 sopra | 13.2 a sinistra, 12.4 a destra, 9.4 sotto, 6.3 sopra (dal modello) | ~ sopra più stretto |
+| da dentro: circa 13 a sinistra, 12 a destra, 10 sotto, 9 sopra | 13.2 a sinistra, 12.4 a destra, 9.4 sotto, 2.7 sopra (dal modello) | ~ sopra più stretto |
 | nicchia più tonda | raggio 9 | ✓ |
 | testata 58, circa 39/40 sopra un materasso da 17/18 | 58 dal fondo della libreria, che sta 1.8 sotto il piano letto: sopra il materasso da 18 restano 38.2 | ~ |
 | pannello unico a L per testata e pilastro | no: due pannelli nello stesso piano, che coprono il bordo dei fianchi; la striscia sul pilastro (15.8) si sagoma sul posto | ✗ |
@@ -132,7 +132,7 @@ nbText: """
 - **I mobili bassi**, alti 102.8 con lo zoccolo da 6.1: A 75.3 con due ripiani, B dei
   gradini 33.6 (dentro 30, gradini profondi 17), C 50 con tre cassetti, D 42.9 con
   l'appenderia.
-- **Il cassone del letto**: dentro 193.4 × 155.7, profondo 77.5, appoggiato sui
+- **Il cassone del letto**: largo dentro 193.4, alto 155.7 fuori come la libreria, profondo 77.5, appoggiato sui
   mobili bassi (piano letto a 104.6).
 - **La libreria**: alta 155.7. Verso il letto niente pannello unico a L, ma due pannelli
   nello stesso piano, davanti ai bordi dei fianchi (il pannello vince sul fianco, che
@@ -141,7 +141,7 @@ nbText: """
   sul posto contro il muro. Due scaffali a passo 30.7; il taglio per il passaggio dei
   cavi nella schiena. La presa con la placca: punto elettrico pronto al montaggio, il
   foro lo fanno sul posto; la lampada si avvita sulla striscia.
-- **I vani alti**: tre scatole 67.4 × 44.4 (dentro 63.6 × 40.6) su un listello sopra il
+- **I vani alti**: tre scatole 67.4 × 45.4 (dentro 63.6 × 41.6; sul disegno 44.4) su un listello sopra il
   cassone; ribalte 67.3 × 45.6, 6 sotto la cima del fronte. Quella di sinistra ha
   ancora la parte fissa (16) per il condizionatore.
 """
@@ -194,14 +194,19 @@ nbText: """
   muri: torna con la parete da 237.
 - **Altezza**: 1180 + 978 + 1018 = 317.6, la stanza è 316. Con 1.5 di luce in alto il
   fronte dovrebbe essere alto circa 314.5: da verificare.
-- **1557 del cassone**: lo leggo dentro (dal piano letto al sotto del cielo), così il
-  cielo finisce a 262.1 e sopra la nicchia restano 6.3 di bordo visto da dentro (i
-  circa 7: torna). La libreria, sulla sua tavola, è alta 155.7 fuori (finisce
-  a 258.5).
+- **1557 del cassone**: fuori, piano e cielo compresi, come la libreria (Pietro): cassone
+  e libreria finiscono tutti e due a 258.5 e sopra la libreria non resta uno scalino.
+  Dentro il cassone è alto 152.1; sopra la nicchia, visto da dentro, restano solo 2.7
+  di bordo (il cielo è a 256.7, la nicchia arriva a 254): da verificare, perché si
+  voleva un bordo più largo.
 - **Listello sotto i vani alti**: le ribalte vanno da 266 a 311.6 (6 sotto la cima del
   fronte) e le aperture, sulla tavola di destra, da 269 a 309.6: le scatole stanno
-  quindi da 267.1 a 311.5. Tra il cielo del cassone (262.1) e le scatole restano 5:
-  è il listello che si vede nella tavola 3 (dedotto; in scala sembra circa 6).
+  quindi da 267.1 a 311.5. Ma così il fondo della scatola (dentro 269) sta 1 cm sopra il
+  bordo basso dell'apertura (268) e se ne vede il bordo. Nel modello le scatole sono alte
+  45.4 invece di 44.4 (dentro 41.6, come l'apertura), da 266.1 a 311.5: fondo e cielo
+  dentro sono a filo dell'apertura. Tra il cielo del cassone (258.5) e le scatole resta
+  un listello di 7.6, quello che si vede nella tavola 3 (dedotto). Da chiedere: scatole
+  più alte di 1 cm, o ribalte che coprono 2.5 sotto e 1.5 sopra.
 - **Anta D 431** (prima 502) e mobile D 42.9: la libreria sopra appoggia ancora sul
   mobile D, e a destra restano 12 cm senza niente sotto (come prima, non è un problema).
 - **Il "200" sotto i gradini** si legge male: in scala le aperture sono larghe 30, come

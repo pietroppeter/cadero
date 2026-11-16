@@ -438,6 +438,9 @@ suite "falegnami, versione 2 (16 novembre)":
     # ribalte 6 sotto la cima, cima a filo delle scatole
     check near(v.zRibalte + v.ribaltaH, v.altezza - 6)
     check abs(v.fondoVani + v.vanoH - (v.zRibalte + v.ribaltaH)) < 0.15   # 311.5 e 311.6
+    # il fondo e il cielo delle scatole, dentro, a filo dell'apertura
+    check near(v.fondoVani + v.sMel, v.zRibalte + v.sormonto)
+    check near(v.fondoVani + v.vanoH - v.sMel, v.zRibalte + v.ribaltaH - v.sormonto)
     # libreria: la L con il braccio basso a 58 dal fondo, scaffali a passo 30.7
     check near(v.pianoComodino - v.hBassi, 58)
     check abs(v.zScaffali[0] - v.pianoComodino - 30.7) < 0.1
@@ -448,5 +451,8 @@ suite "falegnami, versione 2 (16 novembre)":
     check near(g.pos.z + g.size.z, v.pianoComodino) and near(c.size.z, v.hLibreria)
     check near(g.size.y + c.size.y, v.prof)   # insieme larghi 77.5
     check near(v.raggioNicchia, 9)
+  test "cassone e libreria alti uguali, 155.7 fuori":
+    check near(v.cieloNicchia + v.sMulti, v.hBassi + v.hLibreria)
+    check near(v.fondoVani - v.rialzoVani, v.cieloNicchia + v.sMulti)
   test "la v1 resta com'era":
     check near(falegnami().altezza, 319.6) and near(falegnami().fondoVani, 259)

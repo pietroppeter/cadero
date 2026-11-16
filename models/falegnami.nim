@@ -173,11 +173,13 @@ proc falegnamiV2*(): Falegnami =
   result.mobileC = 50
   result.mobileD = 42.9                  # dentro 39.1 (disegno: 391)
   result.profGradini = 17 + 0.8          # gradini profondi 17 (disegno: 170) più la schiena
-  # il cassone: dentro 193.4 × 155.7 (disegno; i 1557 li leggo dentro, dal piano al cielo)
+  # il cassone: dentro largo 193.4, alto 155.7 fuori, piano e cielo compresi, come la
+  # libreria (Pietro, 16 novembre: così sopra la libreria non resta uno scalino)
   result.interno = 193.4
-  result.hNicchia = 155.7 + 2 * 1.8      # fuori: 159.3
-  result.rialzoVani = 5                  # dedotto: le scatole (cima 311.5 come le ribalte)
-                                         # partono da 267.1, il cielo del cassone finisce a 262.1
+  result.hNicchia = 155.7                # cielo a 258.5, a filo con la libreria
+  result.rialzoVani = 7.6                # dedotto: le scatole partono da 266.1, così il loro fondo
+                                         # (dentro, 268) è a filo del bordo basso dell'apertura;
+                                         # il cielo del cassone finisce a 258.5
   # la libreria: alta 155.7, verso il letto la striscia sulla colonna (15.8) e il
   # frontale del gavone alto 58 (disegno: 580 dal fondo della libreria = la cima del
   # comodino), larghi insieme 77.5; 2 scaffali
@@ -185,9 +187,12 @@ proc falegnamiV2*(): Falegnami =
   result.gavone = 58 - 1.8               # 56.2: sopra c'è il piano del comodino
   result.nScaffali = 2                   # passo 30.7 (disegno: 307)
   result.comodino = 35.8                 # dedotto da cassone 193.4 e L (sulla tavola 370 fuori)
-  # in alto: tre scatole 67.4 × 44.4 (dentro 63.6 × 40.6), ribalte 67.3 × 45.6
+  # in alto: tre scatole 67.4 × 45.4 (dentro 63.6 × 41.6), ribalte 67.3 × 45.6. Sul
+  # disegno le scatole sono alte 44.4 (dentro 40.6), ma l'apertura con 2 di sormonto è
+  # 41.6: con 44.4 nell'apertura si vedrebbe 1 cm del fondo o del cielo (Pietro: il
+  # bordo del fondo non va visto). Fondo e cielo dentro sono a filo dell'apertura.
   result.vanoL = 67.4
-  result.vanoH = 44.4
+  result.vanoH = 45.6 - 2 * 2 + 2 * 1.9  # 45.4
   result.ribaltaL = 67.3
   result.ribaltaH = 45.6
   result.parteFissa = 16                 # disegno: 160 fissi + 510 che si aprono
@@ -269,7 +274,7 @@ proc cieloNicchia*(f: Falegnami): float = f.hBassi + f.hNicchia - f.sMulti
   ## 257.2: il sotto del cielo del cassone; la cima (259) è a filo della libreria
 proc fondoVani*(f: Falegnami): float = f.cieloNicchia + f.sMulti + f.rialzoVani
   ## 259: i vani alti sono scatole appoggiate sul cielo del cassone (Pietro);
-  ## nella v2 su un listello alto 5 (267.1)
+  ## nella v2 su un listello alto 7.6 (266.1)
 proc scalinoVani*(f: Falegnami): float = f.zRibalte + f.sormonto - f.fondoVani - f.sMel
   ## 7.5: di quanto il dentro dei vani alti sta sotto il bordo dell'apertura
 proc pianoComodino*(f: Falegnami): float = f.hBassi + f.gavone + f.sMulti
