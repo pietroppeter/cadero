@@ -111,8 +111,7 @@ Le decisioni prese dopo la v1, una per una, e come risultano nella v2.
 | luce nella libreria (placca) e lampada sul pannello del pilastro | punto elettrico pronto al montaggio, il foro lo fanno sul posto; la lampada si avvita sul pannello | ✓ |
 
 **Ancora da decidere o da verificare**: cassetti in frassino sbiancato o in betulla;
-fori nel piano letto; il secondo taglio a metà della nicchia; l'altezza del fronte
-(317.6, la stanza è 316: con 1.5 di luce in alto dovrebbe essere circa 314.5); se
+fori nel piano letto; il secondo taglio a metà della nicchia; se
 vogliamo l'anta dei ripiani più vicina a 70 e il bordo sopra la nicchia più largo.
 """
 
@@ -151,6 +150,7 @@ block:
              .conTaglio(tTre).conLarghezzeBasse(larghezzeNuove)
   let righe = @[
     ("fronte: larghezza", v1.larghezza, v2.larghezza),
+    ("stanza: altezza", v1.muro.altezza, v2.muro.altezza),
     ("fronte: altezza", v1.altezza, v2.altezza),
     ("pezzi del fronte: taglio basso", v1.zTaglioTre, v2.tagliTre[0]),
     ("mobili bassi: altezza", v1.hBassi, v2.hBassi),
@@ -192,8 +192,8 @@ nbText: """
 
 - **Larghezza**: il fronte è 234.8 (2348 scritto), con 1.5 di luce per lato verso i
   muri: torna con la parete da 237.
-- **Altezza**: 1180 + 978 + 1018 = 317.6, la stanza è 316. Con 1.5 di luce in alto il
-  fronte dovrebbe essere alto circa 314.5: da verificare.
+- **Altezza**: 1180 + 978 + 1018 = 317.6; con 1.5 di luce in alto la stanza è alta
+  319.1, come misurata sul posto (prima avevamo 316). Nella v2 la stanza è 319.1.
 - **1557 del cassone**: fuori, piano e cielo compresi, come la libreria (Pietro): cassone
   e libreria finiscono tutti e due a 258.5 e sopra la libreria non resta uno scalino.
   Dentro il cassone è alto 152.1; sopra la nicchia, visto da dentro, restano solo 2.7

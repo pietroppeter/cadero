@@ -133,6 +133,9 @@ proc falegnami*(): Falegnami =
     profLibreria: 63.5, hLibreria: 150, gavone: 32, comodino: 38, scaffali: 27, nScaffali: 3,
     vanoL: 68.1, vanoH: 40.9, cornice: true)
 
+const luceMuri* = 1.5
+  ## v2: lo spazio tra il fronte e i muri, ai lati e in alto
+
 proc falegnamiV2*(): Falegnami =
   ## La versione 2 dei falegnami (PDF "mobile letto", 16 novembre 2026, 7 tavole).
   ## Hanno messo nel disegno quasi tutte le nostre decisioni: fronte in 3 pezzi
@@ -142,6 +145,10 @@ proc falegnamiV2*(): Falegnami =
   result = falegnami()
   result.versione = 2
   result.materasso.altezza = 18          # come deciso per la nicchia
+  # la stanza come l'hanno misurata loro: il fronte da 317.6 più 1.5 di luce in alto
+  # (Pietro, 16 novembre: la nostra era 316); la larghezza resta la nostra (237: con
+  # 1.5 di luce per lato loro arrivano a 237.8)
+  result.muro.altezza = 317.6 + luceMuri
   # il fronte: 234.8 × 317.6 (disegno), in 3 pezzi orizzontali 118, 97.8, 101.8; ai
   # lati e in alto 1.5 di luce verso i muri: le "spalle" del prospetto sono i muri,
   # la cornice di 12 per lato è il bordo del fronte stesso

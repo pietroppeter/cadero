@@ -426,6 +426,7 @@ suite "falegnami, versione 2 (16 novembre)":
   let m = modello(v)
   test "le misure scritte sul PDF":
     check near(v.larghezza, 234.8) and near(v.altezza, 317.6)
+    check near(v.muro.altezza, 319.1) and controlli(v, m).allIt("alto 317.6" notin it)
     let pezzi = v.pezziFronte
     check pezzi.len == 3
     check near(pezzi[0][1].h, 118) and near(pezzi[1][1].h, 97.8) and near(pezzi[2][1].h, 101.8)
