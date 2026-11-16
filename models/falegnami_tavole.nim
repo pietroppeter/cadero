@@ -17,6 +17,7 @@ type TavolaRifatta* = object
   nome*: string
   nota*: string      ## cosa si vede, cosa manca rispetto alla loro
   svg*: string
+  rosse*: seq[string] ## le misure che non tornano, "cosa: nostra (loro) · perché"
 
 proc filtra(m: Model; tieni: proc (p: Part): bool): Model =
   result.name = m.name
@@ -175,7 +176,7 @@ proc tavola5(f: Falegnami; m: Model): TavolaRifatta =
   let altL = @[32.0, no, no, no, 27.7, no, 27.4, no, no, no]
   let xl = f.xLibreria
   result = TavolaRifatta(nome: "La libreria",
-    nota: "vista dal lato (la loro la guarda dal letto, qui è specchiata: il fronte è a sinistra); " &
+    nota: "vista dal lato (la tavola la guarda dal letto, qui è specchiata: il fronte è a sinistra); " &
       "sotto la pianta a 200 con la profondità degli scaffali e il pannello della risega. " &
       "Il triangolo fuori e il taglio per i cavi non ci sono",
     svg: foglio([(v, mm), (pianta, mm)], [
@@ -255,6 +256,300 @@ proc tavoleRifatte*(f: Falegnami): seq[TavolaRifatta] =
   let m = modello(f)
   @[tavola1(f, m), tavola2(f, m), tavola3(f, m), tavola4(f, m), tavola5(f, m), tavola6(f, m),
     tavola7(f, m)]
+
+# --- v2: le tavole del progetto aggiornato, rifatte da `falegnamiV2()` -----------------
+#
+# Le tavole della v2 sono sette pagine: la 1 e la 2 sono lo stesso prospetto (in
+# prospettiva e di fronte), con accanto il fronte senza ante. Le misure rosse sono
+# raccolte in `rosse`, con il motivo quando lo sappiamo.
+
+type Bozza = object
+  views: seq[(View, Model)]
+  quote: seq[(View, DimChain)]
+  rosse: seq[string]
+
+proc vista(b: var Bozza; v: View; m: Model) = b.views.add (v, m)
+
+proc q(b: var Bozza; v: View; cosa: string; vertical: bool; at, ext: float;
+       stops, loro: seq[float]; cose: seq[string] = @[]; perche = "") =
+  ## una catena di quote; quelle che non tornano finiscono nella lista delle rosse.
+  ## `cose` dà un nome a ogni misura della catena (se no vale `cosa` per tutte)
+  b.quote.add (v, catena(v.kind, vertical, at, ext, stops, loro))
+  for i, l in loro:
+    if l.isNaN: continue
+    let m = stops[i + 1] - stops[i]
+    if abs(m - l) >= 0.05:
+      let nome = if cose.len == loro.len: cose[i] else: cosa
+      var r = nome & ": " & fmtNum(m) & " (" & fmtNum(l) & ")"
+      if perche.len > 0: r.add " · " & perche
+      b.rosse.add r
+
+proc finita(b: Bozza; nome, nota: string): TavolaRifatta =
+  TavolaRifatta(nome: nome, nota: nota, svg: foglio(b.views, b.quote), rosse: b.rosse)
+
+proc nelProspetto(p: Part): bool =
+  ## quello che si vede nel prospetto: niente muro, materasso, presa e lampada
+  p.kind notin {kWall, kSoft, kAccessory}
+
+proc estremi(m: Model; blocco: string): (float, float) =
+  var a = Inf
+  var b = -Inf
+  for p in m.parts:
+    if p.blocco == blocco: a = min(a, p.pos.x); b = max(b, p.x1)
+  (a, b)
+
+# --- 1 e 2. il prospetto e il fronte senza ante ---------------------------------------
+proc tavolaV2uno(f: Falegnami; m: Model): TavolaRifatta =
+  let (L, H) = (f.larghezza, f.altezza)
+  let (so, sc) = (f.sormonto, f.sormontoCassetti)
+  let c = f.colonne
+  let r = f.xRibalte
+  var b: Bozza
+  # a sinistra: chiuso, con ante e ribalte
+  let v = View(kind: vFront)
+  b.vista(v, m.filtra(nelProspetto))
+  b.q(v, "ribalte", false, H + 12, H,
+      @[0.0, r[0] + f.parteFissa + 0.3, r[0] + f.ribaltaL, r[1], r[1] + f.ribaltaL, r[2],
+        r[2] + f.ribaltaL, L], @[no, 51.0, no, 67.3, no, no, no])
+  b.q(v, "parte fissa della prima ribalta", false, H + 26, H,
+      @[0.0, r[0], r[0] + f.parteFissa, L], @[no, 16.0, no])
+  b.q(v, "nicchia in larghezza", false, H + 40, H,
+      @[0.0, f.nicchiaX, f.nicchiaX + f.nicchiaL, L], @[15.0, 167.8, 52.0],
+      cose = @["dal bordo sinistro alla nicchia", "nicchia, larghezza", "dalla nicchia al bordo destro"])
+  b.q(v, "larghezza", false, H + 54, H, @[0.0, L], @[234.8])
+  b.q(v, "riga in basso", false, -12, 0,
+      @[0.0, c[0], c[0] + f.antaA, c[1], c[1] + f.aperturaGradini, c[2], c[2] + f.cassetti,
+        c[3], c[3] + f.antaD, L], @[12.0, 75.5, 4.0, 30.0, 4.0, 50.2, 4.0, 43.1, 12.0],
+      cose = @["margine sinistro", "anta A", "spazio", "gradini", "spazio", "cassetti", "spazio",
+               "anta D", "margine destro"])
+  b.q(v, "altezza", true, -14, 0, @[0.0, H], @[317.6])
+  b.q(v, "in altezza", true, -28, 0,
+      @[0.0, f.zBassi, f.zBassi + f.altezzaAnte, f.nicchiaZ, f.nicchiaZ + f.nicchiaH, f.zRibalte,
+        f.zRibalte + f.ribaltaH, H], @[6.0, 95.0, 31.0, 122.0, 12.0, 45.6, 6.0],
+      cose = @["da terra alle ante", "ante", "dalle ante alla nicchia", "nicchia, altezza",
+               "dalla nicchia alle ribalte", "ribalte, altezza", "dalle ribalte in cima"])
+  var gr = @[0.0]
+  var grL: seq[float]
+  for i, z in f.zGradini:
+    grL.add (if i == 0: 6.0 else: no)
+    gr.add z; gr.add z + f.gradini[i]
+    grL.add 15.8
+  gr.add H; grL.add no
+  b.q(v, "gradini", true, L + 14, L, gr, grL)
+  var cas = @[0.0]
+  var casL: seq[float]
+  for i in 0 ..< f.nCassetti:
+    let z = f.zBassi + float(i) * (f.hCassetto + f.spazioCassetti)
+    cas.add z; cas.add z + f.hCassetto
+    casL.add no; casL.add 29.0
+  cas.add H; casL.add no
+  b.q(v, "cassetti", true, L + 28, L, cas, casL)
+  # a destra: il fronte senza ante, con le aperture e i tre pezzi
+  let d = L + 120
+  let w = View(kind: vFront, ox: d)
+  b.vista(w, m.filtra(fronte))
+  let ap = f.aperture
+  var vano, antaA, antaD, cassetto: RRect
+  for a in ap:
+    if a.z >= f.zRibalte and vano.w == 0: vano = a
+    elif a.x == c[0] + so: antaA = a
+    elif a.x == c[3] + so: antaD = a
+    elif a.x == c[2] + so and cassetto.w == 0: cassetto = a
+  const pVano = "l'apertura nel fronte è la ribalta meno 2 di sormonto per lato; " &
+    "63.6 × 40.6 è il dentro della scatola del vano (tavola 7)"
+  b.q(w, "apertura del vano alto, larghezza", false, H + 12, H, @[vano.x, vano.x + vano.w],
+      @[63.6], perche = pVano)
+  b.q(w, "apertura del vano alto, altezza", true, -14, 0, @[vano.z, vano.z + vano.h], @[40.6],
+      perche = pVano)
+  b.q(w, "aperture in basso", false, -12, 0,
+      @[0.0, antaA.x, antaA.x + antaA.w, cassetto.x, cassetto.x + cassetto.w, antaD.x,
+        antaD.x + antaD.w, L], @[no, 71.5, no, 46.2, no, 39.1, no],
+      cose = @["", "apertura anta A", "", "apertura cassetti", "", "apertura anta D", ""])
+  b.q(w, "apertura anta A, altezza", true, -14, 0, @[antaA.z, antaA.z + antaA.h], @[91.0])
+  b.q(w, "apertura cassetto, altezza", true, -28, 0, @[cassetto.z, cassetto.z + cassetto.h], @[27.0])
+  b.q(w, "i tre pezzi del fronte", true, L + 14, L, @[0.0, f.tagliTre[0], f.tagliTre[1], H],
+      @[118.0, 97.8, 101.8])
+  discard sc
+  b.finita("Il prospetto e il fronte senza ante",
+    "le tavole 1 e 2 (la 1 in prospettiva, la 2 di fronte): a sinistra chiuso, con ante e ribalte; " &
+    "a destra il fronte senza ante, in tre pezzi, con le aperture")
+
+# --- 3. il cassone --------------------------------------------------------------------
+proc tavolaV2tre(f: Falegnami; m: Model): TavolaRifatta =
+  let (L, H) = (f.larghezza, f.altezza)
+  let sm = f.sMulti
+  let tieni = proc (p: Part): bool =
+    p.blocco in ["cassone letto", "libreria", "listello vani alti"] or
+      p.blocco.startsWith("vano alto") or p.gruppo.startsWith("coperchio")
+  let mm = m.filtra(tieni)
+  var b: Bozza
+  let v = View(kind: vFront, contorni: true)
+  b.vista(v, mm)
+  let s = View(kind: vSide, cut: 100, ox: L + 40)
+  b.vista(s, m.filtra(proc (p: Part): bool = p.blocco == "cassone letto" or p.kind == kSoft))
+  var pl, cc: float   # sotto il piano letto e sotto il cielo del cassone
+  for p in mm.parts:
+    if p.name == "piano letto": pl = p.pos.z
+    if p.name == "cielo cassone": cc = p.pos.z
+  b.q(v, "cassone, larghezza dentro", false, pl + 12, pl, @[0.0, sm, sm + f.interno, L],
+      @[no, 193.4, no])
+  b.q(v, "cassone, altezza dentro", true, 120, 120, @[pl + sm, cc], @[155.7])
+  b.q(v, "cassone, altezza fuori", true, -14, 0, @[pl, cc + sm], @[no])
+  b.q(s, "piano letto, profondità", false, pl - 12, pl, @[f.yMobili, f.yMobili + f.prof], @[77.5])
+  b.finita("Il cassone",
+    "il cassone del letto con la libreria e i vani alti sopra, senza il fronte; a destra la sezione " &
+    "a 100 dal bordo sinistro, con la profondità del piano letto")
+
+# --- 4. i mobili senza il fronte --------------------------------------------------------
+proc tavolaV2quattro(f: Falegnami; m: Model): TavolaRifatta =
+  let L = f.larghezza
+  let mm = m.filtra(proc (p: Part): bool = p.blocco.len > 0 or p.gruppo.startsWith("coperchio"))
+  var b: Bozza
+  let v = View(kind: vFront, contorni: true)
+  let pl = View(kind: vPlan, cut: 200, oy: f.profondita + 40)
+  b.vista(v, mm)
+  b.vista(pl, mm)
+  let (a0, a1) = mm.estremi("mobile A")
+  let (b0, b1) = mm.estremi("mobile B")
+  let (c0, c1) = mm.estremi("mobile C")
+  let (d0, d1) = mm.estremi("mobile D")
+  let topC = f.cieloNicchia + f.sMulti
+  b.q(v, "in altezza", true, -14, 0, @[0.0, f.hBassi, topC, f.fondoVani, f.fondoVani + f.vanoH],
+      @[no, no, no, no])
+  b.q(v, "mobili bassi", false, -12, 0, @[a0, a1, b0, b1, c0, c1, d0, d1],
+      @[no, no, no, no, no, no, no])
+  b.q(v, "cassone e libreria", false, topC + 10, topC, @[0.0, f.xLibreria - f.sMulti, f.xLibreria, L],
+      @[no, no, no])
+  b.q(pl, "profondità", true, -14, 0, @[f.yMobili, f.yMobili + f.prof], @[no])
+  b.finita("I mobili senza il fronte",
+    "tutti i mobili, senza il fronte e senza ante: mobili bassi, cassone, libreria, vani alti; " &
+    "sotto la pianta a 200. sulla tavola non ci sono misure: sono tutte blu")
+
+# --- 5. la libreria ------------------------------------------------------------------
+proc tavolaV2cinque(f: Falegnami; m: Model): TavolaRifatta =
+  let sm = f.sMulti
+  let L = f.larghezza
+  let mm = m.filtra(proc (p: Part): bool = p.blocco == "libreria" or p.gruppo.startsWith("coperchio"))
+  let (y0, pl, zl) = (f.yMobili, f.profLibreria, f.hBassi)
+  var b: Bozza
+  let v = View(kind: vSide, cut: L + 1)
+  let s = f.zScaffali
+  let pianta = View(kind: vPlan, cut: s[0] + sm / 2, ox: -(f.xLibreria - 2 * sm),
+                    oy: -zl + f.profondita + 50)
+  b.vista(v, mm)
+  b.vista(pianta, mm)
+  let top = zl + f.hLibreria
+  let yF = f.profondita
+  b.q(v, "libreria, profondità", false, zl - 10, zl, @[y0, y0 + pl], @[63.5])
+  b.q(v, "libreria, dentro e pannello della colonna", false, zl - 22, zl,
+      @[y0, y0 + sm, y0 + pl - sm, yF], @[no, 59.9, 15.8],
+      cose = @["", "libreria, profondità dentro", "pannello della colonna"])
+  b.q(v, "profondità totale", false, zl - 34, zl, @[y0, yF], @[77.5])
+  b.q(v, "libreria, altezza dentro", true, y0 - 12, y0, @[zl + sm, top - sm], @[155.7])
+  b.q(v, "libreria, altezza fuori", true, y0 - 26, y0, @[zl, top], @[no])
+  let alt = @[zl + sm, f.pianoComodino, s[0], s[0] + sm, s[1], s[1] + sm, top - sm]
+  b.q(v, "in altezza", true, yF + 14, yF, alt, @[58.0, 30.7, no, no, no, no],
+      cose = @["gavone, dal fondo al piano del comodino", "dal piano del comodino al primo scaffale",
+               "", "", "", ""],
+      perche = "con 155.7 letto come altezza dentro la libreria è 3.6 più alta e i tre spazi " &
+        "uguali sopra il comodino vengono 31.4")
+  b.q(pianta, "scaffale, profondità", false, y0 - 12, y0, @[L - sm - f.scaffali, L - sm], @[27.0])
+  b.q(pianta, "libreria, larghezza in cima", false, y0 - 24, y0, @[f.xLibreria, L], @[37.0],
+      perche = "per noi è il cielo (36) più la schiena (1.8); il 37 della tavola non lo sappiamo spiegare")
+  b.finita("La libreria",
+    "vista dal lato (la tavola la guarda dal letto, qui è specchiata: il fronte è a sinistra); " &
+    "sotto la pianta al primo scaffale. Il taglio per i cavi non c'è")
+
+# --- 6. i mobili bassi -----------------------------------------------------------------
+proc tavolaV2sei(f: Falegnami; m: Model): TavolaRifatta =
+  let mm = m.filtra(proc (p: Part): bool = p.blocco.startsWith("mobile"))
+  let (a0, a1) = mm.estremi("mobile A")
+  let (b0, b1) = mm.estremi("mobile B")
+  let (c0, c1) = mm.estremi("mobile C")
+  let (d0, d1) = mm.estremi("mobile D")
+  let (sl, h) = (f.sMel, f.hBassi)
+  var rip: seq[float]
+  var zFondo, zCielo, zCieloB, yCieloB, yGradino: float
+  for p in mm.parts:
+    if p.name == "ripiano mobile A": rip.add p.pos.z
+    if p.name == "fondo mobile C": zFondo = p.z1
+    if p.name == "cielo mobile C": zCielo = p.pos.z
+    if p.name == "cielo mobile B": zCieloB = p.pos.z; yCieloB = p.y1
+    if p.name == "piano gradino": yGradino = p.y1
+  var b: Bozza
+  let v = View(kind: vFront, contorni: true)
+  let pianta = View(kind: vPlan, cut: 60, oy: f.profondita + 40)
+  let lato = View(kind: vSide, cut: b1 + 1, ox: d1 + 40)
+  b.vista(v, mm)
+  b.vista(pianta, mm)
+  b.vista(lato, mm.filtra(proc (p: Part): bool = p.blocco == "mobile B"))
+  b.q(v, "larghezze", false, h + 10, h, @[a0, a1, b0, b1, c0, c1, d0, d1],
+      @[75.3, no, 33.6, no, 50.0, no, no],
+      cose = @["mobile A", "", "mobile B", "", "mobile C", "", "mobile D"])
+  b.q(v, "mobile A, dentro", false, -12, 0, @[a0 + sl, a1 - sl], @[71.5])
+  b.q(v, "mobile C, dentro", false, -12, 0, @[c0 + sl, c1 - sl], @[46.2])
+  b.q(v, "mobile D, dentro", false, -12, 0, @[d0 + sl, d1 - sl], @[39.1])
+  b.q(v, "altezza", true, a0 - 12, a0, @[0.0, h], @[102.8])
+  b.q(v, "mobile A in altezza", true, a0 - 26, a0,
+      @[0.0, f.zoccolo, zFondo, rip[0], rip[0] + sl, rip[1], rip[1] + sl, zCielo, h],
+      @[6.1, no, 29.7, no, 29.7, no, no, no],
+      cose = @["zoccolo", "", "mobile A, primo spazio", "", "mobile A, secondo spazio", "", "", ""])
+  b.q(v, "mobile C, altezza dentro", true, (c0 + c1) / 2, (c0 + c1) / 2, @[zFondo, zCielo], @[93.9],
+      perche = "per noi C è fatto come D, con il fondo sullo zoccolo: 92.9 come D. Sulla tavola " &
+        "C è 1 più alto dentro: forse il fondo di C sta più in basso")
+  b.q(v, "mobile D, altezza dentro", true, (d0 + d1) / 2, (d0 + d1) / 2, @[zFondo, zCielo], @[92.9])
+  b.q(v, "altezza", true, d1 + 12, d1, @[0.0, h], @[102.8])
+  let y0 = f.yMobili
+  b.q(lato, "mobile B, cielo, profondità", false, h + 10, h, @[y0, yCieloB], @[19.0],
+      perche = "per noi il cielo di B è profondo come i gradini (17); 19 sarebbe più dei fianchi (17.8)")
+  b.q(lato, "mobile B, gradini, profondità", false, -12, 0, @[y0, yGradino], @[17.0])
+  b.q(lato, "mobile B, fianchi, profondità", false, -24, 0, @[y0, y0 + f.profGradini], @[no])
+  discard zCieloB
+  b.q(pianta, "profondità", true, a0 - 12, a0, @[y0, y0 + f.prof], @[no])
+  b.q(pianta, "profondità sotto la risega", true, d1 + 12, d1, @[y0, y0 + f.profRisega], @[no])
+  b.finita("I mobili bassi",
+    "A con due ripiani, B dei gradini, C dei cassetti, D con l'appenderia; a destra il mobile B " &
+    "di lato, sotto la pianta con le profondità")
+
+# --- 7. i tre vani alti ----------------------------------------------------------------
+proc tavolaV2sette(f: Falegnami; m: Model): TavolaRifatta =
+  let mm = m.filtra(proc (p: Part): bool = p.blocco.startsWith("vano alto"))
+  let (x0, x1) = mm.estremi("vano alto 1")
+  let (_, xU) = mm.estremi("vano alto 3")
+  let sl = f.sMel
+  let z0 = f.fondoVani
+  let hV = f.vanoH
+  var b: Bozza
+  let v = View(kind: vFront, contorni: true)
+  let pianta = View(kind: vPlan, cut: z0 + 20, oy: -z0 + f.profondita + 30)
+  b.vista(v, mm)
+  b.vista(pianta, mm)
+  var lar: seq[float]
+  var larL: seq[float]
+  for i in 1..3:
+    let (a, c) = mm.estremi("vano alto " & $i)
+    if i > 1: larL.add no
+    lar.add a; lar.add c
+    larL.add (if i == 1: 67.4 else: no)
+  const pAlto = "voluto: la scatola è 1 più alta del disegno, così fondo e cielo sono a filo " &
+    "con l'apertura della ribalta e il bordo della scatola non si vede"
+  b.q(v, "vani alti, larghezza", false, z0 + hV + 10, z0 + hV, lar, larL)
+  b.q(v, "vano alto, larghezza dentro", false, z0 + hV / 2, z0 + hV / 2, @[x0 + sl, x1 - sl], @[63.6])
+  b.q(v, "vano alto, altezza", true, x0 - 12, x0, @[z0, z0 + hV], @[44.4], perche = pAlto)
+  b.q(v, "vano alto, altezza dentro", true, x0 - 26, x0, @[z0 + sl, z0 + hV - sl], @[40.6],
+      perche = pAlto)
+  b.q(pianta, "profondità", true, x0 - 12, x0, @[f.yMobili, f.yMobili + f.prof], @[no])
+  b.q(pianta, "profondità sopra la risega", true, xU + 12, xU,
+      @[f.yMobili, f.yMobili + f.profRisega], @[no])
+  b.finita("I tre vani alti",
+    "tre scatole in melaminico sul listello sopra il cassone; sotto la pianta con le profondità")
+
+proc tavoleRifatteV2*(f: Falegnami): seq[TavolaRifatta] =
+  ## Le tavole della v2 (16 novembre), rifatte dal modello `f` (di solito `falegnamiV2()`):
+  ## la prima è le loro tavole 1 e 2 insieme, poi una per ognuna delle altre.
+  let m = modello(f)
+  @[tavolaV2uno(f, m), tavolaV2tre(f, m), tavolaV2quattro(f, m), tavolaV2cinque(f, m),
+    tavolaV2sei(f, m), tavolaV2sette(f, m)]
 
 proc disegnoNicchia*(f: Falegnami): string =
   ## Solo frontale, cassone del letto, materasso e libreria: prospetto e sezione

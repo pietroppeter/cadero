@@ -453,8 +453,17 @@ suite "falegnami, versione 2 (16 novembre)":
     check near(g.pos.z + g.size.z, v.pianoComodino) and near(c.size.z, v.hLibreria)
     check near(g.size.y + c.size.y, v.prof)   # insieme larghi 77.5
     check near(v.raggioNicchia, 9)
-  test "cassone e libreria alti uguali, 155.7 fuori":
+  test "cassone e libreria alti uguali, 155.7 dentro":
     check near(v.cieloNicchia + v.sMulti, v.hBassi + v.hLibreria)
     check near(v.fondoVani - v.rialzoVani, v.cieloNicchia + v.sMulti)
   test "la v1 resta com'era":
     check near(falegnami().altezza, 319.6) and near(falegnami().fondoVani, 259)
+  test "le tavole della v2 rifatte: solo le misure rosse attese":
+    let t = tavoleRifatteV2(v)
+    check t.len == 6
+    var rosse: seq[string]
+    for x in t: rosse.add x.rosse
+    # vani alti (apertura e scatola), libreria (primo spazio, larghezza), mobili C e B
+    check rosse.len == 8
+    check rosse.anyIt(it.startsWith("dal piano del comodino al primo scaffale: 31.4 (30.7)"))
+    check rosse.anyIt(it.startsWith("vano alto, altezza: 45.4 (44.4)"))
