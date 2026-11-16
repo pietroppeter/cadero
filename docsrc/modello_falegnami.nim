@@ -30,9 +30,9 @@ così come sono; quelle che mancano le ho misurate in scala sul prospetto
 nbText: """
 ## v2 · Il progetto aggiornato (16 novembre)
 
-Il 16 novembre i falegnami hanno mandato il progetto aggiornato, un PDF di sette
-tavole ("mobile letto"). **Questa è la versione di riferimento.** Hanno messo nel
-disegno quasi tutto quello che avevamo deciso con loro: il fronte in tre pezzi
+Il progetto aggiornato del 16 novembre, un PDF di sette tavole ("mobile letto").
+**Questa è la versione di riferimento.** Contiene quasi tutte le decisioni prese
+dopo la v1: il fronte in tre pezzi
 orizzontali, la nicchia più aperta (15 da sinistra, 52 da destra), la testata alta,
 niente pannellino tra i gradini, niente cornice nel fronte. Il pannello a L invece
 no: sono due pannelli (vedi sotto). Le
@@ -83,21 +83,20 @@ nbCode:
   echo m2.parts.len, " parti, ", fmtNum(v2.larghezza), " × ", fmtNum(v2.altezza), " × ", fmtNum(v2.profondita), " cm"
 
 nbText: """
-### Le nostre richieste e la v2
+### Le decisioni e la v2
 
-Le richieste finali che avevamo mandato dopo la chiamata, una per una, con quello che
-è diventato nella v2.
+Le decisioni prese dopo la v1, una per una, e come risultano nella v2.
 
-| richiesta | nella v2 | |
+| decisione | nella v2 | |
 |---|---|---|
-| sponda del letto a 131/132 da terra, mantenendo un bordo dentro | 132: hanno abbassato i mobili bassi (102.8 invece di 109), dentro restano circa 10 sotto | ✓ |
+| sponda del letto a 131/132 da terra, mantenendo un bordo dentro | 132: mobili bassi abbassati (102.8 invece di 109), dentro restano circa 10 sotto | ✓ |
 | moduli bassi quasi da terra, bordo stretto sopra e sotto e più largo ai lati | ante e primo gradino da 6 (prima 12), zoccolo 6.1; bordi 6 sotto, 6 sopra, 12 ai lati | ✓ |
 | fronte in 3 pezzi orizzontali, venatura orizzontale | 3 pezzi (118, 97.8, 101.8), orizzontale; ante basse verticali, cassetti e ribalte orizzontali | ✓ |
 | primo taglio appena sopra cassetti e scaletta | a 118, 17 sopra le ante | ✓ |
-| secondo taglio circa a metà della nicchia | a 215.8: la metà della nicchia è a 193, quindi 22.8 più su | ✗ da chiedere |
+| secondo taglio circa a metà della nicchia | a 215.8: la metà della nicchia è a 193, quindi 22.8 più su | ✗ da verificare |
 | togliere la cornice piccola contro muri e soffitto | tolta: 1.5 di luce ai lati e in alto | ✓ |
 | nicchia 15 a sinistra e 52 a destra (dal fronte) | 15 e 52 | ✓ |
-| da dentro: circa 13 a sinistra, 12 a destra, 10 sotto, 9 sopra | 13.2 a sinistra (loro dicono 15), 12.4 a destra (loro 11), 9.4 sotto (loro 10), 6.3 sopra (loro 7) | ~ sopra più stretto |
+| da dentro: circa 13 a sinistra, 12 a destra, 10 sotto, 9 sopra | 13.2 a sinistra, 12.4 a destra, 9.4 sotto, 6.3 sopra (dal modello) | ~ sopra più stretto |
 | nicchia più tonda | raggio 9 | ✓ |
 | testata 58, circa 39/40 sopra un materasso da 17/18 | 58 dal fondo della libreria, che sta 1.8 sotto il piano letto: sopra il materasso da 18 restano 38.2 | ~ |
 | pannello unico a L per testata e pilastro | no: due pannelli nello stesso piano, che coprono il bordo dei fianchi; la striscia sul pilastro (15.8) si sagoma sul posto | ✗ |
@@ -107,11 +106,11 @@ Le richieste finali che avevamo mandato dopo la chiamata, una per una, con quell
 | scaletta larga 30, profonda circa 17.5, gradini tutti alti uguali | 30, pedata 17, cinque gradini da 15.8 | ✓ |
 | cassetti circa 50, ripiani circa 70, spazi tutti uguali | cassetti 50.2, anta dei ripiani 75.5, spazi tutti 4 | ~ ripiani 75.5 |
 | scaletta tra il centro della nicchia e quello degli sportelli | centro scaletta a 106.5, tra 98.9 (nicchia) e 117.4 (sportello di mezzo) | ✓ |
-| piano letto forato o doghe? | piano pieno; per loro non serve, ma i fori si possono fare | da decidere |
+| piano letto forato o doghe? | piano pieno; i fori si possono aggiungere | da decidere |
 | materasso da 76.5 | il cassone dentro è profondo 77.5: entra | ✓ |
 | luce nella libreria (placca) e lampada sul pannello del pilastro | punto elettrico pronto al montaggio, il foro lo fanno sul posto; la lampada si avvita sul pannello | ✓ |
 
-**Ancora da decidere o da chiedere**: cassetti in frassino sbiancato o in betulla;
+**Ancora da decidere o da verificare**: cassetti in frassino sbiancato o in betulla;
 fori nel piano letto; il secondo taglio a metà della nicchia; l'altezza del fronte
 (317.6, la stanza è 316: con 1.5 di luce in alto dovrebbe essere circa 314.5); se
 vogliamo l'anta dei ripiani più vicina a 70 e il bordo sopra la nicchia più largo.
@@ -192,12 +191,12 @@ nbText: """
 ### Letture e ipotesi della v2
 
 - **Larghezza**: il fronte è 234.8 (2348 scritto), con 1.5 di luce per lato verso i
-  muri: torna con la parete da 237 (confermato dai falegnami).
+  muri: torna con la parete da 237.
 - **Altezza**: 1180 + 978 + 1018 = 317.6, la stanza è 316. Con 1.5 di luce in alto il
-  fronte dovrebbe essere alto circa 314.5: da chiedere.
+  fronte dovrebbe essere alto circa 314.5: da verificare.
 - **1557 del cassone**: lo leggo dentro (dal piano letto al sotto del cielo), così il
   cielo finisce a 262.1 e sopra la nicchia restano 6.3 di bordo visto da dentro (i
-  falegnami dicono circa 7: torna). La libreria, sulla sua tavola, è alta 155.7 fuori (finisce
+  circa 7: torna). La libreria, sulla sua tavola, è alta 155.7 fuori (finisce
   a 258.5).
 - **Listello sotto i vani alti**: le ribalte vanno da 266 a 311.6 (6 sotto la cima del
   fronte) e le aperture, sulla tavola di destra, da 269 a 309.6: le scatole stanno
@@ -207,7 +206,7 @@ nbText: """
   mobile D, e a destra restano 12 cm senza niente sotto (come prima, non è un problema).
 - **Il "200" sotto i gradini** si legge male: in scala le aperture sono larghe 30, come
   il mobile B dentro (336 − 2 × 18).
-- **Gradini**: pedata utile 17 (confermato), con la schiena 17.8; il mobile dei
+- **Gradini**: pedata utile 17, con la schiena 17.8; il mobile dei
   gradini è stato allargato e l'appendiabiti stretto a 39 dentro.
 - **Comodino**: con il cassone da 193.4 e il pannello sulla colonna, la libreria dentro è larga
   35.8 (sulla tavola 370 fuori).
@@ -215,11 +214,11 @@ nbText: """
   e il vano alto sopra la risega 62.2 (non sono scritti nella v2: tenuti dalla v1).
 - **Il taglio per i cavi** nella schiena della libreria non è disegnato nel modello.
 
-**Da decidere** (domande dei falegnami):
+**Da decidere**:
 
 - i cassetti in frassino sbiancato (come visto in laboratorio) o in betulla come fuori;
-- se fare dei fori nel piano letto (per loro non servono: i materassi nuovi non chiedono
-  aerazione particolare).
+- se fare dei fori nel piano letto (i materassi nuovi non chiedono aerazione
+  particolare).
 """
 
 nbText: """
