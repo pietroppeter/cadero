@@ -115,9 +115,8 @@ type
     # --- le proposte sulla v2 (Pietro, 17 novembre)
     presaPilastro*: bool     ## la presa sul fianco della libreria verso il pilastro (la risega),
                              ## invece che sulla schiena: vedi `centroPresaPilastro`
-    bordiLibreria*: bool     ## i bordi dei pannelli della libreria si vedono uguali sui quattro
-                             ## lati dell'apertura, dal letto (vedi `conBordoLibreria`)
-    bordoAlto*: bool         ## con i bordi: anche quello del cielo, in alto
+    bordiLibreria*: bool     ## dal letto: sotto il comodino una testata larga fino al muro, sopra
+                             ## i bordi dei pannelli del vano libreria (vedi `conBordoLibreria`)
 
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
@@ -435,20 +434,20 @@ proc conPresaPilastro*(f: Falegnami; on = true): Falegnami =
   result = f
   result.presaPilastro = on
 
-proc conBordoLibreria*(f: Falegnami; on = true; alto = true): Falegnami =
-  ## Visto che il pannello a L non si può fare, dal letto la libreria mostra i bordi
-  ## dei suoi pannelli allo stesso modo sui quattro lati, tutti nel piano della
-  ## colonna e del frontale del gavone, senza pannelli nuovi: i due fianchi avanzano di
-  ## uno spessore (a destra il bordo c'era già, a sinistra la colonna non lo copre
-  ## più), il piano del comodino avanza e copre da sopra il frontale del gavone, che
-  ## sta tra i fianchi; in alto il cielo avanza (se `alto`, se no resta indietro).
+proc conBordoLibreria*(f: Falegnami; on = true): Falegnami =
+  ## Visto che il pannello a L non si può fare (Pietro, 17 novembre): sotto il piano
+  ## del comodino una testata sola, orizzontale, larga dal davanti fino al muro (copre
+  ## i fianchi e la parte bassa della colonna); sopra, nel vano della libreria, si
+  ## vedono i bordi dei pannelli sui quattro lati, tutti nel piano della testata: i
+  ## fianchi avanzano di uno spessore sopra la testata (sotto hanno una tacca e stanno
+  ## dietro), il piano del comodino avanza e copre da sopra la testata, il cielo
+  ## avanza; la colonna comincia sopra la testata, dietro il fianco.
   result = f
   result.bordiLibreria = on
-  result.bordoAlto = on and alto
 
-proc chiaveProposteV2*(presa, bordo, alto: bool): string =
+proc chiaveProposteV2*(presa, bordo: bool): string =
   ## il pezzo di chiave del visore dopo `chiaveV2`
-  (if presa: "Pilastro" else: "") & (if bordo: (if alto: "Bordo" else: "BordoSenzaAlto") else: "")
+  (if presa: "Pilastro" else: "") & (if bordo: "Bordo" else: "")
 
 
 # --- le modifiche che vorremmo (Pietro, 4 novembre 2026) --------------------------
@@ -749,16 +748,24 @@ proc modello*(f: Falegnami): Model =
     for q in lib.mitems:
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
   elif f.pannelliLibreria and f.bordiLibreria:
-    # i bordi dei pannelli uguali sui quattro lati (`conBordoLibreria`), tutti nel
-    # piano della colonna: fianchi, piano del comodino e (se `bordoAlto`) cielo
-    # avanzano di uno spessore; il frontale del gavone sta tra i fianchi, sotto il
-    # piano del comodino; la colonna comincia dietro il fianco
+    # sotto il comodino la testata larga fino al muro; sopra, nel vano, i bordi di
+    # fianchi, piano del comodino e cielo nel piano della testata (`conBordoLibreria`).
+    # Il fianco è un pezzo solo con una tacca in basso: qui due parti con lo stesso nome
+    let zt = zc - sm                           # la cima della testata, sotto il comodino
+    var sopra: seq[Part]
     for q in lib.mitems:
-      if q.name.startsWith("fianco") or (q.name == "cielo libreria" and f.bordoAlto):
-        q.pos.x = xl - sm; q.size.x = wl + sm
+      if q.name.startsWith("fianco"):
+        var s = q
+        s.pos.x = xl - sm; s.size.x = wl + sm
+        s.pos.z = zt; s.size.z = q.z1 - zt
+        sopra.add s
+        q.size.z = zt - q.pos.z
+      if q.name == "cielo libreria": q.pos.x = xl - sm; q.size.x = wl + sm
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
-    lib.add part("frontale gavone", kPanel, xl - sm, y0 + sm, zl, sm, pl - 2 * sm, zc - sm - zl)
-    lib.add part("pannello colonna", kPanel, xl - sm, y0 + pl, zl, sm, f.profondita - (y0 + pl), f.hLibreria)
+    lib.add sopra
+    lib.add part("frontale gavone", kPanel, xl - sm, y0, zl, sm, f.profondita - y0, zt - zl)
+    lib.add part("pannello colonna", kPanel, xl - sm, y0 + pl, zt, sm, f.profondita - (y0 + pl),
+                 zl + f.hLibreria - zt)
   elif f.pannelliLibreria:
     # v2: gli stessi due bracci della L, ma due pezzi; il pannello vince sui fianchi
     lib.add part("frontale gavone", kPanel, xl - sm, y0, zl, sm, pl - sm, zc - zl)

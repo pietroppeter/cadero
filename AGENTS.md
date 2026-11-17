@@ -124,10 +124,10 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   della v1 ha i titoli "v1 · ...". Le novità vanno nella v2.
 - Proposte sulla v2 (Pietro, 17 novembre), gruppo "Proposte" del visore (solo v2; presa sul pilastro accesa di base, anche in `falegnamiV2`):
   `conPresaPilastro` (presa sul fianco dietro della libreria, verso la risega, scatola da mobile
-  profonda `profScatolaMobile` nei 7 di `ariaDietroFianco`) e `conBordoLibreria(on, alto)` (niente pannelli nuovi: fianchi, piano del comodino e,
-  se `alto`, cielo avanzano di uno spessore fino al piano della colonna, così i loro bordi si vedono
-  uguali sui quattro lati; frontale del gavone tra i fianchi). Chiave: `chiaveV2 & chiaveProposteV2(presa, bordo, alto)`
-  ("Pilastro", "Bordo" / "BordoSenzaAlto").
+  profonda `profScatolaMobile` nei 7 di `ariaDietroFianco`) e `conBordoLibreria` (sotto il comodino il "frontale gavone" largo fino
+  al muro; sopra, fianchi, piano del comodino e cielo avanzano di uno spessore e i bordi si vedono sui
+  quattro lati del vano; ogni fianco ha una tacca in basso, nel modello due parti). Chiave:
+  `chiaveV2 & chiaveProposteV2(presa, bordo)` ("Pilastro", "Bordo").
 - `Model.guide`: linee guida verticali sul fronte (le x). Il pulsante "Guide nicchia" le disegna
   tratteggiate su tutta l'altezza; i falegnami mettono bordo sinistro, centro e bordo destro della nicchia.
 - Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e

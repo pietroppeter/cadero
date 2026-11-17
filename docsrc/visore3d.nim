@@ -46,10 +46,10 @@ for pal in [false, true]:
 let v2 = falegnamiV2()
 tavole.add tavolaVariante(v2, chiaveV2, false)
 for presa in [false, true]:
-  for (bordo, alto) in [(false, false), (true, true), (true, false)]:
-    let k = chiaveProposteV2(presa, bordo, alto)
+  for bordo in [false, true]:
+    let k = chiaveProposteV2(presa, bordo)
     if k != "":
-      tavole.add tavolaVariante(v2.conPresaPilastro(presa).conBordoLibreria(bordo, alto), chiaveV2 & k, true)
+      tavole.add tavolaVariante(v2.conPresaPilastro(presa).conBordoLibreria(bordo), chiaveV2 & k, true)
 nbInit(theme = temaVuoto, renderer = renderVisore(PaginaVisore(
   titolo: "Visore 3D",
   misure: &"v2: L <b>{v2.larghezza:g}</b> × H <b>{v2.altezza:g}</b> × P <b>{v2.profondita:g}</b> cm · melaminico 19 mm, multistrato 18 mm",
@@ -95,11 +95,11 @@ nbJsFromCode(cartaSrc):
           varianti[k] = modello(parametri[k].conLarghezzeBasse(larghezzeNuove))
   # la versione 2 (16 novembre): il visore parte da qui
   varianti[chiaveV2] = modello(falegnamiV2())
-  # le proposte sulla v2 (17 novembre): presa sul pilastro, bordo della libreria (con o senza il pezzo alto)
+  # le proposte sulla v2 (17 novembre): presa sul pilastro, bordo della libreria
   for presa in [false, true]:
-    for (bordo, alto) in [(false, false), (true, true), (true, false)]:
-      varianti[chiaveV2 & chiaveProposteV2(presa, bordo, alto)] =
-        modello(falegnamiV2().conPresaPilastro(presa).conBordoLibreria(bordo, alto))
+    for bordo in [false, true]:
+      varianti[chiaveV2 & chiaveProposteV2(presa, bordo)] =
+        modello(falegnamiV2().conPresaPilastro(presa).conBordoLibreria(bordo))
   # il visore riconosce il modello dei falegnami dalla chiave "falegnami" (e parte da lì)
   varianti["falegnami"] = varianti[chiaveModifiche(false, true, false, false)]
   let carta = Carta(src: cartaSrc, w: 106, h: 52.6)

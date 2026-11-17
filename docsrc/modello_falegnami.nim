@@ -294,12 +294,12 @@ accesa di base (Pietro, 17 novembre), il bordo spento.
   prese su una scatola da incasso per mobili (o per cartongesso) da 3 moduli, profonda circa 4.5:
   1.8 nel fianco e 2.7 nell'aria, restano più di 4 cm fino al muro. Una scatola nel muro, invece,
   sarebbe a 7 cm dietro la placca: troppo lontana per i moduli.
-- **Bordo libreria**: visto che il pannello a L non si può fare, dal letto la libreria mostra
-  il bordo dei suoi pannelli allo stesso modo sui quattro lati, senza pannelli nuovi. Oggi si vede
-  solo a destra (il fianco davanti). I due fianchi avanzano di 1.8 fino al piano della colonna (a
-  destra il bordo avanza un poco, a sinistra la colonna parte dietro il fianco e non lo copre più);
-  il piano del comodino avanza e copre da sopra il frontale del gavone, che sta tra i fianchi; in
-  alto avanza il cielo. **Senza bordo alto** lascia il cielo indietro com'è oggi.
+- **Bordo libreria**: visto che il pannello a L non si può fare, sotto il piano del comodino una
+  testata sola, orizzontale e larga, dal davanti fino al muro (copre i fianchi e la parte bassa della
+  colonna). Sopra, nel vano della libreria, si vedono i bordi dei pannelli allo stesso modo sui
+  quattro lati, senza pannelli nuovi: i fianchi avanzano di 1.8 fino al piano della testata (sotto
+  hanno una tacca e stanno dietro la testata), il piano del comodino avanza e copre da sopra la
+  testata, il cielo avanza; la colonna comincia sopra la testata, dietro il fianco.
 """
 nbCode:
   let pp = v2.conPresaPilastro

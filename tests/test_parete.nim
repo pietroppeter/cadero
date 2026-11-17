@@ -470,16 +470,19 @@ suite "falegnami, versione 2 (16 novembre)":
         inc placche
         check near(q.y1, p.yMobili + p.profLibreria - p.sMulti)   # sulla faccia del fianco dietro
     check placche == 1
-  test "bordi della libreria uguali sui quattro lati, senza pannelli nuovi":
+  test "bordo libreria: testata larga fino al muro, bordi solo nel vano":
     let v0 = falegnamiV2()
     let b = v0.conBordoLibreria
-    let m0 = modello(v0)
     let m = modello(b)
-    check m.parts.len == m0.parts.len
-    let xp = b.xLibreria - b.sMulti      # il piano della colonna
+    let xp = b.xLibreria - b.sMulti      # il piano della testata
+    let zt = b.pianoComodino - b.sMulti
+    var fianchiSopra = 0
     for q in m.parts:
-      if q.name in ["fianco libreria", "piano comodino", "cielo libreria"]: check near(q.pos.x, xp)
-      if q.name == "pannello colonna": check near(q.pos.y, b.yMobili + b.profLibreria)
-      if q.name == "frontale gavone": check near(q.z1, b.pianoComodino - b.sMulti)
-    for q in modello(v0.conBordoLibreria(alto = false)).parts:
-      if q.name == "cielo libreria": check near(q.pos.x, b.xLibreria)
+      if q.name == "frontale gavone":
+        check near(q.pos.y, b.yMobili) and near(q.y1, b.profondita) and near(q.z1, zt)
+      if q.name in ["piano comodino", "cielo libreria"]: check near(q.pos.x, xp)
+      if q.name == "fianco libreria" and near(q.pos.x, xp):
+        inc fianchiSopra
+        check near(q.pos.z, zt)
+      if q.name == "pannello colonna": check near(q.pos.z, zt)
+    check fianchiSopra == 2
