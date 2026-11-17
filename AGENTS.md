@@ -122,6 +122,12 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   visore il gruppo "Versione" (v1 / v2, si parte dalla v2): nella v2 restano nascosti modifiche,
   taglio, cornice e larghezze in basso. Nel documento la v2 viene prima; tutto quello
   della v1 ha i titoli "v1 · ...". Le novità vanno nella v2.
+- Proposte sulla v2 (Pietro, 17 novembre), gruppo "Proposte" del visore (solo v2, spente di base):
+  `conPresaPilastro` (presa sul fianco dietro della libreria, verso la risega, scatola da mobile
+  profonda `profScatolaMobile` nei 7 di `ariaDietroFianco`) e `conBordoLibreria(on, alto)` (bordo
+  largo `bordoLibreriaProposto` sui quattro lati dell'apertura, nel piano della colonna, parti
+  "bordo libreria: …"). Chiave: `chiaveV2 & chiaveProposteV2(presa, bordo, alto)`
+  ("Pilastro", "Bordo" / "BordoSenzaAlto").
 - `Model.guide`: linee guida verticali sul fronte (le x). Il pulsante "Guide nicchia" le disegna
   tratteggiate su tutta l'altezza; i falegnami mettono bordo sinistro, centro e bordo destro della nicchia.
 - Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e

@@ -458,3 +458,27 @@ suite "falegnami, versione 2 (16 novembre)":
     check near(v.fondoVani - v.rialzoVani, v.cieloNicchia + v.sMulti)
   test "la v1 resta com'era":
     check near(falegnami().altezza, 319.6) and near(falegnami().fondoVani, 259)
+  test "presa sul pilastro: la scatola da mobile sta nell'aria dietro il fianco":
+    let p = falegnamiV2().conPresaPilastro
+    check near(p.ariaDietroFianco, 7)
+    # 4.5 di scatola: 1.8 nel fianco, 2.7 nell'aria, restano 4.3 fino alla risega
+    check p.ariaDietroFianco - (profScatolaMobile - p.sMulti) > 4
+    let m = modello(p)
+    var placche = 0
+    for q in m.parts:
+      if q.name.startsWith("presa: placca"):
+        inc placche
+        check near(q.y1, p.yMobili + p.profLibreria - p.sMulti)   # sulla faccia del fianco dietro
+    check placche == 1
+  test "bordo della libreria uguale sui quattro lati, con e senza il pezzo alto":
+    let b = falegnamiV2().conBordoLibreria
+    let m = modello(b)
+    var nomi: seq[string]
+    for q in m.parts:
+      if q.name.startsWith("bordo libreria"): nomi.add q.name
+    check nomi.len == 3
+    let s = modello(falegnamiV2().conBordoLibreria(alto = false))
+    var n = 0
+    for q in s.parts:
+      if q.name.startsWith("bordo libreria"): inc n
+    check n == 2

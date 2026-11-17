@@ -244,6 +244,32 @@ nbCode:
       echo $r.count & " × " & fmtNum(r.dims[0]) & " × " & fmtNum(r.dims[1]) & " × " &
         fmtNum(r.dims[2]) & "  " & r.name
 
+nbText: """
+### Proposte sulla v2 (17 novembre)
+
+Due proposte da vedere nel visore, gruppo **Proposte** (solo nella v2, spente di base):
+
+- **Presa sul pilastro**: la presa passa dalla schiena della libreria al fianco dietro,
+  quello davanti al pilastro (la risega), 5 sopra il piano del comodino e 5 dal bordo verso il
+  letto. Dietro quel fianco, fino alla faccia della risega, ci sono 7 cm d'aria, chiusi a sinistra
+  dal pannello della colonna. Non serve la scatola grande di adesso: una traccia nel muro porta il
+  cavo fino a quell'aria, un tubo lo porta alla scatola; sul fianco una mascherina con le sole
+  prese su una scatola da incasso per mobili (o per cartongesso) da 3 moduli, profonda circa 4.5:
+  1.8 nel fianco e 2.7 nell'aria, restano più di 4 cm fino al muro. Una scatola nel muro, invece,
+  sarebbe a 7 cm dietro la placca: troppo lontana per i moduli.
+- **Bordo libreria**: visto che il pannello a L non si può fare, la libreria vista dal letto ha un
+  bordo fatto allo stesso modo sui quattro lati, tutti pezzi nel piano del pannello della colonna,
+  larghi 5: ognuno copre il bordo del pannello dietro (1.8) e sporge 3.2 nell'apertura. A sinistra
+  la colonna (più larga di 3.2), a destra una striscia davanti al fianco, in basso una striscia che
+  sta sopra il frontale del gavone (il comodino ha un bordino di 3.2), in alto una davanti al cielo.
+  **Senza bordo alto** toglie il pezzo in alto.
+"""
+nbCode:
+  let pp = v2.conPresaPilastro
+  echo "aria dietro il fianco, fino alla risega: ", fmtNum(pp.ariaDietroFianco)
+  echo "centro della presa sul pilastro: x ", fmtNum(pp.centroPresaPilastro.x), ", ",
+    fmtNum(pp.centroPresaPilastro.z), " da terra"
+
 nbRawHtml: """<h2 id="v1">v1 · Le prime tavole (3 novembre), non più aggiornata</h2>
 <p><strong>Da qui in giù è la versione 1</strong>: le sette tavole SketchUp del 3 novembre,
 il modello che ne abbiamo ricavato e le modifiche che avevamo chiesto. È superata dalla v2
