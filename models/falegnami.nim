@@ -764,7 +764,6 @@ proc modello*(f: Falegnami): Model =
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
     lib.add sopra
     var te = part("frontale gavone", kPanel, xl - sm, y0, zl, sm, f.profondita - y0, zt - zl)
-    te.venatura = venVerticale         # Pietro: la venatura della testata in verticale
     lib.add te
     lib.add part("pannello colonna", kPanel, xl - sm, y0 + pl, zt, sm, f.profondita - (y0 + pl),
                  zl + f.hLibreria - zt)
@@ -876,6 +875,17 @@ proc modello*(f: Falegnami): Model =
   result.add part("risega (muro, carta da parati)", kWall, f.xRisega, yMuro - f.muro.risegaProf, 0,
                   f.muro.risegaLarga, f.muro.risegaProf, H)
 
+  # --- v2: i pannelli interni in piedi (quelli che non continuano il pannello
+  # frontale: fianchi, schiene, testata, colonna, gradini) hanno la venatura
+  # verticale (Pietro, 17 novembre); i frontali seguono il fronte, i pannelli stesi
+  # (piani, scaffali) restano lungo il lato lungo; niente listelli (strisce)
+  if f.versione >= 2:
+    for q in result.parts.mitems:
+      let s = q.size
+      let inPiedi = not (s.z <= s.x and s.z <= s.y)
+      if q.kind == kPanel and q.materiale != "melaminico" and inPiedi and
+         not q.name.startsWith("fronte") and not q.name.startsWith("listello"):
+        q.venatura = venVerticale
   # --- la venatura scelta pannello per pannello (le altre: lungo il lato lungo)
   for (nome, v) in f.venature:
     for q in result.parts.mitems:

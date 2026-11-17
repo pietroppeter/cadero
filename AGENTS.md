@@ -128,6 +128,9 @@ Pietro è nuovo al CAD: il codice deve restare piccolo e leggibile, commentato i
   al muro; sopra, fianchi, piano del comodino e cielo avanzano di uno spessore e i bordi si vedono sui
   quattro lati del vano; ogni fianco ha una tacca in basso, nel modello due parti). Chiave:
   `chiaveV2 & chiaveProposteV2(presa, bordo)` ("Pilastro", "Bordo").
+- Venatura nella v2 (Pietro, 17 novembre): i pannelli interni in piedi che non continuano il
+  fronte (fianchi, schiene, testata, colonna, gradini) sono verticali; lo fa la fine di `modello`
+  (niente listelli, niente melaminico, niente pannelli stesi).
 - `Model.guide`: linee guida verticali sul fronte (le x). Il pulsante "Guide nicchia" le disegna
   tratteggiate su tutta l'altezza; i falegnami mettono bordo sinistro, centro e bordo destro della nicchia.
 - Misure: ogni misura ha il suo `id` e si toglie da sola; restano spegnendo Misurare e

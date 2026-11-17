@@ -487,3 +487,9 @@ suite "falegnami, versione 2 (16 novembre)":
         check near(q.pos.z, zt)
       if q.name == "pannello colonna": check near(q.pos.z, zt)
     check fianchiSopra == 2
+  test "v2: i pannelli interni in piedi hanno la venatura verticale":
+    for f in [falegnamiV2(), falegnamiV2().conBordoLibreria]:
+      for q in modello(f).parts:
+        if q.name in ["frontale gavone", "pannello colonna", "fianco libreria", "schiena libreria",
+                      "fianco cassone"]:
+          check q.verso == venVerticale
