@@ -83,6 +83,42 @@ nbCode:
   echo m2.parts.len, " parti, ", fmtNum(v2.larghezza), " × ", fmtNum(v2.altezza), " × ", fmtNum(v2.profondita), " cm"
 
 nbText: """
+### Le tavole della v2 rifatte dal nostro modello
+
+Le stesse tavole, disegnate dal modello della v2 in proiezione e con le stesse quote
+(le tavole 1 e 2 sono lo stesso prospetto, qui insieme). Ogni misura è confrontata con
+quella scritta sulla tavola della v2:
+<span style="color:#1a1a1a">**nera**</span> se torna,
+<span style="color:#d0312d">**rossa**</span> se è diversa (tra parentesi quella della tavola),
+<span style="color:#1f6fd1">**blu**</span> se sulla tavola non c'è e l'abbiamo dedotta.
+Toccandone una si apre a tutta pagina.
+"""
+
+let rifatteV2 = tavoleRifatteV2(falegnamiV2())
+const numeriV2 = ["1 e 2", "3", "4", "5", "6", "7"]
+var schedeRifatteV2 = ""
+for i, t in rifatteV2:
+  schedeRifatteV2.add "<figure><div class=\"disegno\" role=\"button\" tabindex=\"0\">" & t.svg &
+    "</div><figcaption><b>" & numeriV2[i] & ". " & t.nome & "</b><span>" & t.nota &
+    "</span></figcaption></figure>\n"
+
+nbRawHtml: """
+<div class="galleria">
+  <div class="striscia" tabindex="0" aria-label="Le tavole della versione 2 rifatte dal modello">
+""" & schedeRifatteV2 & """
+  </div>
+  <button class="freccia indietro" type="button" aria-label="Tavola precedente">‹</button>
+  <button class="freccia avanti" type="button" aria-label="Tavola successiva">›</button>
+</div>
+"""
+
+var rosseV2 = "#### Le misure rosse\n\nNostra misura, tra parentesi quella della tavola, e il motivo quando lo sappiamo.\n\n"
+for i, t in rifatteV2:
+  for r in t.rosse:
+    rosseV2.add "- tavola " & numeriV2[i] & ", " & r & "\n"
+nbText: rosseV2
+
+nbText: """
 ### Le decisioni e la v2
 
 Le decisioni prese dopo la v1, una per una, e come risultano nella v2.
@@ -414,12 +450,13 @@ nbRawHtml: """
 </div>
 <script>
 // la seconda galleria: stesso comportamento; toccando un disegno lo si vede a tutta pagina
+// (vale per tutte le gallerie di disegni, anche quella della v2 più sopra)
 (() => {
   const g = document.querySelectorAll('.galleria');
   const ultima = g[g.length - 1];
   attivaGalleria(ultima);
-  ultima.querySelectorAll('.disegno').forEach(d => d.addEventListener('click', () => {
-    if (ultima.querySelector('.striscia').classList.contains('trascina')) return;
+  document.querySelectorAll('.galleria .disegno').forEach(d => d.addEventListener('click', () => {
+    if (d.closest('.striscia').classList.contains('trascina')) return;
     const o = document.createElement('div');
     o.className = 'ingrandita';
     o.innerHTML = d.innerHTML;
