@@ -763,7 +763,9 @@ proc modello*(f: Falegnami): Model =
       if q.name == "cielo libreria": q.pos.x = xl - sm; q.size.x = wl + sm
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
     lib.add sopra
-    lib.add part("frontale gavone", kPanel, xl - sm, y0, zl, sm, f.profondita - y0, zt - zl)
+    var te = part("frontale gavone", kPanel, xl - sm, y0, zl, sm, f.profondita - y0, zt - zl)
+    te.venatura = venVerticale         # Pietro: la venatura della testata in verticale
+    lib.add te
     lib.add part("pannello colonna", kPanel, xl - sm, y0 + pl, zt, sm, f.profondita - (y0 + pl),
                  zl + f.hLibreria - zt)
   elif f.pannelliLibreria:

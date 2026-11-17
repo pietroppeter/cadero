@@ -480,6 +480,7 @@ suite "falegnami, versione 2 (16 novembre)":
     for q in m.parts:
       if q.name == "frontale gavone":
         check near(q.pos.y, b.yMobili) and near(q.y1, b.profondita) and near(q.z1, zt)
+        check q.venatura == venVerticale
       if q.name in ["piano comodino", "cielo libreria"]: check near(q.pos.x, xp)
       if q.name == "fianco libreria" and near(q.pos.x, xp):
         inc fianchiSopra

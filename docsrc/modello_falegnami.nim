@@ -296,7 +296,7 @@ accesa di base (Pietro, 17 novembre), il bordo spento.
   sarebbe a 7 cm dietro la placca: troppo lontana per i moduli.
 - **Bordo libreria**: visto che il pannello a L non si può fare, sotto il piano del comodino una
   testata sola, orizzontale e larga, dal davanti fino al muro (copre i fianchi e la parte bassa della
-  colonna). Sopra, nel vano della libreria, si vedono i bordi dei pannelli allo stesso modo sui
+  colonna), con la venatura verticale. Sopra, nel vano della libreria, si vedono i bordi dei pannelli allo stesso modo sui
   quattro lati, senza pannelli nuovi: i fianchi avanzano di 1.8 fino al piano della testata (sotto
   hanno una tacca e stanno dietro la testata), il piano del comodino avanza e copre da sopra la
   testata, il cielo avanza; la colonna comincia sopra la testata, dietro il fianco.
