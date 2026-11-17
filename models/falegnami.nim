@@ -112,6 +112,11 @@ type
     pannelliLibreria*: bool  ## v2: al posto della L due pannelli nello stesso piano, davanti ai bordi
                              ## dei fianchi: la striscia sulla colonna (alta quanto la libreria,
                              ## sagomata sul posto contro il muro) e il frontale del gavone
+    # --- le proposte sulla v2 (Pietro, 17 novembre)
+    presaPilastro*: bool     ## la presa sul fianco della libreria verso il pilastro (la risega),
+                             ## invece che sulla schiena: vedi `centroPresaPilastro`
+    bordiLibreria*: bool     ## dal letto: sotto il comodino una testata larga fino al muro, sopra
+                             ## i bordi dei pannelli del vano libreria (vedi `conBordoLibreria`)
 
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
@@ -205,6 +210,8 @@ proc falegnamiV2*(): Falegnami =
   result.ribaltaH = 45.6
   result.parteFissa = 16                 # disegno: 160 fissi + 510 che si aprono
   result.zRibalte = 317.6 - 6 - 45.6     # 266: 6 sotto la cima del fronte (disegno: 60)
+  # la presa a sinistra, sul fianco verso il pilastro (Pietro, 17 novembre: di base)
+  result.presaPilastro = true
 
 proc senzaPannello*(f: Falegnami): Falegnami =
   ## La variante senza il pannellino: niente fessura, i gradini si ridistribuiscono.
@@ -403,6 +410,44 @@ proc centroLampada*(f: Falegnami): tuple[y, z: float] =
 proc presaDallaRisega*(f: Falegnami): float =
   ## dal centro della presa alla faccia della risega, in orizzontale
   f.yMuro - f.muro.risegaProf - f.centroPresa.y
+
+# --- le proposte sulla v2 (Pietro, 17 novembre 2026) ---------------------------------
+const
+  profScatolaMobile* = 4.5
+    ## la scatola da incasso per mobili (o per cartongesso) da 3 moduli: profonda circa
+    ## 4.5, entra nel fianco da 1.8 e sporge 2.7 nell'aria dietro
+
+proc centroPresaPilastro*(f: Falegnami): tuple[x, z: float] =
+  ## La presa sul fianco dietro della libreria, verso il pilastro (la risega): la
+  ## placca sulla faccia del fianco che guarda il davanti, 5 sopra il piano del
+  ## comodino (come sulla schiena) e 5 dal bordo verso il letto.
+  (f.xLibreria + marginePresa + placcaL / 2,
+   f.pianoComodino + marginePresa + placcaH / 2)
+
+proc ariaDietroFianco*(f: Falegnami): float =
+  ## lo spazio tra il fianco dietro della libreria e la faccia della risega: dove
+  ## passa il cavo e sporge la scatola della presa sul pilastro (7)
+  f.yMuro - f.muro.risegaProf - (f.yMobili + f.profLibreria)
+
+proc conPresaPilastro*(f: Falegnami; on = true): Falegnami =
+  ## la presa sul fianco verso il pilastro invece che sulla schiena
+  result = f
+  result.presaPilastro = on
+
+proc conBordoLibreria*(f: Falegnami; on = true): Falegnami =
+  ## Visto che il pannello a L non si può fare (Pietro, 17 novembre): sotto il piano
+  ## del comodino una testata sola, orizzontale, larga dal davanti fino al muro (copre
+  ## i fianchi e la parte bassa della colonna); sopra, nel vano della libreria, si
+  ## vedono i bordi dei pannelli sui quattro lati, tutti nel piano della testata: i
+  ## fianchi avanzano di uno spessore sopra la testata (sotto hanno una tacca e stanno
+  ## dietro), il piano del comodino avanza e copre da sopra la testata, il cielo
+  ## avanza; la colonna comincia sopra la testata, dietro il fianco.
+  result = f
+  result.bordiLibreria = on
+
+proc chiaveProposteV2*(presa, bordo: bool): string =
+  ## il pezzo di chiave del visore dopo `chiaveV2`
+  (if presa: "Pilastro" else: "") & (if bordo: "Bordo" else: "")
 
 
 # --- le modifiche che vorremmo (Pietro, 4 novembre 2026) --------------------------
@@ -702,6 +747,26 @@ proc modello*(f: Falegnami): Model =
     lib.add pa
     for q in lib.mitems:
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
+  elif f.pannelliLibreria and f.bordiLibreria:
+    # sotto il comodino la testata larga fino al muro; sopra, nel vano, i bordi di
+    # fianchi, piano del comodino e cielo nel piano della testata (`conBordoLibreria`).
+    # Il fianco è un pezzo solo con una tacca in basso: qui due parti con lo stesso nome
+    let zt = zc - sm                           # la cima della testata, sotto il comodino
+    var sopra: seq[Part]
+    for q in lib.mitems:
+      if q.name.startsWith("fianco"):
+        var s = q
+        s.pos.x = xl - sm; s.size.x = wl + sm
+        s.pos.z = zt; s.size.z = q.z1 - zt
+        sopra.add s
+        q.size.z = zt - q.pos.z
+      if q.name == "cielo libreria": q.pos.x = xl - sm; q.size.x = wl + sm
+      if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
+    lib.add sopra
+    var te = part("frontale gavone", kPanel, xl - sm, y0, zl, sm, f.profondita - y0, zt - zl)
+    lib.add te
+    lib.add part("pannello colonna", kPanel, xl - sm, y0 + pl, zt, sm, f.profondita - (y0 + pl),
+                 zl + f.hLibreria - zt)
   elif f.pannelliLibreria:
     # v2: gli stessi due bracci della L, ma due pezzi; il pannello vince sui fianchi
     lib.add part("frontale gavone", kPanel, xl - sm, y0, zl, sm, pl - sm, zc - zl)
@@ -717,6 +782,8 @@ proc modello*(f: Falegnami): Model =
     lib.add part("pannello risega", kPanel, xl - sm, y0 + pl - sm, zl,
                  sm, f.profondita - (y0 + pl - sm), f.hLibreria)
   var com = part("piano comodino", kPanel, xl, y0 + sm, zc - sm, wl, pl - 2 * sm, sm)
+  if f.pannelliLibreria and f.bordiLibreria:   # avanza fino al piano della colonna
+    com.pos.x = xl - sm; com.size.x = wl + sm
   let (xG, yG, wG, dG) = (xl + 4, y0 + sm + 6, wl - 8, pl - 2 * sm - 12)
   com.holesPiano.add rrect(xG, yG, wG, dG, 4)
   lib.add com
@@ -725,21 +792,44 @@ proc modello*(f: Falegnami): Model =
   for q in lib.mitems:
     if q.name.startsWith("fianco"): q.hiddenFront = true
   result.aggiungi(lib, "libreria")
-  # la presa sulla schiena, verso il comodino; dietro, nel muro, la scatola da 3 moduli
-  let (yP, zP) = f.centroPresa
-  let xS = L - sm                      # la faccia della schiena verso il letto
-  var placca = part("presa: placca 3 moduli", kAccessory, xS - 0.9, yP - placcaL / 2,
-                    zP - placcaH / 2, 0.9, placcaL, placcaH)
-  placca.hiddenFront = true
-  result.add placca
-  for k in 0..2:
-    var m = part("presa: modulo " & $(k + 1), kAccessory, xS - 1.2, yP - 3.3 + float(k) * 2.2,
-                 zP - 2.2, 0.3, 2.0, 4.4)
-    m.hiddenFront = true
-    result.add m
-  var scatolaPresa = part("presa: scatola nel muro", kAccessory, L, yP - 5.3, zP - 3.5, 5, 10.6, 7)
-  scatolaPresa.hiddenFront = true
-  result.add scatolaPresa
+  if f.presaPilastro:
+    # la presa sul fianco dietro, verso il pilastro: la placca con le sole prese sulla
+    # faccia che guarda il davanti; la scatola da mobile incassata nel fianco sporge
+    # nell'aria tra fianco e risega, dove un tubo porta il cavo dalla traccia nel muro
+    let (xP, zP) = f.centroPresaPilastro
+    let yF = y0 + pl - sm                # la faccia del fianco verso il davanti
+    var placca = part("presa: placca 3 moduli", kAccessory, xP - placcaL / 2, yF - 0.9,
+                      zP - placcaH / 2, placcaL, 0.9, placcaH)
+    placca.hiddenFront = true
+    result.add placca
+    for k in 0..2:
+      var m = part("presa: modulo " & $(k + 1), kAccessory, xP - 3.3 + float(k) * 2.2, yF - 1.2,
+                   zP - 2.2, 2.0, 0.3, 4.4)
+      m.hiddenFront = true
+      result.add m
+    let yR = f.yMuro - f.muro.risegaProf  # la faccia della risega
+    for q in [part("presa: scatola nel fianco", kAccessory, xP - 5.3, yF, zP - 3.5, 10.6, profScatolaMobile, 7),
+              part("presa: tubo dalla traccia", kAccessory, xP - 1, yF + profScatolaMobile, zP - 1,
+                   2, yR - yF - profScatolaMobile, 2)]:
+      var q = q
+      q.hiddenFront = true
+      result.add q
+  else:
+    # la presa sulla schiena, verso il comodino; dietro, nel muro, la scatola da 3 moduli
+    let (yP, zP) = f.centroPresa
+    let xS = L - sm                      # la faccia della schiena verso il letto
+    var placca = part("presa: placca 3 moduli", kAccessory, xS - 0.9, yP - placcaL / 2,
+                      zP - placcaH / 2, 0.9, placcaL, placcaH)
+    placca.hiddenFront = true
+    result.add placca
+    for k in 0..2:
+      var m = part("presa: modulo " & $(k + 1), kAccessory, xS - 1.2, yP - 3.3 + float(k) * 2.2,
+                   zP - 2.2, 0.3, 2.0, 4.4)
+      m.hiddenFront = true
+      result.add m
+    var scatolaPresa = part("presa: scatola nel muro", kAccessory, L, yP - 5.3, zP - 3.5, 5, 10.6, 7)
+    scatolaPresa.hiddenFront = true
+    result.add scatolaPresa
   # la lampada da lettura (facoltativa nel visore): un'applique sulla striscia che
   # copre la risega, verso il letto (altezza in `centroLampada`), come nella foto di
   # Pietro: una base a capsula, gialla e lucida, e sopra una sfera di vetro bianco.
@@ -785,6 +875,17 @@ proc modello*(f: Falegnami): Model =
   result.add part("risega (muro, carta da parati)", kWall, f.xRisega, yMuro - f.muro.risegaProf, 0,
                   f.muro.risegaLarga, f.muro.risegaProf, H)
 
+  # --- v2: i pannelli interni in piedi (quelli che non continuano il pannello
+  # frontale: fianchi, schiene, testata, colonna, gradini) hanno la venatura
+  # verticale (Pietro, 17 novembre); i frontali seguono il fronte, i pannelli stesi
+  # (piani, scaffali) restano lungo il lato lungo; niente listelli (strisce)
+  if f.versione >= 2:
+    for q in result.parts.mitems:
+      let s = q.size
+      let inPiedi = not (s.z <= s.x and s.z <= s.y)
+      if q.kind == kPanel and q.materiale != "melaminico" and inPiedi and
+         not q.name.startsWith("fronte") and not q.name.startsWith("listello"):
+        q.venatura = venVerticale
   # --- la venatura scelta pannello per pannello (le altre: lungo il lato lungo)
   for (nome, v) in f.venature:
     for q in result.parts.mitems:

@@ -458,12 +458,38 @@ suite "falegnami, versione 2 (16 novembre)":
     check near(v.fondoVani - v.rialzoVani, v.cieloNicchia + v.sMulti)
   test "la v1 resta com'era":
     check near(falegnami().altezza, 319.6) and near(falegnami().fondoVani, 259)
-  test "le tavole della v2 rifatte: solo le misure rosse attese":
-    let t = tavoleRifatteV2(v)
-    check t.len == 6
-    var rosse: seq[string]
-    for x in t: rosse.add x.rosse
-    # vani alti (apertura e scatola), libreria (primo spazio, larghezza), mobili C e B
-    check rosse.len == 8
-    check rosse.anyIt(it.startsWith("dal piano del comodino al primo scaffale: 31.4 (30.7)"))
-    check rosse.anyIt(it.startsWith("vano alto, altezza: 45.4 (44.4)"))
+  test "presa sul pilastro: la scatola da mobile sta nell'aria dietro il fianco":
+    let p = falegnamiV2().conPresaPilastro
+    check near(p.ariaDietroFianco, 7)
+    # 4.5 di scatola: 1.8 nel fianco, 2.7 nell'aria, restano 4.3 fino alla risega
+    check p.ariaDietroFianco - (profScatolaMobile - p.sMulti) > 4
+    let m = modello(p)
+    var placche = 0
+    for q in m.parts:
+      if q.name.startsWith("presa: placca"):
+        inc placche
+        check near(q.y1, p.yMobili + p.profLibreria - p.sMulti)   # sulla faccia del fianco dietro
+    check placche == 1
+  test "bordo libreria: testata larga fino al muro, bordi solo nel vano":
+    let v0 = falegnamiV2()
+    let b = v0.conBordoLibreria
+    let m = modello(b)
+    let xp = b.xLibreria - b.sMulti      # il piano della testata
+    let zt = b.pianoComodino - b.sMulti
+    var fianchiSopra = 0
+    for q in m.parts:
+      if q.name == "frontale gavone":
+        check near(q.pos.y, b.yMobili) and near(q.y1, b.profondita) and near(q.z1, zt)
+        check q.venatura == venVerticale
+      if q.name in ["piano comodino", "cielo libreria"]: check near(q.pos.x, xp)
+      if q.name == "fianco libreria" and near(q.pos.x, xp):
+        inc fianchiSopra
+        check near(q.pos.z, zt)
+      if q.name == "pannello colonna": check near(q.pos.z, zt)
+    check fianchiSopra == 2
+  test "v2: i pannelli interni in piedi hanno la venatura verticale":
+    for f in [falegnamiV2(), falegnamiV2().conBordoLibreria]:
+      for q in modello(f).parts:
+        if q.name in ["frontale gavone", "pannello colonna", "fianco libreria", "schiena libreria",
+                      "fianco cassone"]:
+          check q.verso == venVerticale

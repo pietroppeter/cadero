@@ -280,6 +280,37 @@ nbCode:
       echo $r.count & " × " & fmtNum(r.dims[0]) & " × " & fmtNum(r.dims[1]) & " × " &
         fmtNum(r.dims[2]) & "  " & r.name
 
+nbText: """
+### Proposte sulla v2 (17 novembre)
+
+Due proposte da vedere nel visore, gruppo **Proposte** (solo nella v2): la presa sul pilastro è
+accesa di base (Pietro, 17 novembre), il bordo spento.
+
+- **Presa sul pilastro**: la presa passa dalla schiena della libreria al fianco dietro,
+  quello davanti al pilastro (la risega), 5 sopra il piano del comodino e 5 dal bordo verso il
+  letto. Dietro quel fianco, fino alla faccia della risega, ci sono 7 cm d'aria, chiusi a sinistra
+  dal pannello della colonna. Non serve la scatola grande di adesso: una traccia nel muro porta il
+  cavo fino a quell'aria, un tubo lo porta alla scatola; sul fianco una mascherina con le sole
+  prese su una scatola da incasso per mobili (o per cartongesso) da 3 moduli, profonda circa 4.5:
+  1.8 nel fianco e 2.7 nell'aria, restano più di 4 cm fino al muro. Una scatola nel muro, invece,
+  sarebbe a 7 cm dietro la placca: troppo lontana per i moduli.
+- **Bordo libreria**: visto che il pannello a L non si può fare, sotto il piano del comodino una
+  testata sola, orizzontale e larga, dal davanti fino al muro (copre i fianchi e la parte bassa della
+  colonna). Sopra, nel vano della libreria, si vedono i bordi dei pannelli allo stesso modo sui
+  quattro lati, senza pannelli nuovi: i fianchi avanzano di 1.8 fino al piano della testata (sotto
+  hanno una tacca e stanno dietro la testata), il piano del comodino avanza e copre da sopra la
+  testata, il cielo avanza; la colonna comincia sopra la testata, dietro il fianco.
+
+Regola della venatura nella v2: i pannelli interni in piedi, quelli che non continuano il pannello
+frontale (fianchi, schiene, testata stretta o larga, colonna, gradini), hanno la venatura
+verticale; ante, cassetti e ribalte seguono il fronte, piani e scaffali restano lungo il lato lungo.
+"""
+nbCode:
+  let pp = v2.conPresaPilastro
+  echo "aria dietro il fianco, fino alla risega: ", fmtNum(pp.ariaDietroFianco)
+  echo "centro della presa sul pilastro: x ", fmtNum(pp.centroPresaPilastro.x), ", ",
+    fmtNum(pp.centroPresaPilastro.z), " da terra"
+
 nbRawHtml: """<h2 id="v1">v1 · Le prime tavole (3 novembre), non più aggiornata</h2>
 <p><strong>Da qui in giù è la versione 1</strong>: le sette tavole SketchUp del 3 novembre,
 il modello che ne abbiamo ricavato e le modifiche che avevamo chiesto. È superata dalla v2

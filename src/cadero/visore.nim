@@ -1321,6 +1321,10 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
     if conV2:
       el("g-modifiche").nascosto(not fal or v2())
       el("g-taglio").nascosto(not fal or v2())
+    # le proposte sulla v2 (17 novembre): presa sul pilastro, bordo della libreria
+    let gProposte = el("g-proposte")
+    if gProposte != nil:
+      gProposte.nascosto(not (fal and v2()))
   pulsanti()
   # le misure regolate a mano (le larghezze della zona bassa): un pannello che si
   # apre con il suo pulsante, una riga per misura con − e + e il numero
@@ -1417,6 +1421,9 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
     var chiave = "falegnami"
     if fal and v2():
       chiave = "falegnamiV2"
+      if el("g-proposte") != nil:
+        if premuto(el("pv-pilastro")): chiave.add "Pilastro"
+        if premuto(el("pv-bordo")): chiave.add "Bordo"
     elif fal:
       for (id, nome) in modifiche:
         if premuto(el(id)): chiave.add nome
@@ -1472,6 +1479,8 @@ proc avviaVisore*(varianti: Table[string, Model]; cartaDaParati: Carta;
         variante = name; cambiaModello())
   var interruttori = @[tRisega, tAntina, tPrese, tCornice]
   for (id, _) in modifiche: interruttori.add el(id)
+  for id in ["pv-pilastro", "pv-bordo"]:
+    if el(id) != nil: interruttori.add el(id)
   for i in 0 ..< interruttori.len:
     closureScope:   # ogni giro ha le sue variabili, anche nelle closure
       let b = interruttori[i]
