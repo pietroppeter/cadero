@@ -283,7 +283,8 @@ nbCode:
 nbText: """
 ### Proposte sulla v2 (17 novembre)
 
-Due proposte da vedere nel visore, gruppo **Proposte** (solo nella v2, spente di base):
+Due proposte da vedere nel visore, gruppo **Proposte** (solo nella v2): la presa sul pilastro è
+accesa di base (Pietro, 17 novembre), il bordo spento.
 
 - **Presa sul pilastro**: la presa passa dalla schiena della libreria al fianco dietro,
   quello davanti al pilastro (la risega), 5 sopra il piano del comodino e 5 dal bordo verso il
@@ -293,12 +294,12 @@ Due proposte da vedere nel visore, gruppo **Proposte** (solo nella v2, spente di
   prese su una scatola da incasso per mobili (o per cartongesso) da 3 moduli, profonda circa 4.5:
   1.8 nel fianco e 2.7 nell'aria, restano più di 4 cm fino al muro. Una scatola nel muro, invece,
   sarebbe a 7 cm dietro la placca: troppo lontana per i moduli.
-- **Bordo libreria**: visto che il pannello a L non si può fare, la libreria vista dal letto ha un
-  bordo fatto allo stesso modo sui quattro lati, tutti pezzi nel piano del pannello della colonna,
-  larghi 5: ognuno copre il bordo del pannello dietro (1.8) e sporge 3.2 nell'apertura. A sinistra
-  la colonna (più larga di 3.2), a destra una striscia davanti al fianco, in basso una striscia che
-  sta sopra il frontale del gavone (il comodino ha un bordino di 3.2), in alto una davanti al cielo.
-  **Senza bordo alto** toglie il pezzo in alto.
+- **Bordo libreria**: visto che il pannello a L non si può fare, dal letto la libreria mostra
+  il bordo dei suoi pannelli allo stesso modo sui quattro lati, senza pannelli nuovi. Oggi si vede
+  solo a destra (il fianco davanti). I due fianchi avanzano di 1.8 fino al piano della colonna (a
+  destra il bordo avanza un poco, a sinistra la colonna parte dietro il fianco e non lo copre più);
+  il piano del comodino avanza e copre da sopra il frontale del gavone, che sta tra i fianchi; in
+  alto avanza il cielo. **Senza bordo alto** lascia il cielo indietro com'è oggi.
 """
 nbCode:
   let pp = v2.conPresaPilastro

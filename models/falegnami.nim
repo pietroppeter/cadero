@@ -115,11 +115,9 @@ type
     # --- le proposte sulla v2 (Pietro, 17 novembre)
     presaPilastro*: bool     ## la presa sul fianco della libreria verso il pilastro (la risega),
                              ## invece che sulla schiena: vedi `centroPresaPilastro`
-    bordoLibreria*: float    ## 0 = niente; se no il bordo uguale su tutti i lati dell'apertura
-                             ## della libreria vista dal letto (vedi `conBordoLibreria`): ogni
-                             ## pezzo copre il bordo del pannello dietro e sporge nell'apertura
-                             ## di `bordoLibreria - sMulti`
-    bordoAlto*: bool         ## con il bordo: anche quello in alto (sotto il cielo)
+    bordiLibreria*: bool     ## i bordi dei pannelli della libreria si vedono uguali sui quattro
+                             ## lati dell'apertura, dal letto (vedi `conBordoLibreria`)
+    bordoAlto*: bool         ## con i bordi: anche quello del cielo, in alto
 
 proc falegnami*(): Falegnami =
   ## Le misure delle tavole dei falegnami.
@@ -213,6 +211,8 @@ proc falegnamiV2*(): Falegnami =
   result.ribaltaH = 45.6
   result.parteFissa = 16                 # disegno: 160 fissi + 510 che si aprono
   result.zRibalte = 317.6 - 6 - 45.6     # 266: 6 sotto la cima del fronte (disegno: 60)
+  # la presa a sinistra, sul fianco verso il pilastro (Pietro, 17 novembre: di base)
+  result.presaPilastro = true
 
 proc senzaPannello*(f: Falegnami): Falegnami =
   ## La variante senza il pannellino: niente fessura, i gradini si ridistribuiscono.
@@ -414,9 +414,6 @@ proc presaDallaRisega*(f: Falegnami): float =
 
 # --- le proposte sulla v2 (Pietro, 17 novembre 2026) ---------------------------------
 const
-  bordoLibreriaProposto* = 5.0
-    ## ipotesi: il bordo della libreria largo 5, cioè 1.8 che copre il bordo del
-    ## pannello dietro più 3.2 che sporgono nell'apertura
   profScatolaMobile* = 4.5
     ## la scatola da incasso per mobili (o per cartongesso) da 3 moduli: profonda circa
     ## 4.5, entra nel fianco da 1.8 e sporge 2.7 nell'aria dietro
@@ -424,10 +421,8 @@ const
 proc centroPresaPilastro*(f: Falegnami): tuple[x, z: float] =
   ## La presa sul fianco dietro della libreria, verso il pilastro (la risega): la
   ## placca sulla faccia del fianco che guarda il davanti, 5 sopra il piano del
-  ## comodino (come sulla schiena) e 5 dal bordo verso il letto (con il bordo della
-  ## libreria, 5 dal bordo).
-  let bordo = max(f.bordoLibreria - f.sMulti, 0)
-  (f.xLibreria + bordo + marginePresa + placcaL / 2,
+  ## comodino (come sulla schiena) e 5 dal bordo verso il letto.
+  (f.xLibreria + marginePresa + placcaL / 2,
    f.pianoComodino + marginePresa + placcaH / 2)
 
 proc ariaDietroFianco*(f: Falegnami): float =
@@ -441,14 +436,14 @@ proc conPresaPilastro*(f: Falegnami; on = true): Falegnami =
   result.presaPilastro = on
 
 proc conBordoLibreria*(f: Falegnami; on = true; alto = true): Falegnami =
-  ## Visto che il pannello a L non si può fare, la libreria vista dal letto ha un
-  ## bordo fatto allo stesso modo sui quattro lati, tutti nel piano del pannello
-  ## della colonna: a sinistra la colonna (più larga), a destra una striscia davanti
-  ## al bordo del fianco, in basso una striscia che sta sopra il frontale del gavone
-  ## (e copre il bordo del piano del comodino), in alto una davanti al bordo del
-  ## cielo (se `alto`). Ogni pezzo sporge nell'apertura della stessa misura.
+  ## Visto che il pannello a L non si può fare, dal letto la libreria mostra i bordi
+  ## dei suoi pannelli allo stesso modo sui quattro lati, tutti nel piano della
+  ## colonna e del frontale del gavone, senza pannelli nuovi: i due fianchi avanzano di
+  ## uno spessore (a destra il bordo c'era già, a sinistra la colonna non lo copre
+  ## più), il piano del comodino avanza e copre da sopra il frontale del gavone, che
+  ## sta tra i fianchi; in alto il cielo avanza (se `alto`, se no resta indietro).
   result = f
-  result.bordoLibreria = if on: bordoLibreriaProposto else: 0
+  result.bordiLibreria = on
   result.bordoAlto = on and alto
 
 proc chiaveProposteV2*(presa, bordo, alto: bool): string =
@@ -753,22 +748,17 @@ proc modello*(f: Falegnami): Model =
     lib.add pa
     for q in lib.mitems:
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
-  elif f.pannelliLibreria and f.bordoLibreria > 0:
-    # il bordo uguale sui quattro lati (`conBordoLibreria`), tutti pezzi nel piano della
-    # colonna: ognuno copre il bordo del pannello dietro e sporge nell'apertura di `a`
-    let a = f.bordoLibreria - sm
-    let zt = zl + f.hLibreria                  # la cima della libreria
-    let yc = y0 + pl - sm - a                  # dove comincia la colonna, più larga di `a`
-    let zb = zc + a                            # la cima del bordo in basso
-    let zs = if f.bordoAlto: zt - f.bordoLibreria else: zt   # sotto il bordo in alto
-    lib.add part("frontale gavone", kPanel, xl - sm, y0, zl, sm, yc - y0, zc - sm - zl)
-    lib.add part("bordo libreria: basso", kPanel, xl - sm, y0, zc - sm, sm, yc - y0, f.bordoLibreria)
-    lib.add part("bordo libreria: destro", kPanel, xl - sm, y0, zb, sm, f.bordoLibreria, zs - zb)
-    if f.bordoAlto:
-      lib.add part("bordo libreria: alto", kPanel, xl - sm, y0, zs, sm, yc - y0, f.bordoLibreria)
-    lib.add part("pannello colonna", kPanel, xl - sm, yc, zl, sm, f.profondita - yc, f.hLibreria)
+  elif f.pannelliLibreria and f.bordiLibreria:
+    # i bordi dei pannelli uguali sui quattro lati (`conBordoLibreria`), tutti nel
+    # piano della colonna: fianchi, piano del comodino e (se `bordoAlto`) cielo
+    # avanzano di uno spessore; il frontale del gavone sta tra i fianchi, sotto il
+    # piano del comodino; la colonna comincia dietro il fianco
     for q in lib.mitems:
+      if q.name.startsWith("fianco") or (q.name == "cielo libreria" and f.bordoAlto):
+        q.pos.x = xl - sm; q.size.x = wl + sm
       if q.name == "fondo gavone": q.pos.x = xl; q.size.x = wl
+    lib.add part("frontale gavone", kPanel, xl - sm, y0 + sm, zl, sm, pl - 2 * sm, zc - sm - zl)
+    lib.add part("pannello colonna", kPanel, xl - sm, y0 + pl, zl, sm, f.profondita - (y0 + pl), f.hLibreria)
   elif f.pannelliLibreria:
     # v2: gli stessi due bracci della L, ma due pezzi; il pannello vince sui fianchi
     lib.add part("frontale gavone", kPanel, xl - sm, y0, zl, sm, pl - sm, zc - zl)
@@ -784,6 +774,8 @@ proc modello*(f: Falegnami): Model =
     lib.add part("pannello risega", kPanel, xl - sm, y0 + pl - sm, zl,
                  sm, f.profondita - (y0 + pl - sm), f.hLibreria)
   var com = part("piano comodino", kPanel, xl, y0 + sm, zc - sm, wl, pl - 2 * sm, sm)
+  if f.pannelliLibreria and f.bordiLibreria:   # avanza fino al piano della colonna
+    com.pos.x = xl - sm; com.size.x = wl + sm
   let (xG, yG, wG, dG) = (xl + 4, y0 + sm + 6, wl - 8, pl - 2 * sm - 12)
   com.holesPiano.add rrect(xG, yG, wG, dG, 4)
   lib.add com

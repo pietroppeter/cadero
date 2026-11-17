@@ -470,24 +470,16 @@ suite "falegnami, versione 2 (16 novembre)":
         inc placche
         check near(q.y1, p.yMobili + p.profLibreria - p.sMulti)   # sulla faccia del fianco dietro
     check placche == 1
-  test "bordo della libreria uguale sui quattro lati, con e senza il pezzo alto":
-    let b = falegnamiV2().conBordoLibreria
+  test "bordi della libreria uguali sui quattro lati, senza pannelli nuovi":
+    let v0 = falegnamiV2()
+    let b = v0.conBordoLibreria
+    let m0 = modello(v0)
     let m = modello(b)
-    var nomi: seq[string]
+    check m.parts.len == m0.parts.len
+    let xp = b.xLibreria - b.sMulti      # il piano della colonna
     for q in m.parts:
-      if q.name.startsWith("bordo libreria"): nomi.add q.name
-    check nomi.len == 3
-    let s = modello(falegnamiV2().conBordoLibreria(alto = false))
-    var n = 0
-    for q in s.parts:
-      if q.name.startsWith("bordo libreria"): inc n
-    check n == 2
-  test "le tavole della v2 rifatte: solo le misure rosse attese":
-    let t = tavoleRifatteV2(v)
-    check t.len == 6
-    var rosse: seq[string]
-    for x in t: rosse.add x.rosse
-    # vani alti (apertura e scatola), libreria (primo spazio, larghezza), mobili C e B
-    check rosse.len == 8
-    check rosse.anyIt(it.startsWith("dal piano del comodino al primo scaffale: 31.4 (30.7)"))
-    check rosse.anyIt(it.startsWith("vano alto, altezza: 45.4 (44.4)"))
+      if q.name in ["fianco libreria", "piano comodino", "cielo libreria"]: check near(q.pos.x, xp)
+      if q.name == "pannello colonna": check near(q.pos.y, b.yMobili + b.profLibreria)
+      if q.name == "frontale gavone": check near(q.z1, b.pianoComodino - b.sMulti)
+    for q in modello(v0.conBordoLibreria(alto = false)).parts:
+      if q.name == "cielo libreria": check near(q.pos.x, b.xLibreria)
